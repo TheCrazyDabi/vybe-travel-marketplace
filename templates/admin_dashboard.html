@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Admin dashboard — VYBE{% endblock %}
+{% block content %}
+<h1>Admin dashboard <span class="muted small">· demo admin</span></h1>
+
+<h2>Overview</h2>
+<div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
+  <div class="card"><div class="card-body"><b>{{ stats.users_total }}</b><span class="muted">Total users</span></div></div>
+  <div class="card"><div class="card-body"><b>{{ stats.travelers }}</b><span class="muted">Travelers</span></div></div>
+  <div class="card"><div class="card-body"><b>{{ stats.operators }}</b><span class="muted">Operators</span></div></div>
+  <div class="card"><div class="card-body"><b>{{ stats.pending_verifications }}</b><span class="muted">Pending verification</span></div></div>
+  <div class="card"><div class="card-body"><b>{{ stats.approved_operators }}</b><span class="muted">Approved</span></div></div>
+  <div class="card"><div class="card-body"><b>{{ stats.rejected_operators }}</b><span class="muted">Rejected</span></div></div>
+  <div class="card"><div class="card-body"><b>{{ stats.packages }}</b><span class="muted">Live packages</span></div></div>
+  <div class="card"><div class="card-body"><b>{{ stats.interests }}</b><span class="muted">Traveler interests</span></div></div>
+  <div class="card"><div class="card-body"><b>{{ stats.open_reports }}</b><span class="muted">Open reports</span></div></div>
+  <div class="card"><div class="card-body"><b>{{ stats.suspended }}</b><span class="muted">Suspended</span></div></div>
+</div>
+<p><a class="btn small primary" href="/admin/verifications">Verification queue</a></p>
+
+<h2>Users</h2>
+<form class="form" onsubmit="return loadUsers(event)" style="display:flex; gap:8px; flex-wrap:wrap;">
+  <input id="uq" class="input" placeholder="Search name or email" style="max-width:240px;" />
+  <select id="urole" class="input" style="max-width:150px;">
+    <option value="">All roles</option><option value="traveler">Traveler</option>
+    <option value="operator">Operator</option><option value="admin">Admin</option>
+  </select>
+  <select id="ustatus" class="input" style="max-width:150px;">
+    <option value="">Any status</option><option value="active">Active</option>
+    <option value="suspended">Suspended</option>
+  </select>
+  <button class="btn small primary" type="submit">Filter</button>
+</form>
+<table class="table" id="users"><tr><th>User</th><th>Role</th><th>Status</th><th>Company</th><th>Joined</th><th>Action</th></tr></table>
+
+<h2>Reports</h2>
+<table class="table" id="reports"><tr><th>ID</th><th>Reporter</th><th>Target</th><th>Reason</th><th>Status</th><th>Action</th></tr></table>
+{% endblock %}
+{% block scripts %}
+<script>
+async function api(url, opts={}) {
+  const r = await fetch(url, {headers: {'Content-Type': 'application/json'}, ...opts});
+  return r.json();
+}
+async function loadUsers(e) {
+  if (e) e.preventDefault();
+  const q = document.getElementById('uq').value, role = document.getElementById('urole').value, status = document.getElementById('ustatus').value;
+  const {users} = await api(`/api/admin/users?q=${encodeURIComponent(q)}&role=${role}&status=${status}`);
+  const t = document.getElementById('users');
+  t.innerHTML = '<tr><th>User</th><th>Role</th><th>Status</th><th>Company</th><th>Joined</th><th>Action</th></tr>' +
+    users.map(u => `<tr><td>${u.name} &lt;${u.email}&gt;</td><td>${u.role}</td><td>${u.status}</td><td>${u.company ? u.company.company_name + ' (' + u.company.status + ')' : '—'}</td><td>${(u.created_at||'').slice(0,10)}</td><td>${u.status === 'suspended' ? `<button class="btn small ghost" onclick="setStatus(${u.id},'active')">Reactivate</button>` : `<button class="btn small ghost" onclick="setStatus(${u.id},'suspended')">Suspend</button>`}</td></tr>`).join('');
+}
+async function setStatus(id, status) {
+  const reason = status === 'suspended' ? (prompt('Reason for suspension (recorded):') || '') : '';
+  await api(`/api/admin/users/${id}/status`, {method: 'POST', body: JSON.stringify({status, reason})});
+  loadUsers();
+}
+async function loadReports() {
+  const {reports} = await api('/api/admin/reports');
+  const t = document.getElementById('reports');
+  t.innerHTML = '<tr><th>ID</th><th>Reporter</th><th>Target</th><th>Reason</th><th>Status</th><th>Action</th></tr>' +
+    (reports.map(r => `<tr><td>${r.id}</td><td>${r.reporter_email}</td><td>${r.target_type} #${r.target_id}</td><td>${r.reason}</td><td>${r.status}</td><td>${['resolved','dismissed'].includes(r.status) ? (r.action_taken || '—') : `<button class="btn small ghost" onclick="reviewReport(${r.id},'resolved')">Resolve</button> <button class="btn small ghost" onclick="reviewReport(${r.id},'dismissed')">Dismiss</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No reports.</td></tr>');
+}
+async function reviewReport(id, status) {
+  const action_taken = prompt('Action note (optional):') || '';
+  await api(`/api/admin/reports/${id}/review`, {method: 'POST', body: JSON.stringify({status, action_taken})});
+  loadReports();
+}
+loadUsers(); loadReports();
+</script>
+{% endblock %}

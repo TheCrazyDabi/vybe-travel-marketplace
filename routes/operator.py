@@ -1,6 +1,6 @@
 import os
 
-from flask import Blueprint, abort, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 
@@ -23,6 +23,13 @@ def dashboard():
         abort(403)
     company = _own_company()
     packages, interests, conversations = [], [], []
+    latest_review = None
+    if company:
+        latest_review = (
+            VerificationRecord.query.filter_by(company_id=company.id)
+            .order_by(VerificationRecord.created_at.desc())
+            .first()
+        )
     if company:
         packages = TravelPackage.query.filter_by(operator_id=company.id).all()
         pkg_ids = [p.id for p in packages]
@@ -45,6 +52,7 @@ def dashboard():
         packages=packages,
         interests=interests,
         conversations=conversations,
+        latest_review=latest_review,
     )
 
 
@@ -92,6 +100,10 @@ def package_form(pkg_id: int | None = None):
     company = _own_company()
     if not company and current_user.role != "admin":
         return redirect(url_for("operator.company_form"))
+    if (company and company.status != "approved"
+            and current_user.role != "admin"):
+        flash("Publishing unlocks after your company is approved.", "error")
+        return redirect(url_for("operator.dashboard"))
     pkg = TravelPackage.query.get_or_404(pkg_id) if pkg_id else None
     if request.method == "POST":
         data = request.form
@@ -99,8 +111,15 @@ def package_form(pkg_id: int | None = None):
         if target.operator_id is None:  # admin fallback
             fallback = TravelCompany.query.filter_by(status="approved").first()
             target.operator_id = fallback.id if fallback else None
-        target.title = data.get("title", target.title)
-        target.destination = data.get("destination", target.destination)
+        title = (data.get("title") or (target.title or "")).strip()
+        destination = (data.get("destination") or (target.destination or "")).strip()
+        if not pkg and (not title or not destination):
+            return render_template(
+                "package_form.html", pkg=pkg, company=company,
+                error="Title and destination are required.",
+            ), 400
+        target.title = title or target.title
+        target.destination = destination or target.destination
         target.short_desc = data.get("short_desc", target.short_desc)
         target.itinerary = data.get("itinerary", target.itinerary)
         target.price = int(data.get("price") or target.price or 0)
@@ -109,7 +128,8 @@ def package_form(pkg_id: int | None = None):
         target.group_size = data.get("group_size", target.group_size)
         target.accommodation = data.get("accommodation", target.accommodation)
         target.transportation = data.get("transportation", target.transportation)
-        target.is_active = bool(data.get("is_active", target.is_active if pkg else True))
+        # Checkbox semantics: unchecked box omits the key -> False.
+        target.is_active = "is_active" in data
         for field in ("region_tags", "interest_tags", "mood_tags", "climate_tags"):
             vals = data.get(field, "")
             if vals:

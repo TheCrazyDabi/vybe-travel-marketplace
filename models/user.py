@@ -15,6 +15,9 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     # traveler | operator | admin
     role = db.Column(db.String(20), nullable=False, default="traveler")
+    # active | suspended (admin moderation)
+    status = db.Column(db.String(20), nullable=False, default="active")
+    status_reason = db.Column(db.String(255), nullable=True)
     age_range = db.Column(db.String(20), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -40,7 +43,9 @@ class User(UserMixin, db.Model):
             "name": self.name,
             "email": self.email,
             "role": self.role,
+            "status": self.status,
             "age_range": self.age_range,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
 

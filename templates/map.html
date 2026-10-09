@@ -7,7 +7,7 @@
 {% endblock %}
 {% block scripts %}
 <script>
-const PKGS = {{ packages|map(attribute='to_dict')|list|tojson }};
+const PKGS = {{ packages|tojson }};
 const map = L.map('map').setView([15.5, 76.5], 5);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '© OpenStreetMap contributors'}).addTo(map);
 for (const p of PKGS) {

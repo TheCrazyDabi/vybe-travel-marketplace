@@ -23,6 +23,14 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Log in")
 
 
+def _dashboard_for(role: str) -> str:
+    if role == "admin":
+        return "admin.dashboard"
+    if role == "operator":
+        return "operator.dashboard"
+    return "traveler.discover"
+
+
 def _get_or_create_profile(user: User):
     if not user.profile:
         user.profile = TravelerProfile(user_id=user.id)
@@ -65,12 +73,15 @@ def login_page():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data.lower()).first()
-        if user and user.check_password(form.password.data):
+        if user and (user.status or "active") != "active":
+            flash("Account suspended. Contact support.", "error")
+        elif user and user.check_password(form.password.data):
             login_user(user)
             flash(f"Welcome back, {user.name}!", "success")
             next_page = request.args.get("next")
-            return redirect(next_page or url_for("main.index"))
-        flash("Invalid email or password.", "error")
+            return redirect(next_page or url_for(_dashboard_for(user.role)))
+        else:
+            flash("Invalid email or password.", "error")
     return render_template("login.html", form=form)
 
 
@@ -110,10 +121,14 @@ def api_register():
 def api_login():
     data = request.get_json(force=True, silent=True) or {}
     user = User.query.filter_by(email=(data.get("email") or "").lower()).first()
+    if user and (user.status or "active") != "active":
+        return jsonify({"error": "account suspended"}), 403
     if not user or not user.check_password(data.get("password") or ""):
         return jsonify({"error": "invalid credentials"}), 401
     login_user(user)
-    return jsonify({"user": user.to_dict()})
+    payload = user.to_dict()
+    payload["dashboard"] = url_for(_dashboard_for(user.role))
+    return jsonify({"user": payload})
 
 
 @auth_bp.post("/api/auth/logout")

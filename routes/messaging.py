@@ -25,6 +25,8 @@ def chats_page():
     if current_user.role == "operator":
         comp = TravelCompany.query.filter_by(user_id=current_user.id).first()
         convs = Conversation.query.filter_by(company_id=comp.id).all() if comp else []
+    elif current_user.role == "admin":
+        convs = Conversation.query.order_by(Conversation.updated_at.desc()).limit(100).all()
     else:
         convs = Conversation.query.filter_by(traveler_id=current_user.id).all()
     return render_template("chat.html", conversations=convs, active=None)
@@ -39,6 +41,8 @@ def chat_detail(conv_id: int):
     if current_user.role == "operator":
         comp = TravelCompany.query.filter_by(user_id=current_user.id).first()
         convs = Conversation.query.filter_by(company_id=comp.id).all() if comp else []
+    elif current_user.role == "admin":
+        convs = Conversation.query.order_by(Conversation.updated_at.desc()).limit(100).all()
     else:
         convs = Conversation.query.filter_by(traveler_id=current_user.id).all()
     return render_template("chat.html", conversations=convs, active=conv)
@@ -51,6 +55,8 @@ def api_list_conversations():
     if current_user.role == "operator":
         comp = TravelCompany.query.filter_by(user_id=current_user.id).first()
         convs = Conversation.query.filter_by(company_id=comp.id).all() if comp else []
+    elif current_user.role == "admin":
+        convs = Conversation.query.order_by(Conversation.updated_at.desc()).limit(100).all()
     else:
         convs = Conversation.query.filter_by(traveler_id=current_user.id).all()
     return jsonify({"conversations": [c.to_dict() for c in convs]})

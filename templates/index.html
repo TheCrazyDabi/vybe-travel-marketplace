@@ -2,6 +2,10 @@
 {% block content %}
 <section class="hero">
   <div class="hero-text">
+    <div class="hero-logo" aria-label="VYBE logo">
+      <svg width="34" height="34" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C55 35 65 45 100 50 C65 55 55 65 50 100 C45 65 35 55 0 50 C35 45 45 35 50 0 Z" fill="currentColor"/></svg>
+      <span>VYBE</span>
+    </div>
     <p class="eyebrow">AI-powered travel marketplace</p>
     <h1>Find trips that match your vibe.</h1>
     <p class="lede">Tell VYBE what you love, swipe through personalized travel experiences, and connect with verified travel companies to plan your next adventure.</p>
@@ -24,27 +28,6 @@
       <b>Munnar Tea Trails Escape</b>
       <span class="muted">Munnar · 3 days · ₹9,999 · ★ 92 match</span>
     </div>
-  </div>
-</section>
-
-<section>
-  <h2>Featured trips <span class="muted small">· sample data</span></h2>
-  <div class="grid">
-    {% for p in featured %}
-    <a class="card" href="/packages/{{ p.id }}">
-      <img src="{{ p.cover_image }}" alt="{{ p.destination }}" loading="lazy" />
-      <div class="card-body">
-        <b>{{ p.title }}</b>
-        <span class="muted">{{ p.destination }} · {{ p.duration_days }} days · ₹{{ "{:,}".format(p.price) }}</span>
-        <span class="badge-row">
-          {% if p.operator and p.operator.is_verified %}<span class="badge verified">✓ Verified</span>{% endif %}
-          <span class="badge">{{ p.destination }}</span>
-        </span>
-      </div>
-    </a>
-    {% else %}
-    <p class="muted">No packages yet — run the app once to seed demo data.</p>
-    {% endfor %}
   </div>
 </section>
 

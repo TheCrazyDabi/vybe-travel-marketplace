@@ -45,6 +45,10 @@ def _require_operator_company():
     company = TravelCompany.query.filter_by(user_id=current_user.id).first()
     if not company and current_user.role != "admin":
         abort(403, description="operator company profile required")
+    # Only approved operators may publish (admins bypass for demo management).
+    if (company and company.status != "approved"
+            and current_user.role != "admin"):
+        abort(403, description="company verification required before publishing")
     return company
 
 
@@ -53,7 +57,7 @@ def _require_operator_company():
 def api_create():
     company = _require_operator_company()
     data = request.get_json(force=True, silent=True) or {}
-    if not data.get("title") or not data.get("destination") or not data.get("price"):
+    if not data.get("title") or not data.get("destination") or data.get("price") is None:
         return jsonify({"error": "title, destination, price required"}), 400
     pkg = TravelPackage(
         operator_id=company.id if company else None,

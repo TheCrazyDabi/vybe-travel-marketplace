@@ -10,6 +10,7 @@ from .company import TravelCompany, VerificationRecord  # noqa: E402,F401
 from .package import TravelPackage  # noqa: E402,F401
 from .interaction import Interest  # noqa: E402,F401
 from .messaging import Conversation, Message  # noqa: E402,F401
+from .moderation import Report  # noqa: E402,F401
 
 __all__ = [
     "db",
@@ -22,4 +23,5 @@ __all__ = [
     "Interest",
     "Conversation",
     "Message",
+    "Report",
 ]

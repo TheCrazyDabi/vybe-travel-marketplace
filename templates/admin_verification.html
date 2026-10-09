@@ -13,6 +13,11 @@
 <table class="table"><tr><th>Company</th><th>Email</th><th>Status</th><th>Verified</th></tr>
 {% for c in companies %}<tr><td>{{ c.company_name }}</td><td>{{ c.business_email }}</td><td>{{ c.status }}</td><td>{{ '✓' if c.is_verified else '—' }}</td></tr>{% endfor %}
 </table>
+<h2>Decision history</h2>
+<table class="table"><tr><th>Company</th><th>Decision</th><th>Note</th><th>By</th><th>When</th></tr>
+{% for r in history %}<tr><td>{{ r.company.company_name if r.company else r.company_id }}</td><td>{{ r.status }}</td><td>{{ r.reviewer_note or '—' }}</td><td>{{ reviewers.get(r.reviewed_by, '—') }}</td><td>{{ r.reviewed_at or '—' }}</td></tr>
+{% else %}<tr><td colspan="5" class="muted">No decisions yet.</td></tr>{% endfor %}
+</table>
 {% endblock %}
 {% block scripts %}
 <script>

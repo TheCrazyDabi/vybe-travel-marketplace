@@ -6,10 +6,20 @@
   <p>No company profile yet. <a class="btn primary" href="/operator/company">Create company profile</a></p>
 {% else %}
   <p><b>{{ company.company_name }}</b>
-    {% if company.is_verified %}<span class="badge verified">✓ Verified</span>{% else %}<span class="badge">Status: {{ company.status }}</span>{% endif %}
+    {% if company.is_verified %}<span class="badge verified">✓ Verified</span>
+    {% elif company.status == 'pending' %}<span class="badge">Pending Verification</span>
+    {% elif company.status == 'rejected' %}<span class="badge">Rejected</span>
+    {% else %}<span class="badge">Status: {{ company.status }}</span>{% endif %}
     <a class="btn small ghost" href="/operator/company">Edit / verification</a>
+    {% if company.status == 'approved' or current_user.role == 'admin' %}
     <a class="btn small primary" href="/operator/packages/new">+ New package</a>
+    {% endif %}
   </p>
+  {% if company.status == 'pending' %}
+    <p class="match">⏳ <b>Pending Verification</b> — an administrator is reviewing your company. Publishing unlocks after approval.</p>
+  {% elif company.status == 'rejected' %}
+    <p class="match"><b>Verification rejected{% if latest_review and latest_review.reviewer_note %}: {{ latest_review.reviewer_note }}{% endif %}.</b> Update your details and <a href="/operator/company">resubmit for review</a>.</p>
+  {% endif %}
   <h2>Your packages</h2>
   <div class="grid">
     {% for p in packages %}

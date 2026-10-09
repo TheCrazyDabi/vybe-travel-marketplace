@@ -12,6 +12,8 @@ a { color: var(--teal-dark); }
 .nav-links a { text-decoration: none; font-weight: 600; }
 .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
 .hero { display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px; align-items: center; margin: 12px 0 30px; }
+.hero-logo { display: flex; align-items: center; gap: 10px; color: var(--teal-dark); margin-bottom: 10px; }
+.hero-logo span { font-weight: 900; font-size: 34px; letter-spacing: 6px; }
 .eyebrow { text-transform: uppercase; letter-spacing: 2px; color: var(--teal); font-weight: 700; font-size: 12px; }
 .hero h1 { font-size: 52px; line-height: 1.02; margin: 8px 0; }
 .lede { font-size: 18px; color: var(--muted); }

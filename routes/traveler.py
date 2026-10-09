@@ -1,11 +1,23 @@
 from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
 
-from models import Interest, TravelPackage, db
+from models import Interest, TravelerProfile, TravelPackage, UserPreference, db
 from services.recommendation import rank_packages
 from services.vybe_ai import extract_preferences, onboarding_reply
 
 traveler_bp = Blueprint("traveler", __name__)
+
+
+def _get_or_create_profile():
+    """Ensure the current user has a traveler profile (auto-create for travelers)."""
+    p = current_user.profile
+    if p is None:
+        p = TravelerProfile(user_id=current_user.id)
+        db.session.add(p)
+        if not current_user.preference:
+            db.session.add(UserPreference(user_id=current_user.id))
+        db.session.commit()
+    return p
 
 
 def _prefs_dict():
@@ -17,7 +29,7 @@ def _prefs_dict():
 @traveler_bp.route("/onboarding", methods=["GET", "POST"])
 @login_required
 def onboarding():
-    profile = current_user.profile
+    profile = _get_or_create_profile()
     if request.method == "POST":
         data = request.form or {}
         profile.budget_max = int(data.get("budget_max") or profile.budget_max or 15000)
@@ -69,7 +81,7 @@ def saved():
 @login_required
 def map_view():
     pkgs = TravelPackage.query.filter_by(is_active=True).all()
-    return render_template("map.html", packages=pkgs)
+    return render_template("map.html", packages=[p.to_dict() for p in pkgs])
 
 
 # ---- JSON API ----
@@ -85,7 +97,7 @@ def api_get_profile():
 @login_required
 def api_put_profile():
     data = request.get_json(force=True, silent=True) or {}
-    p = current_user.profile
+    p = _get_or_create_profile()
     for field in ("budget_max", "duration_days", "preferred_regions", "preferred_climate",
                   "scenery", "interests", "group_type", "current_mood", "avoid"):
         if field in data:
@@ -98,7 +110,7 @@ def api_put_profile():
 @login_required
 def api_preferences():
     data = request.get_json(force=True, silent=True) or {}
-    p = current_user.profile
+    p = _get_or_create_profile()
     # Accept either structured fields or free text
     if "free_text" in data:
         merged = extract_preferences(data["free_text"], p.to_dict())

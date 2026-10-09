@@ -2,6 +2,7 @@
 {% block title %}Package editor — VYBE{% endblock %}
 {% block content %}
 <h1>{{ 'Edit' if pkg else 'New' }} package</h1>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
 <form method="post" class="form wide">
   <label>Title<input name="title" class="input" value="{{ pkg.title if pkg else '' }}" required /></label>
   <label>Destination<input name="destination" class="input" value="{{ pkg.destination if pkg else '' }}" required /></label>
