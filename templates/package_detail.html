@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ pkg.title }} — VYBE{% endblock %}
+{% block content %}
+<a href="/packages" class="muted">← All trips</a>
+<div class="detail">
+  <img src="{{ pkg.cover_image }}" alt="{{ pkg.destination }}" />
+  <div>
+    <h1>{{ pkg.title }}</h1>
+    <p class="muted">{{ pkg.destination }} · {{ pkg.duration_days }} days · <b>₹{{ "{:,}".format(pkg.price) }}</b>
+      {% if pkg.operator %} · by {{ pkg.operator.company_name }}
+        {% if pkg.operator.is_verified %}<span class="badge verified">✓ Verified</span>{% else %}<span class="badge">Unverified demo</span>{% endif %}
+      {% endif %}
+    </p>
+    {% if score %}<div class="match">Match {{ score }} — {{ explanation }}</div>{% endif %}
+    <p>{{ pkg.short_desc }}</p>
+    <h3>Itinerary</h3><p>{{ pkg.itinerary }}</p>
+    <div class="cols">
+      <div><h4>Included</h4><ul>{% for x in pkg.included or [] %}<li>{{ x }}</li>{% endfor %}</ul></div>
+      <div><h4>Details</h4>
+        <p class="muted">Stay: {{ pkg.accommodation }}<br/>Travel: {{ pkg.transportation }}<br/>Group: {{ pkg.group_size }}<br/>Dates: {{ pkg.available_dates }}</p>
+      </div>
+    </div>
+    <div class="cta-row">
+      <button class="btn primary" onclick="expressInterest({{ pkg.id }})">♥ I'm interested</button>
+      <button class="btn ghost" onclick="savePkg({{ pkg.id }})">Bookmark</button>
+      <button class="btn ghost" onclick="startChat({{ pkg.operator.id if pkg.operator else 'null' }}, {{ pkg.id }})">Chat with operator</button>
+    </div>
+    <p id="detail-status" class="muted"></p>
+  </div>
+</div>
+<div id="map" class="map"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const LAT = {{ pkg.lat or 'null' }}, LNG = {{ pkg.lng or 'null' }};
+if (LAT && LNG && window.L) {
+  const m = L.map('map').setView([LAT, LNG], 8);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '© OpenStreetMap contributors'}).addTo(m);
+  L.marker([LAT, LNG]).addTo(m).bindPopup({{ (pkg.title + ' — ' + pkg.destination)|tojson }}).openPopup();
+} else { document.getElementById('map').innerHTML = '<p class="muted">Map unavailable for this package.</p>'; }
+async function expressInterest(id){ await fetch(`/api/packages/${id}/swipe`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'like'})}); document.getElementById('detail-status').textContent='Interest recorded! The operator can now see it.'; }
+async function savePkg(id){ await fetch(`/api/packages/${id}/save`, {method:'POST'}); document.getElementById('detail-status').textContent='Bookmarked ✓'; }
+async function startChat(companyId, packageId){ const r = await fetch('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({company_id: companyId, package_id: packageId})}); const j = await r.json(); if(j.conversation) location.href = `/chats/${j.conversation.id}`; }
+</script>
+{% endblock %}

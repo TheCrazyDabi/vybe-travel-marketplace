@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Log in — VYBE{% endblock %}
+{% block content %}
+<h1>Welcome back</h1>
+<form method="post" class="form">
+  {{ form.hidden_tag() }}
+  <label>Email {{ form.email(class="input") }}</label>
+  <label>Password {{ form.password(class="input") }}</label>
+  {{ form.submit(class="btn primary") }}
+  <p class="muted">No account? <a href="/register">Create one</a></p>
+</form>
+{% endblock %}

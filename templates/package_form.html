@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Package editor — VYBE{% endblock %}
+{% block content %}
+<h1>{{ 'Edit' if pkg else 'New' }} package</h1>
+<form method="post" class="form wide">
+  <label>Title<input name="title" class="input" value="{{ pkg.title if pkg else '' }}" required /></label>
+  <label>Destination<input name="destination" class="input" value="{{ pkg.destination if pkg else '' }}" required /></label>
+  <div class="form-grid">
+    <label>Price (₹)<input name="price" type="number" class="input" value="{{ pkg.price if pkg else 9999 }}" required /></label>
+    <label>Days<input name="duration_days" type="number" class="input" value="{{ pkg.duration_days if pkg else 3 }}" /></label>
+  </div>
+  <label>Cover image URL<input name="cover_image" class="input" value="{{ pkg.cover_image if pkg else '' }}" /></label>
+  <label>Short description<textarea name="short_desc" class="input" rows="2">{{ pkg.short_desc if pkg else '' }}</textarea></label>
+  <label>Itinerary<textarea name="itinerary" class="input" rows="4">{{ pkg.itinerary if pkg else '' }}</textarea></label>
+  <label>Region tags (comma separated)<input name="region_tags" class="input" value="{{ (pkg.region_tags or [])|join(', ') if pkg else 'mountains' }}" /></label>
+  <label>Interest tags (comma separated)<input name="interest_tags" class="input" value="{{ (pkg.interest_tags or [])|join(', ') if pkg else 'nature, adventure' }}" /></label>
+  <label>Mood tags (comma separated)<input name="mood_tags" class="input" value="{{ (pkg.mood_tags or [])|join(', ') if pkg else 'relaxation, adventure' }}" /></label>
+  <label>Climate tags (comma separated)<input name="climate_tags" class="input" value="{{ (pkg.climate_tags or [])|join(', ') if pkg else 'cool' }}" /></label>
+  <label class="chip"><input type="checkbox" name="is_active" checked /> Active / visible</label>
+  <button class="btn primary" type="submit">Save package</button>
+</form>
+{% endblock %}

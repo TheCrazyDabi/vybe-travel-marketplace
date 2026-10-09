@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Discover — VYBE{% endblock %}
+{% block content %}
+<h1>Swipe your VYBE</h1>
+<p class="muted">Right = interested · Left = pass · Tap card for details. Works with mouse, touch & buttons.</p>
+<div class="swipe-wrap">
+  <div id="card-stack"></div>
+  <div id="empty-state" class="empty hidden">All caught up! <a href="/saved">See saved & interests</a> or <a href="/onboarding">tweak preferences</a>.</div>
+  <div class="swipe-actions">
+    <button id="btn-pass" class="btn ghost big">✕ Pass</button>
+    <button id="btn-detail" class="btn ghost big">Details</button>
+    <button id="btn-like" class="btn primary big">♥ Interested</button>
+  </div>
+  <p id="swipe-status" class="muted"></p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/discover.js') }}"></script>
+{% endblock %}

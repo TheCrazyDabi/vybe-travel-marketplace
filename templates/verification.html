@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Company verification — VYBE{% endblock %}
+{% block content %}
+<h1>Company profile & verification</h1>
+<p class="muted">Demo flow: submit → admin approves → verified badge. Demo approvals are sample data, not real verification.</p>
+<form method="post" enctype="multipart/form-data" class="form wide">
+  <label>Company name<input name="company_name" class="input" value="{{ company.company_name if company else '' }}" required /></label>
+  <label>Business email<input name="business_email" class="input" value="{{ company.business_email if company else '' }}" /></label>
+  <label>Contact details<input name="contact_details" class="input" value="{{ company.contact_details if company else '' }}" /></label>
+  <label>Description<textarea name="description" class="input" rows="3">{{ company.description if company else '' }}</textarea></label>
+  <label>Licence / registration info<input name="licence_info" class="input" value="{{ company.licence_info if company else '' }}" /></label>
+  <label>Supporting document (png/jpg/pdf, ≤5MB)<input type="file" name="document" class="input" /></label>
+  <button class="btn primary" type="submit">Submit for verification</button>
+</form>
+{% endblock %}

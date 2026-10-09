@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Operator dashboard — VYBE{% endblock %}
+{% block content %}
+<h1>Operator dashboard</h1>
+{% if not company %}
+  <p>No company profile yet. <a class="btn primary" href="/operator/company">Create company profile</a></p>
+{% else %}
+  <p><b>{{ company.company_name }}</b>
+    {% if company.is_verified %}<span class="badge verified">✓ Verified</span>{% else %}<span class="badge">Status: {{ company.status }}</span>{% endif %}
+    <a class="btn small ghost" href="/operator/company">Edit / verification</a>
+    <a class="btn small primary" href="/operator/packages/new">+ New package</a>
+  </p>
+  <h2>Your packages</h2>
+  <div class="grid">
+    {% for p in packages %}
+    <div class="card">
+      <img src="{{ p.cover_image }}" alt="" loading="lazy" />
+      <div class="card-body">
+        <b>{{ p.title }}</b>
+        <span class="muted">{{ p.destination }} · ₹{{ "{:,}".format(p.price) }} · {% if p.is_active %}Active{% else %}Hidden{% endif %}</span>
+        <span class="badge-row"><a class="btn small ghost" href="/packages/{{ p.id }}">View</a><a class="btn small ghost" href="/operator/packages/{{ p.id }}/edit">Edit</a></span>
+      </div>
+    </div>
+    {% else %}<p class="muted">No packages yet.</p>{% endfor %}
+  </div>
+  <h2>Incoming interests (swipe-right)</h2>
+  {% if interests %}
+  <table class="table"><tr><th>When</th><th>Package</th><th>Traveler</th></tr>
+    {% for i in interests %}<tr><td>{{ i.created_at }}</td><td>{{ i.package.title if i.package else i.package_id }}</td><td>#{{ i.traveler_id }}</td></tr>{% endfor %}
+  </table>
+  {% else %}<p class="muted">No interests yet — share your packages with travelers.</p>{% endif %}
+  <h2>Conversations</h2>
+  {% if conversations %}
+  <ul>{% for c in conversations %}<li><a href="/chats/{{ c.id }}">#{{ c.id }} — package {{ c.package_id }} — {{ c.status }}</a></li>{% endfor %}</ul>
+  {% else %}<p class="muted">No conversations yet.</p>{% endif %}
+{% endif %}
+{% endblock %}

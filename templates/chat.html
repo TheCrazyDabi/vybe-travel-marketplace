@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Chats — VYBE{% endblock %}
+{% block content %}
+<h1>Conversations</h1>
+<div class="chat-layout">
+  <div class="chat-list">
+    {% for c in conversations %}
+    <a class="chat-item {% if active and active.id==c.id %}active{% endif %}" href="/chats/{{ c.id }}">#{{ c.id }} · pkg {{ c.package_id }} · {{ c.status }}</a>
+    {% else %}<p class="muted">No conversations. Express interest in a trip first.</p>{% endfor %}
+  </div>
+  <div class="chat-main">
+    {% if active %}
+    <div id="msgs" class="msgs"></div>
+    <div class="msg-row"><input id="msg-input" class="input" placeholder="Write a message…" /><button class="btn primary" onclick="sendMsg()">Send</button></div>
+    {% else %}<p class="muted">Select a conversation.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if active %}
+<script>
+const CONV = {{ active.id }};
+async function loadMsgs(){ const r = await fetch(`/api/conversations/${CONV}/messages`); const j = await r.json(); document.getElementById('msgs').innerHTML = j.messages.map(m=>`<div class="msg"><b>#${m.sender_id}</b> ${m.body}<span class="muted small"> ${m.created_at}</span></div>`).join('') || '<p class="muted">Say hello to start.</p>'; }
+async function sendMsg(){ const el = document.getElementById('msg-input'); if(!el.value.trim()) return; await fetch(`/api/conversations/${CONV}/messages`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({body: el.value})}); el.value=''; loadMsgs(); }
+loadMsgs(); setInterval(loadMsgs, 5000);
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Join — VYBE{% endblock %}
+{% block content %}
+<h1>Find trips that match your vibe</h1>
+<form method="post" class="form">
+  {{ form.hidden_tag() }}
+  <label>Name {{ form.name(class="input") }}</label>
+  <label>Email {{ form.email(class="input") }}</label>
+  <label>Password (6+ chars) {{ form.password(class="input") }}</label>
+  <label>I am a
+    <select name="role" class="input">
+      <option value="traveler">Traveler — discover trips</option>
+      <option value="operator">Travel operator — publish packages</option>
+    </select>
+  </label>
+  {{ form.submit(class="btn primary") }}
+  <p class="muted">Have an account? <a href="/login">Log in</a></p>
+</form>
+{% endblock %}

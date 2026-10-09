@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Admin verification — VYBE{% endblock %}
+{% block content %}
+<h1>Verification queue <span class="muted small">· demo admin</span></h1>
+<table class="table"><tr><th>ID</th><th>Company</th><th>Status</th><th>Action</th></tr>
+{% for r in pending %}
+<tr><td>{{ r.id }}</td><td>{{ r.company.company_name if r.company else r.company_id }}</td><td>{{ r.status }}</td>
+<td><button class="btn small primary" onclick="decide({{ r.id }},'approve')">Approve</button>
+<button class="btn small ghost" onclick="decide({{ r.id }},'reject')">Reject</button></td></tr>
+{% else %}<tr><td colspan="4" class="muted">Queue empty.</td></tr>{% endfor %}
+</table>
+<h2>All companies</h2>
+<table class="table"><tr><th>Company</th><th>Email</th><th>Status</th><th>Verified</th></tr>
+{% for c in companies %}<tr><td>{{ c.company_name }}</td><td>{{ c.business_email }}</td><td>{{ c.status }}</td><td>{{ '✓' if c.is_verified else '—' }}</td></tr>{% endfor %}
+</table>
+{% endblock %}
+{% block scripts %}
+<script>
+async function decide(id, decision){ await fetch(`/api/admin/verifications/${id}/decision`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({decision})}); location.reload(); }
+</script>
+{% endblock %}

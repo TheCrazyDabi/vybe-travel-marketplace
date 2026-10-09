@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Preferences — VYBE{% endblock %}
+{% block content %}
+<h1>What’s your travel VYBE?</h1>
+{% if message %}<div class="flash success">{{ message }}</div>{% endif %}
+<form method="post" class="form wide">
+  <div class="form-grid">
+    <label>Budget max (₹)<input name="budget_max" type="number" class="input" value="{{ profile.budget_max or 15000 }}" /></label>
+    <label>Days<input name="duration_days" type="number" class="input" value="{{ profile.duration_days or 3 }}" /></label>
+    <label>Current mood
+      <select name="current_mood" class="input">
+        {% for m in ['relaxation','adventure','romantic','family','party','nature','spiritual','culture'] %}
+        <option value="{{ m }}" {% if profile.current_mood==m %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Group
+      <select name="group_type" class="input">
+        {% for g in ['solo','friends','couple','family'] %}
+        <option value="{{ g }}" {% if profile.group_type==g %}selected{% endif %}>{{ g }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <fieldset><legend>Regions</legend>
+    {% for r in ['mountains','beaches','forests','cities','desert'] %}
+    <label class="chip"><input type="checkbox" name="regions" value="{{ r }}" {% if r in (profile.preferred_regions or []) %}checked{% endif %}/> {{ r }}</label>
+    {% endfor %}
+  </fieldset>
+  <fieldset><legend>Climate</legend>
+    {% for c in ['cool','warm'] %}
+    <label class="chip"><input type="checkbox" name="climate" value="{{ c }}" {% if c in (profile.preferred_climate or []) %}checked{% endif %}/> {{ c }}</label>
+    {% endfor %}
+  </fieldset>
+  <fieldset><legend>Interests</legend>
+    {% for i in ['nature','adventure','relaxation','culture','heritage','food','wildlife','nightlife'] %}
+    <label class="chip"><input type="checkbox" name="interests" value="{{ i }}" {% if i in (profile.interests or []) %}checked{% endif %}/> {{ i }}</label>
+    {% endfor %}
+  </fieldset>
+  <label>Or describe in words (AI fallback parses this)
+    <textarea name="free_text" class="input" rows="2" placeholder="e.g. cool mountains, 3 days, trekking under 12000, relaxing mood"></textarea>
+  </label>
+  <button class="btn primary" type="submit">Save & get recommendations</button>
+  <a class="btn ghost" href="/discover">Go to Discover →</a>
+</form>
+{% endblock %}

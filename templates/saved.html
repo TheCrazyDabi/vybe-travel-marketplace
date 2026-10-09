@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Saved — VYBE{% endblock %}
+{% block content %}
+<h1>Saved & interests</h1>
+<div class="grid">
+  {% for i in interests %}
+  <a class="card" href="/packages/{{ i.package_id }}">
+    <img src="{{ i.package.cover_image if i.package else '' }}" alt="" loading="lazy" />
+    <div class="card-body">
+      <b>{{ i.package.title if i.package else 'Trip #' ~ i.package_id }}</b>
+      <span class="badge">{{ i.action }}</span>
+      <span class="muted small">{{ i.created_at }}</span>
+    </div>
+  </a>
+  {% else %}
+  <p class="muted">Nothing yet — <a href="/discover">discover trips</a>.</p>
+  {% endfor %}
+</div>
+{% endblock %}

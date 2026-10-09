@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Trip map — VYBE{% endblock %}
+{% block content %}
+<h1>Trip map</h1>
+<p class="muted">OpenStreetMap + Leaflet. Markers open package details.</p>
+<div id="map" class="map tall"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const PKGS = {{ packages|map(attribute='to_dict')|list|tojson }};
+const map = L.map('map').setView([15.5, 76.5], 5);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '© OpenStreetMap contributors'}).addTo(map);
+for (const p of PKGS) {
+  if (p.lat && p.lng) L.marker([p.lat, p.lng]).addTo(map)
+    .bindPopup(`<b>${p.title}</b><br>${p.destination} · ₹${p.price}<br><a href="/packages/${p.id}">View →</a>`);
+}
+</script>
+{% endblock %}

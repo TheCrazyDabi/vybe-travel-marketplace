@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Explore trips — VYBE{% endblock %}
+{% block content %}
+<h1>Explore trips</h1>
+<div class="grid">
+  {% for p in packages %}
+  <a class="card" href="/packages/{{ p.id }}">
+    <img src="{{ p.cover_image }}" alt="{{ p.destination }}" loading="lazy" />
+    <div class="card-body">
+      <b>{{ p.title }}</b>
+      <span class="muted">{{ p.destination }} · {{ p.duration_days }} days · ₹{{ "{:,}".format(p.price) }}</span>
+      <span class="badge-row">{% if p.operator and p.operator.is_verified %}<span class="badge verified">✓ Verified</span>{% endif %}</span>
+      <span class="muted small">{{ p.short_desc }}</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

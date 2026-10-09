@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="hero-text">
+    <p class="eyebrow">AI-powered travel marketplace</p>
+    <h1>Find trips that match your vibe.</h1>
+    <p class="lede">Tell VYBE what you love, swipe through personalized travel experiences, and connect with verified travel companies to plan your next adventure.</p>
+    <div class="cta-row">
+      {% if current_user.is_authenticated %}
+        <a class="btn primary" href="/discover">Start swiping</a>
+        <a class="btn ghost" href="/onboarding">Update preferences</a>
+      {% else %}
+        <a class="btn primary" href="/register">Find your VYBE</a>
+        <a class="btn ghost" href="/packages">Browse trips</a>
+      {% endif %}
+    </div>
+    <div class="loop">
+      <span>Discover</span>→<span>Swipe</span>→<span>Match</span>→<span>Connect</span>
+    </div>
+  </div>
+  <div class="hero-card">
+    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=80" alt="Munnar hills" />
+    <div class="hero-card-body">
+      <b>Munnar Tea Trails Escape</b>
+      <span class="muted">Munnar · 3 days · ₹9,999 · ★ 92 match</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Featured trips <span class="muted small">· sample data</span></h2>
+  <div class="grid">
+    {% for p in featured %}
+    <a class="card" href="/packages/{{ p.id }}">
+      <img src="{{ p.cover_image }}" alt="{{ p.destination }}" loading="lazy" />
+      <div class="card-body">
+        <b>{{ p.title }}</b>
+        <span class="muted">{{ p.destination }} · {{ p.duration_days }} days · ₹{{ "{:,}".format(p.price) }}</span>
+        <span class="badge-row">
+          {% if p.operator and p.operator.is_verified %}<span class="badge verified">✓ Verified</span>{% endif %}
+          <span class="badge">{{ p.destination }}</span>
+        </span>
+      </div>
+    </a>
+    {% else %}
+    <p class="muted">No packages yet — run the app once to seed demo data.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="how">
+  <div><b>1. Tell us your mood</b><span class="muted">Budget, days, mountains vs beaches, adventure vs chill.</span></div>
+  <div><b>2. Swipe trips</b><span class="muted">Right = interested, Left = pass. VYBE learns gently.</span></div>
+  <div><b>3. Connect</b><span class="muted">Chat with the travel company. No fake bookings.</span></div>
+</section>
+
+<section>
+  <h2>Demo accounts</h2>
+  <div class="demo-grid">
+    <code>traveler@vybe.demo / traveler123</code>
+    <code>operator@vybe.demo / operator123</code>
+    <code>admin@vybe.demo / admin123</code>
+  </div>
+</section>
+{% endblock %}
