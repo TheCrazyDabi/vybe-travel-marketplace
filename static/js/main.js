@@ -5,23 +5,15 @@ async function vybeFetch(url, opts = {}) {
   return r.json();
 }
 
-// Header favourite/saved counts (liked vs saved kept separate).
+// Header saved-count badge (likes + saves combined).
 async function refreshNavCounts() {
-  const likeEl = document.getElementById('nav-like-count');
-  const saveEl = document.getElementById('nav-save-count');
-  if (!likeEl && !saveEl) return;
+  const el = document.getElementById('nav-saved-count');
+  if (!el) return;
   try {
     const j = await (await fetch('/api/interests/counts')).json();
-    if (likeEl) {
-      const n = j.like || 0;
-      likeEl.textContent = n;
-      likeEl.classList.toggle('hidden', n <= 0);
-    }
-    if (saveEl) {
-      const n = j.save || 0;
-      saveEl.textContent = n;
-      saveEl.classList.toggle('hidden', n <= 0);
-    }
+    const n = (j.like || 0) + (j.save || 0);
+    el.textContent = n;
+    el.classList.toggle('hidden', n <= 0);
   } catch (e) { /* anonymous users have no counts */ }
 }
 document.addEventListener('DOMContentLoaded', refreshNavCounts);

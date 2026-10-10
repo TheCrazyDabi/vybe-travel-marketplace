@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="hero home-hero">
+<section class="hero hero-video">
+  <!-- Decorative looping aerial coastline video (Wikimedia Commons, freely licensed).
+       Poster + ocean-gradient fallback show if playback fails or reduced motion is set. -->
+  <video id="hero-video" class="hero-bg" autoplay muted loop playsinline
+         poster="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80" aria-hidden="true" tabindex="-1">
+    <source src="https://upload.wikimedia.org/wikipedia/commons/4/40/Aerial_views_of_the_Great_Ocean_Road_and_nearby_coastline_in_Victoria%2C_Australia.webm" type="video/webm" />
+    <source src="https://upload.wikimedia.org/wikipedia/commons/transcoded/4/40/Aerial_views_of_the_Great_Ocean_Road_and_nearby_coastline_in_Victoria%2C_Australia.webm/Aerial_views_of_the_Great_Ocean_Road_and_nearby_coastline_in_Victoria%2C_Australia.webm.360p.mpeg4.mov" type="video/quicktime" />
+  </video>
+  <div class="hero-shade" aria-hidden="true"></div>
   <div class="hero-text">
     <div class="hero-logo" aria-label="VYBE logo">
       <svg width="34" height="34" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C55 35 65 45 100 50 C65 55 55 65 50 100 C45 65 35 55 0 50 C35 45 45 35 50 0 Z" fill="currentColor"/></svg>
@@ -17,21 +25,18 @@
         <a class="btn primary" href="/register">Find your VYBE</a>
       {% endif %}
     </div>
-    <div class="loop">
-      <span>Discover</span>→<span>Swipe</span>→<span>Match</span>→<span>Connect</span>
-    </div>
-  </div>
-  <div class="hero-visual" role="img" aria-label="Kerala hills, beaches and misty mountains">
-    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=80" alt="Misty mountain landscape" loading="lazy"
-         onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=900&q=80';" />
-    <div class="hero-overlay"></div>
-    <div class="hero-tags"><span>Nature</span><span>Beaches</span><span>Culture</span></div>
   </div>
 </section>
-
-<section class="how">
-  <div><b>Personalized discovery</b><span class="muted">Matches for your budget, mood and travel style.</span></div>
-  <div><b>Swipe-based matching</b><span class="muted">Right = interested, Left = pass. Simple and fast.</span></div>
-  <div><b>Direct operators</b><span class="muted">Chat with travel companies. No fake bookings.</span></div>
-</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var v = document.getElementById('hero-video');
+  if (!v) return;
+  var still = function () { v.remove(); };  // poster/gradient fallback remains
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { still(); return; }
+  v.addEventListener('error', still, true);
+  try { var p = v.play(); if (p && p.catch) p.catch(still); } catch (e) { still(); }
+})();
+</script>
 {% endblock %}

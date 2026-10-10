@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}My Trips — VYBE{% endblock %}
+{% block content %}
+<h1>{{ trip.title }}</h1>
+<p class="muted">{{ trip.destination }} · {{ trip.dates }} · {{ trip.traveler_count }} travellers ·
+  <span class="badge verified">{{ trip.status|capitalize }}</span></p>
+<p class="muted">{{ trip.summary }}</p>
+{% if trip.meeting_point %}<p class="muted">Meeting point: <b>{{ trip.meeting_point }}</b></p>{% endif %}
+{% if trip.announcements %}
+<div class="match">{% for a in trip.announcements %}📢 {{ a }}<br>{% endfor %}</div>
+{% endif %}
+
+<div class="badge-row" style="margin:14px 0;">
+  {% for d in days %}
+  <a class="btn small {% if day and d.id == day.id %}primary{% else %}ghost{% endif %}" href="/trips?day={{ d.day_number }}">Day {{ d.day_number }}</a>
+  {% endfor %}
+</div>
+
+{% if day %}
+<h2>Day {{ day.day_number }} — {{ day.title }}</h2>
+<p class="muted">{{ day.date }} · {{ day.stops|selectattr('visited')|list|length }} of {{ day.stops|length }} visited</p>
+{% for s in day.stops %}
+<div class="card" style="margin-bottom:14px;">
+  <div class="card-body">
+    <span class="badge-row"><span class="badge">{{ s.time_slot }} · {{ s.duration }}</span><span class="badge">{{ s.category }}</span>{% if s.visited %}<span class="badge verified">✓ Visited</span>{% endif %}</span>
+    <b style="font-size:18px;">{{ s.name }}</b>
+    <span class="muted">{{ s.short_desc }}</span>
+    <span class="badge-row">
+      <button class="btn small ghost" onclick="visitStop({{ s.id }}, {{ 'false' if s.visited else 'true' }})">{{ 'Unmark' if s.visited else 'Mark visited' }}</button>
+    </span>
+    <div style="margin-top:8px;"><b>Things to do</b>
+      <ul style="margin:6px 0;">{% for a in s.activities %}
+        <li><label class="chip" style="cursor:pointer;"><input type="checkbox" {{ 'checked' if a.done }} onchange="toggleAct({{ a.id }})" /> {{ a.title }}</label></li>
+      {% endfor %}</ul>
+    </div>
+    <details>
+      <summary>Details, tips &amp; precautions</summary>
+      <p>{{ s.full_desc }}</p>
+      <p><b>💡 Practical tips</b></p>
+      <ul>{% for t in s.tips %}<li>{{ t }}</li>{% endfor %}</ul>
+      <p><b>⚠️ Precautions</b></p>
+      <ul>{% for t in s.precautions %}<li>{{ t }}</li>{% endfor %}</ul>
+      <details>
+        <summary>🧳 Departing this stop? Verify belongings first</summary>
+        <ul>{% for b in departure_items %}<li>{{ b }}</li>{% endfor %}</ul>
+        <p class="muted small">Non-destructive: your lists are never cleared.</p>
+        <button class="btn small primary" onclick="departStop({{ s.id }})">I have everything — depart</button>
+      </details>
+    </details>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<p class="muted">No daily plan yet.</p>
+{% endif %}
+<p id="trip-status" class="muted"></p>
+{% endblock %}
+{% block scripts %}
+<script>
+async function post(url, body={}) {
+  const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  if (!r.ok) throw new Error('request failed');
+  return r.json();
+}
+async function visitStop(id, v){ try { await post(`/api/trips/stops/${id}/visit`, {visited: v}); location.reload(); } catch(e){ document.getElementById('trip-status').textContent='Could not update. Check connection.'; } }
+async function toggleAct(id){ try { await post(`/api/trips/activities/${id}/toggle`); location.reload(); } catch(e){ document.getElementById('trip-status').textContent='Could not update. Check connection.'; } }
+async function departStop(id){ try { await post(`/api/trips/stops/${id}/departure`); location.reload(); } catch(e){ document.getElementById('trip-status').textContent='Could not record departure. Check connection.'; } }
+</script>
+{% endblock %}

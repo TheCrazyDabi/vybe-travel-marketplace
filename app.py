@@ -34,6 +34,7 @@ def create_app(config_class=Config):
     from routes.admin import admin_bp
     from routes.auth import auth_bp
     from routes.bookings import bookings_bp
+    from routes.companion import companion_bp
     from routes.main import main_bp
     from routes.messaging import messaging_bp
     from routes.operator import operator_bp
@@ -41,7 +42,7 @@ def create_app(config_class=Config):
     from routes.reports import reports_bp
     from routes.traveler import traveler_bp
 
-    for bp in (main_bp, auth_bp, traveler_bp, packages_bp, operator_bp, messaging_bp, admin_bp, reports_bp, bookings_bp):
+    for bp in (main_bp, auth_bp, traveler_bp, packages_bp, operator_bp, messaging_bp, admin_bp, reports_bp, bookings_bp, companion_bp):
         app.register_blueprint(bp)
 
     @app.context_processor

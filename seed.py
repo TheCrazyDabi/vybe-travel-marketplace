@@ -2,11 +2,10 @@
 
 import json
 import os
-from datetime import datetime
 
 from models import (
     Interest, Report, TravelCompany, TravelerProfile, TravelPackage,
-    User, UserPreference, VerificationRecord, db,
+    User, UserPreference, db,
 )
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "data", "sample_packages.json")
@@ -23,11 +22,7 @@ def seed_if_empty():
     operator.set_password("operator123")
     admin = User(name="Demo Admin", email="admin@vybe.demo", role="admin")
     admin.set_password("admin123")
-    pending_op = User(name="Pending Operator (demo)", email="pending@vybe.demo", role="operator")
-    pending_op.set_password("pending123")
-    rejected_op = User(name="Rejected Operator (demo)", email="rejected@vybe.demo", role="operator")
-    rejected_op.set_password("rejected123")
-    db.session.add_all([traveler, operator, admin, pending_op, rejected_op])
+    db.session.add_all([traveler, operator, admin])
     db.session.flush()
 
     db.session.add(TravelerProfile(
@@ -79,30 +74,6 @@ def seed_if_empty():
             is_active=True,
         ))
     db.session.flush()
-
-    # Demo verification states: one pending, one rejected (clearly labeled sample data).
-    pending_co = TravelCompany(
-        user_id=pending_op.id, company_name="Hill Country Trails (demo, pending review)",
-        business_email="hello@hillcountry.demo", contact_details="+91 98470 00003",
-        description="Demo pending company — shows the operator verification queue.",
-        licence_info="DEMO-PENDING-0003 (sample data, not a real licence)",
-        service_regions=["Kerala"], status="pending", is_verified=False,
-    )
-    rejected_co = TravelCompany(
-        user_id=rejected_op.id, company_name="Budget Beach Stays (demo, rejected)",
-        business_email="hello@budgetbeach.demo", contact_details="+91 98220 00004",
-        description="Demo rejected company — shows the rejection + resubmit flow.",
-        licence_info="DEMO-REJECTED-0004 (sample data, not a real licence)",
-        service_regions=["Goa"], status="rejected", is_verified=False,
-    )
-    db.session.add_all([pending_co, rejected_co])
-    db.session.flush()
-    db.session.add(VerificationRecord(company_id=pending_co.id, submitted_by=pending_op.id))
-    db.session.add(VerificationRecord(
-        company_id=rejected_co.id, submitted_by=rejected_op.id, status="rejected",
-        reviewer_note="Licence document unclear — please resubmit. (demo decision)",
-        reviewed_by=admin.id, reviewed_at=datetime.utcnow(),
-    ))
 
     # Demo traveler activity: one like + one save, and one example safety report.
     pkgs = TravelPackage.query.order_by(TravelPackage.id).all()

@@ -33,5 +33,5 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Local-only file at repo root (not part of the product repo)
+# Local-only build prompt (not part of the product repo; also covers docs/ copy)
 VYBE_MASTER_BUILD_PROMPT.md

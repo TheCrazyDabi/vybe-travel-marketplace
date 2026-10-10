@@ -35,14 +35,3 @@
   </div>
 </div>
 {% endblock %}
-{% block scripts %}
-<script>
-document.querySelectorAll('.pw-toggle').forEach(b=>b.addEventListener('click',()=>{
-  const el=document.getElementById(b.dataset.for);
-  const show = el.type==='password';
-  el.type = show?'text':'password';
-  b.textContent = show?'Hide':'Show';
-  b.setAttribute('aria-label', show?'Hide password':'Show password');
-}));
-</script>
-{% endblock %}

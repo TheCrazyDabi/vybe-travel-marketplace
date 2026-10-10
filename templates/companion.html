@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}AI Travel Guide — VYBE{% endblock %}
+{% block content %}
+<h1>AI travel guide <span class="muted small">· offline demo companion</span></h1>
+<p class="muted">Singapore travel help — no AI key needed. Tap a suggestion or ask below.</p>
+
+<div class="chat-main" style="margin-bottom:12px;">
+  <div id="msgs" class="msgs">
+    {% for m in history %}
+    <div class="msg"><b>{{ 'You' if m.sender == 'user' else '✦ Guide' }}:</b> <span class="rich">{{ m.body }}</span></div>
+    {% endfor %}
+    {% if not history %}<p class="muted">Say hello to start — e.g. “What should I explore near Marina Bay?”</p>{% endif %}
+  </div>
+  <div class="badge-row" id="chips" style="margin-bottom:8px;">
+    {% for chip in chips %}<button class="btn small ghost" data-q="{{ chip|e }}" onclick="ask(this.dataset.q)">{{ chip }}</button>{% endfor %}
+  </div>
+  <form class="msg-row" onsubmit="return sendMsg(event)">
+    <input id="ask-input" class="input" placeholder="Ask about Marina Bay, packing, food, precautions…" autocomplete="off" />
+    <button class="btn primary" type="submit">Ask</button>
+  </form>
+  <p id="ask-status" class="muted small"></p>
+</div>
+<p class="muted small">Deterministic demo answers adapted from the Roamly offline companion. For live bookings, talk to an operator via Chats.</p>
+{% endblock %}
+{% block scripts %}
+<script>
+function rich(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>'); }
+document.querySelectorAll('.rich').forEach(el => { el.innerHTML = rich(el.textContent); });
+function addMsg(sender, body, chips=[]) {
+  const box = document.getElementById('msgs');
+  const empty = box.querySelector('p.muted'); if (empty) empty.remove();
+  const d = document.createElement('div'); d.className = 'msg';
+  d.innerHTML = `<b>${sender}:</b> <span>${rich(body)}</span>`;
+  box.appendChild(d); box.scrollTop = box.scrollHeight;
+  const cb = document.getElementById('chips'); cb.innerHTML = '';
+  chips.forEach(c => { const b = document.createElement('button'); b.className = 'btn small ghost'; b.textContent = c; b.onclick = () => ask(c); cb.appendChild(b); });
+}
+async function ask(q) {
+  document.getElementById('ask-status').textContent = 'Thinking…';
+  try {
+    const r = await fetch('/api/companion/ask', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message: q})});
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'failed');
+    addMsg('You', q); addMsg('✦ Guide', j.message.body, j.chips || []);
+  } catch(e){ document.getElementById('ask-status').textContent = 'Could not answer. Check connection.'; return; }
+  document.getElementById('ask-status').textContent = '';
+}
+function sendMsg(e){ e.preventDefault(); const el = document.getElementById('ask-input'); if(!el.value.trim()) return false; const q = el.value; el.value=''; ask(q); return false; }
+</script>
+{% endblock %}

@@ -12,6 +12,9 @@ from .interaction import Interest  # noqa: E402,F401
 from .messaging import Conversation, Message  # noqa: E402,F401
 from .moderation import Report  # noqa: E402,F401
 from .booking import Booking, Enquiry, Quotation  # noqa: E402,F401
+from .companion import (  # noqa: E402,F401
+    CompanionMessage, PackItem, Stop, StopActivity, TripDay, TripPlan,
+)
 
 __all__ = [
     "db",
@@ -28,4 +31,10 @@ __all__ = [
     "Enquiry",
     "Quotation",
     "Booking",
+    "TripPlan",
+    "TripDay",
+    "Stop",
+    "StopActivity",
+    "PackItem",
+    "CompanionMessage",
 ]

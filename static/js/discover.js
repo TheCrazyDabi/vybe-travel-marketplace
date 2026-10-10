@@ -158,7 +158,6 @@ async function doLike(){
     const r = await fetch(`/api/packages/${p.id}/like`, {method: isLiked ? 'DELETE' : 'POST'});
     if(!r.ok) throw new Error('like failed');
     if(isLiked) likedSet.delete(p.id); else likedSet.add(p.id);
-    status(isLiked ? `Removed ♥ ${p.destination} from favourites` : `♥ Favourited ${p.destination} (no enquiry created)`);
     if (window.refreshNavCounts) window.refreshNavCounts();
     renderCard();
   } catch(e){ status('Could not update favourite.'); }
@@ -173,7 +172,6 @@ async function doSave(){
     const r = await fetch(`/api/packages/${p.id}/save`, {method: isSaved ? 'DELETE' : 'POST'});
     if(!r.ok) throw new Error('save failed');
     if(isSaved) savedSet.delete(p.id); else savedSet.add(p.id);
-    status(isSaved ? `Removed ☆ ${p.destination} from saved` : `☆ Saved ${p.destination}`);
     if (window.refreshNavCounts) window.refreshNavCounts();
     renderCard();
   } catch(e){ status('Could not update saved list.'); }
