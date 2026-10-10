@@ -46,7 +46,8 @@ def test_profile_shows_current_user_not_hardcoded(client):
 def test_nav_separation_and_onboarding_intact(client):
     register(client)
     body = client.get("/").data.decode()
-    assert 'href="/profile"' in body and 'href="/onboarding"' in body
+    assert 'href="/profile"' in body
+    # /onboarding page + backend stay intact (homepage button intentionally removed)
     assert client.get("/onboarding").status_code == 200
     assert client.get("/profile").status_code == 200
 
@@ -83,7 +84,7 @@ def test_profile_has_no_preferences_questionnaire(client):
     assert "Travel preferences" not in body
     assert "20,000" not in body
     assert "Zed" in body and "zed@z.com" in body
-    # preferences live on Discover + nav instead
-    assert 'href="/onboarding"' in client.get("/").data.decode()
+    # preferences live on Discover (Edit preferences) + /onboarding page instead
+    assert client.get("/onboarding").status_code == 200
     disc = client.get("/discover").data.decode()
     assert disc and "Edit preferences" in disc

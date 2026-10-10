@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from config import Config
 from models import Conversation, Interest, TravelCompany, TravelPackage, VerificationRecord, db
 from models.booking import Booking, Enquiry
+from models.custom_offer import CustomOffer
 
 operator_bp = Blueprint("operator", __name__)
 
@@ -30,7 +31,7 @@ def dashboard():
     if current_user.role not in ("operator", "admin"):
         abort(403)
     company = _own_company()
-    packages, interests, conversations, enquiries, bookings = [], [], [], [], []
+    packages, interests, conversations, enquiries, bookings, offers = [], [], [], [], [], []
     latest_review = None
     if company:
         latest_review = (
@@ -66,6 +67,12 @@ def dashboard():
             .limit(100)
             .all()
         )
+        offers = (
+            CustomOffer.query.filter_by(company_id=company.id)
+            .order_by(CustomOffer.updated_at.desc())
+            .limit(100)
+            .all()
+        )
     return render_template(
         "operator_dashboard.html",
         company=company,
@@ -74,6 +81,7 @@ def dashboard():
         conversations=conversations,
         enquiries=enquiries,
         bookings=bookings,
+        offers=offers,
         latest_review=latest_review,
     )
 
@@ -205,6 +213,9 @@ def package_form(pkg_id: int | None = None):
             target.nights = max(0, target.duration_days - 1)
         if target.seats_remaining is None and target.capacity is not None:
             target.seats_remaining = target.capacity
+        from datetime import datetime as _dt3
+        target.price_kind = target.price_kind or "operator_quote"
+        target.price_confirmed_at = _dt3.utcnow()
         ming, maxg = target.min_group_size, target.max_group_size
         if isinstance(ming, int) and isinstance(maxg, int) and ming is not None and maxg is not None and ming > maxg:
             return render_template("package_form.html", pkg=pkg, company=company, error="Min group cannot exceed max group."), 400

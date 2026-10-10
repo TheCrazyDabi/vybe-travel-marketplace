@@ -2,6 +2,7 @@
 {% block title %}{{ pkg.title }} — VYBE{% endblock %}
 {% block content %}
 <a href="/packages" class="muted">← All trips</a>
+{% if pkg.is_demo %}<p><span class="badge">Sample data — not live availability</span></p>{% endif %}
 <div class="detail">
   <div>
     <img src="{{ pkg.cover_image }}" alt="{{ pkg.destination }}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80&auto=format&fit=crop'" />
@@ -13,23 +14,51 @@
   </div>
   <div>
     <h1>{{ pkg.title }}</h1>
-    <p class="muted">{{ pkg.destination }} · {{ pkg.duration_days }} days{% if pkg.nights is not none %} / {{ pkg.nights }} nights{% endif %} · <b>₹{{ "{:,}".format(pkg.price) }}</b> / person
+    <p class="muted">{{ pkg.destination }} · {{ pkg.duration_days }} days{% if pkg.nights is not none %} / {{ pkg.nights }} nights{% endif %} · <b>₹{{ "{:,}".format(pkg.price) }}</b> / person <span class="muted small">({% if pkg.price_kind == 'demo_estimate' %}illustrative demo price{% elif pkg.price_kind == 'operator_quote' %}operator quotation{% elif pkg.price_kind == 'confirmed' %}confirmed price{% else %}per-person estimate{% endif %})</span>
       {% if pkg.operator %} · by {{ pkg.operator.company_name }}
-        {% if pkg.operator.is_verified %}<span class="badge verified">✓ Verified</span>{% else %}<span class="badge">Unverified demo</span>{% endif %}
+        {% if pkg.operator.is_demo or '(demo)' in pkg.operator.company_name %}<span class="badge">Demo sample operator</span>
+        {% elif pkg.operator.is_verified %}<span class="badge verified">✓ Verified</span>{% endif %}
       {% endif %}
       <span class="badge">{{ pkg.availability_status if pkg.availability_status else ('Available' if pkg.is_active else 'Hidden') }}</span>
     </p>
+    {% if pkg.operator and (pkg.operator.is_demo or '(demo)' in pkg.operator.company_name) %}
+    <p class="muted small">Sample operator — demo data, not a genuinely verified business.</p>
+    {% endif %}
+    {% if pkg.price_confirmed_at or pkg.updated_at %}
+    <p class="muted small">Price last confirmed: {{ (pkg.price_confirmed_at or pkg.updated_at).strftime('%Y-%m-%d') if (pkg.price_confirmed_at or pkg.updated_at).strftime else (pkg.price_confirmed_at or pkg.updated_at) }}</p>
+    {% endif %}
     {% if score %}<div class="match">Match {{ score }} — {{ explanation }}</div>
-    <p class="muted small">{{ reasons|join(' · ') }}</p>{% endif %}
+    <p class="muted small">Why this matches you: {{ reasons|join(' · ') }}</p>{% endif %}
     <p>{{ pkg.short_desc }}</p>
-    <h3>Itinerary</h3><p>{{ pkg.itinerary }}</p>
+
+    <h3>Price breakdown (TruePrice)</h3>
+    {% if pkg.price_breakdown %}
+    {% set b = pkg.price_breakdown %}
+    <table class="table"><tr><th>Item</th><th>₹ / person</th></tr>
+      <tr><td>Base package</td><td>₹{{ "{:,}".format(b.get('base', 0)) }}</td></tr>
+      <tr><td>Stay</td><td>₹{{ "{:,}".format(b.get('accommodation', 0)) }}</td></tr>
+      <tr><td>Transport</td><td>₹{{ "{:,}".format(b.get('transport', 0)) }}</td></tr>
+      <tr><td>Meals</td><td>₹{{ "{:,}".format(b.get('meals', 0)) }}</td></tr>
+      <tr><td>Activities & entry</td><td>₹{{ "{:,}".format(b.get('activities', 0)) }}</td></tr>
+      <tr><td>Taxes & charges</td><td>₹{{ "{:,}".format(b.get('taxes', 0)) }}</td></tr>
+      <tr><td><b>Estimated total / person</b></td><td><b>₹{{ "{:,}".format(pkg.price) }}</b></td></tr>
+      <tr><td class="muted small">Group of 2 (est.)</td><td class="muted small">₹{{ "{:,}".format(pkg.price * 2) }}</td></tr>
+    </table>
+    <p class="muted small">{% if pkg.price_kind == 'demo_estimate' %}Illustrative demo prices — not a final quote. Ask the operator to confirm.{% else %}Estimate only — confirm with the operator before paying.{% endif %}</p>
+    {% else %}
+    <p class="muted">Detailed breakdown: Not provided — <b>needs operator confirmation</b>.</p>
+    <p class="muted">Advertised: <b>₹{{ "{:,}".format(pkg.price) }}</b> / person (estimate, not guaranteed).</p>
+    {% endif %}
+    <p class="muted small">Known exclusions: {{ (pkg.excluded or [])|join(', ') or 'Not provided' }}</p>
+
+    <h3>Itinerary</h3><p>{{ pkg.itinerary or 'Not provided' }}</p>
     <div class="cols">
-      <div><h4>Included</h4><ul>{% for x in pkg.included or [] %}<li>{{ x }}</li>{% endfor %}</ul>
-      <h4>Excluded</h4><ul>{% for x in pkg.excluded or [] %}<li>{{ x }}</li>{% endfor %}</ul></div>
+      <div><h4>Included</h4><ul>{% for x in pkg.included or [] %}<li>{{ x }}</li>{% else %}<li class="muted">Not provided</li>{% endfor %}</ul>
+      <h4>Excluded</h4><ul>{% for x in pkg.excluded or [] %}<li>{{ x }}</li>{% else %}<li class="muted">Not provided</li>{% endfor %}</ul></div>
       <div><h4>Details</h4>
-        <p class="muted">Stay: {{ pkg.accommodation }}<br/>Travel: {{ pkg.transportation }}<br/>Group: {{ pkg.group_size }}{% if pkg.min_group_size or pkg.max_group_size %} ({{ pkg.min_group_size or '?' }}–{{ pkg.max_group_size or '?' }}){% endif %}<br/>Dates: {{ pkg.available_dates }}<br/>Seats: {{ pkg.seats_remaining if pkg.seats_remaining is not none else '—' }}<br/>Styles: {{ (pkg.suitable_travel_styles or [])|join(', ') }}<br/>Groups: {{ (pkg.suitable_groups or [])|join(', ') }}</p>
-        <h4>Cancellation</h4><p class="muted small">{{ pkg.cancellation_terms or 'Contact operator.' }}</p>
-        {% if pkg.customization_options %}<h4>Customizable</h4><p class="muted small">{{ pkg.customization_options }}</p>{% endif %}
+        <p class="muted">Stay: {{ pkg.accommodation or 'Not provided' }}<br/>Travel: {{ pkg.transportation or 'Not provided' }}<br/>Group: {{ pkg.group_size or 'Not provided' }}{% if pkg.min_group_size or pkg.max_group_size %} ({{ pkg.min_group_size or '?' }}–{{ pkg.max_group_size or '?' }}){% endif %}<br/>Dates: {{ pkg.available_dates or 'Not provided' }}<br/>Seats: {{ pkg.seats_remaining if pkg.seats_remaining is not none else 'Not provided' }}<br/>Styles: {{ (pkg.suitable_travel_styles or [])|join(', ') or 'Not provided' }}</p>
+        <h4>Cancellation</h4><p class="muted small">{{ pkg.cancellation_terms or 'Unavailable — ask the operator before booking.' }}</p>
+        {% if pkg.operator %}<h4>Operator</h4><p class="muted small">{{ pkg.operator.company_name }}<br/>{{ pkg.operator.description or '' }}<br/>Contact: {{ pkg.operator.contact_details or pkg.operator.business_email }}</p>{% endif %}
       </div>
     </div>
     <div class="cta-row">
@@ -37,6 +66,19 @@
       <button class="btn ghost" onclick="savePkg({{ pkg.id }})">Bookmark</button>
       <button class="btn ghost" onclick="startChat({{ pkg.operator.id if pkg.operator else 'null' }}, {{ pkg.id }})">Chat with operator</button>
       <button class="btn ghost" onclick="sendEnquiry({{ pkg.id }})">Send enquiry</button>
+      <button class="btn ghost" onclick="document.getElementById('offer-form').classList.toggle('hidden')">Request custom offer</button>
+    </div>
+    <div id="offer-form" class="hidden onboard-step">
+      <h4>Request custom offer (no payment, no booking yet)</h4>
+      <div class="form-grid">
+        <label>Dates<input id="off-dates" class="input" placeholder="e.g. Dec 12–16, flexible" /></label>
+        <label>Travellers<input id="off-num" type="number" min="1" max="100" value="2" class="input" /></label>
+        <label>Budget ₹<input id="off-budget" type="number" min="0" class="input" /></label>
+        <label>Stay<input id="off-acc" class="input" placeholder="homestay / resort…" /></label>
+      </div>
+      <label>Itinerary changes<textarea id="off-itin" class="input" rows="2"></textarea></label>
+      <label>Notes<textarea id="off-notes" class="input" rows="2"></textarea></label>
+      <button class="btn primary" onclick="sendOffer({{ pkg.id }})">Send request</button>
     </div>
     <div class="form-grid" style="margin-top:10px">
       <label>Travellers<input id="enq-num" type="number" min="1" max="100" value="2" class="input" /></label>
@@ -46,6 +88,22 @@
     {% if my_enquiry %}
     <div class="match">Your enquiry: <b>{{ my_enquiry.status }}</b> (#{{ my_enquiry.id }}) — <a href="/dashboard">track in My trips</a></div>
     {% endif %}
+    {% if quotations %}
+    <h4>Quotations (original preserved)</h4>
+    <table class="table"><tr><th>#</th><th>Per person</th><th>Total</th><th>Status</th><th>Note</th></tr>
+      {% for q in quotations %}<tr><td>{{ q.id }}</td><td>₹{{ "{:,}".format(q.price_per_person) }}</td><td>₹{{ "{:,}".format(q.total_price or 0) }}</td><td>{{ q.status }}</td><td class="muted small">{{ q.message or '' }}</td></tr>{% endfor %}
+    </table>
+    {% endif %}
+    {% if my_offers %}
+    <h4>Custom offers</h4>
+    <table class="table"><tr><th>v</th><th>Status</th><th>Revised ₹</th><th>Valid till</th></tr>
+      {% for o in my_offers %}<tr><td>{{ o.version }}</td><td>{{ o.status }}</td><td>{{ ("₹{:,}".format(o.revised_price)) if o.revised_price else '—' }}</td><td>{{ o.valid_until or '—' }}</td></tr>{% endfor %}
+    </table>
+    {% endif %}
+    <h3>Reviews</h3>
+    {% if reviews %}
+    <ul>{% for r in reviews %}<li><b>★ {{ r.rating }}/5</b> — {{ r.text or '' }} <span class="muted small">({{ r.created_at }})</span></li>{% endfor %}</ul>
+    {% else %}<p class="muted">No verified-trip reviews yet. Reviews appear only after a completed trip — none are fabricated for demo packages.</p>{% endif %}
   </div>
 </div>
 <div id="map" class="map"></div>
@@ -58,7 +116,11 @@ if (LAT && LNG && window.L) {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '© OpenStreetMap contributors'}).addTo(m);
   L.marker([LAT, LNG]).addTo(m).bindPopup({{ (pkg.title + ' — ' + pkg.destination)|tojson }}).openPopup();
 } else { document.getElementById('map').innerHTML = '<p class="muted">Map unavailable for this package.</p>'; }
-async function expressInterest(id){ await fetch(`/api/packages/${id}/swipe`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'like'})}); document.getElementById('detail-status').textContent='Interest recorded! The operator can now see it. No charge, no booking yet.'; }
+async function expressInterest(id){
+  const r = await fetch('/api/enquiries', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({package_id:id, num_travellers:2})});
+  const j = await r.json();
+  document.getElementById('detail-status').textContent = r.ok ? `Interest recorded — enquiry ${j.enquiry.status} (#${j.enquiry.id}). No charge, no booking yet.` : (j.error||'Failed');
+}
 async function savePkg(id){ await fetch(`/api/packages/${id}/save`, {method:'POST'}); document.getElementById('detail-status').textContent='Bookmarked ✓'; }
 async function startChat(companyId, packageId){ const r = await fetch('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({company_id: companyId, package_id: packageId})}); const j = await r.json(); if(j.conversation) location.href = `/chats/${j.conversation.id}`; }
 async function sendEnquiry(id){
@@ -67,6 +129,12 @@ async function sendEnquiry(id){
   const r = await fetch('/api/enquiries', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({package_id:id, num_travellers:num, travel_date:date})});
   const j = await r.json();
   document.getElementById('detail-status').textContent = r.ok ? `Enquiry ${j.enquiry.status} (#${j.enquiry.id}) — track in My trips` : (j.error||'Enquiry failed');
+}
+async function sendOffer(id){
+  const body = {package_id:id, travel_dates:document.getElementById('off-dates').value, num_travellers:parseInt(document.getElementById('off-num').value||'2',10), desired_budget:parseInt(document.getElementById('off-budget').value||'0',10)||null, accommodation_pref:document.getElementById('off-acc').value, itinerary_changes:document.getElementById('off-itin').value, notes:document.getElementById('off-notes').value};
+  const r = await fetch('/api/custom-offers', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  const j = await r.json();
+  document.getElementById('detail-status').textContent = r.ok ? `Custom-offer request sent (#${j.offer.id}, pending). The operator will reply — nothing accepted yet.` : (j.error||'Failed');
 }
 </script>
 {% endblock %}

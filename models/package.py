@@ -48,6 +48,13 @@ class TravelPackage(db.Model):
     images = db.Column(db.JSON, default=list)
     departure_dates_list = db.Column(db.JSON, default=list)
 
+    # TruePrice + demo trust layer (additive, nullable)
+    price_breakdown = db.Column(db.JSON, nullable=True)
+    price_kind = db.Column(db.String(20), nullable=True)  # demo_estimate|operator_quote|confirmed
+    price_confirmed_at = db.Column(db.DateTime, nullable=True)
+    is_demo = db.Column(db.Boolean, default=False, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     def to_dict(self, include_operator=True):
         data = {
             "id": self.id,
@@ -86,6 +93,11 @@ class TravelPackage(db.Model):
             "customization_options": self.customization_options,
             "images": self.images or [],
             "departure_dates_list": self.departure_dates_list or [],
+            "price_breakdown": self.price_breakdown,
+            "price_kind": self.price_kind,
+            "price_confirmed_at": self.price_confirmed_at.isoformat() if self.price_confirmed_at else None,
+            "is_demo": bool(self.is_demo),
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             # availability derived from real data only (never fabricated)
             "availability_status": (
                 "Available"

@@ -37,12 +37,13 @@ def create_app(config_class=Config):
     from routes.companion import companion_bp
     from routes.main import main_bp
     from routes.messaging import messaging_bp
+    from routes.offers import offers_bp
     from routes.operator import operator_bp
     from routes.packages import packages_bp
     from routes.reports import reports_bp
     from routes.traveler import traveler_bp
 
-    for bp in (main_bp, auth_bp, traveler_bp, packages_bp, operator_bp, messaging_bp, admin_bp, reports_bp, bookings_bp, companion_bp):
+    for bp in (main_bp, auth_bp, traveler_bp, packages_bp, operator_bp, messaging_bp, admin_bp, reports_bp, bookings_bp, offers_bp, companion_bp):
         app.register_blueprint(bp)
 
     @app.context_processor
@@ -145,6 +146,7 @@ def _migrate_schema():
         "business_type": "VARCHAR(80)",
         "phone": "VARCHAR(50)",
         "operating_regions": "JSON",
+        "is_demo": "BOOLEAN DEFAULT 0",
     })
     ensure("travel_packages", {
         "nights": "INTEGER",
@@ -157,6 +159,11 @@ def _migrate_schema():
         "customization_options": "TEXT",
         "images": "JSON",
         "departure_dates_list": "JSON",
+        "price_breakdown": "JSON",
+        "price_kind": "VARCHAR(20)",
+        "price_confirmed_at": "DATETIME",
+        "is_demo": "BOOLEAN DEFAULT 0",
+        "updated_at": "DATETIME",
     })
     db.session.commit()
 

@@ -35,3 +35,22 @@
   </div>
 </div>
 {% endblock %}
+{% block scripts %}
+<script>
+(function(){
+  document.querySelectorAll('.pw-toggle').forEach(b=>b.addEventListener('click',(e)=>{
+    if(e) e.preventDefault();
+    const el=document.getElementById(b.dataset.for);
+    if(!el) return;
+    const show = el.type==='password';
+    const v = el.value;
+    el.type = show?'text':'password';
+    el.value = v;
+    b.textContent = show?'Hide':'Show';
+    b.setAttribute('aria-label', show?'Hide password':'Show password');
+    b.setAttribute('aria-pressed', show?'true':'false');
+    try{ el.focus({preventScroll:true}); el.setSelectionRange(el.value.length, el.value.length); }catch(_){}
+  }));
+})();
+</script>
+{% endblock %}

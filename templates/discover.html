@@ -1,69 +1,129 @@
 {% extends "base.html" %}
 {% block title %}Discover — VYBE{% endblock %}
 {% block content %}
-<div class="discover-head">
-  <div>
-    <h1 style="margin:0">Swipe your VYBE</h1>
-    <p class="muted" style="margin:4px 0">Right = interested (creates enquiry, no charge) · Left = pass · ♥ = favourite only · ☆ = save</p>
+<!-- SCREEN 1: preference refinement (no packages rendered until Find my trips) -->
+<section id="refine-screen" aria-label="Refine your trip options">
+  <div class="refine-head">
+    <div class="hero-logo" aria-label="VYBE logo">
+      <svg width="28" height="28" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C55 35 65 45 100 50 C65 55 55 65 50 100 C45 65 35 55 0 50 C35 45 45 35 50 0 Z" fill="currentColor"/></svg>
+      <span>VYBE</span>
+    </div>
+    <h1 style="margin:8px 0 4px">Let's find your VYBE.</h1>
+    <p class="muted" style="margin:0">Tell us what your perfect trip looks like.</p>
   </div>
-  <a class="btn small ghost" href="/onboarding">Edit preferences</a>
-</div>
 
-<details class="filters" id="filters-panel">
-  <summary>Refine your trip options</summary>
-  <div class="form-grid">
-    <label>Destination<input id="f-destination" class="input" placeholder="Munnar, Goa…" /></label>
-    <label>Min ₹<input id="f-min-price" type="number" min="0" class="input" /></label>
-    <label>Max ₹<input id="f-max-price" type="number" min="0" class="input" /></label>
-    <label>Min days<input id="f-min-dur" type="number" min="1" class="input" /></label>
-    <label>Max days<input id="f-max-dur" type="number" min="1" class="input" /></label>
-    <label>Style<input id="f-style" class="input" placeholder="comfort, luxury…" /></label>
-    <label>Stay<input id="f-accom" class="input" placeholder="hotel, homestay…" /></label>
-    <label>Operator<input id="f-operator" class="input" placeholder="company name…" /></label>
-    <label>Min score<input id="f-min-score" type="number" min="0" max="100" class="input" placeholder="70" /></label>
-  </div>
-  <div class="cta-row">
-    <button class="btn small primary" id="f-apply" type="button">Apply</button>
-    <button class="btn small ghost" id="f-clear" type="button">Clear</button>
-  </div>
-</details>
-
-<div class="discover-layout">
-  <button id="btn-prev" class="nav-arrow" aria-label="Previous package" title="Previous (←)">‹</button>
-  <div class="swipe-wrap">
-    <div id="card-stack" aria-live="polite"></div>
-    <div id="empty-state" class="empty hidden">
-      <b id="empty-title">All caught up!</b>
-      <p class="muted" id="empty-text">No more packages right now.</p>
-      <div class="cta-row" style="justify-content:center">
-        <button class="btn small primary" id="empty-clear" type="button">Clear filters</button>
-        <a class="btn small ghost" href="/onboarding">Try different preferences</a>
-        <a class="btn small ghost" href="/saved">See saved & liked</a>
+  <div class="onboard-step">
+    <h2>Destination</h2>
+    <div class="form-grid">
+      <label>Preferred destination or region<input id="f-destination" class="input" placeholder="Munnar, Goa…" /></label>
+      <label>Operator<input id="f-operator" class="input" placeholder="company name…" /></label>
+    </div>
+    <fieldset><legend>Landscape (multi)</legend>
+      <div id="f-landscape">
+        {% for l in ['hills','mountains','beaches','snow','forests','waterfalls','cities','wildlife','historical'] %}
+        <label class="chip"><input type="checkbox" value="{{ l }}" /> {{ l }}</label>
+        {% endfor %}
       </div>
+    </fieldset>
+    <div class="form-grid">
+      <label>Include places<input id="f-include" class="input" placeholder="tea gardens, forts…" /></label>
+      <label>Avoid places<input id="f-avoid" class="input" placeholder="crowded cities…" /></label>
     </div>
-    <div class="swipe-actions">
-      <button id="btn-pass" class="btn ghost circle" aria-label="Pass">✕</button>
-      <button id="btn-like" class="btn ghost circle" aria-label="Like favourite">♥</button>
-      <button id="btn-interested" class="btn primary big" aria-label="Interested">♥ Interested</button>
-      <button id="btn-save" class="btn ghost circle" aria-label="Save">☆</button>
+  </div>
+
+  <div class="onboard-step">
+    <h2>Budget & duration</h2>
+    <div class="form-grid">
+      <label>Min ₹ / person<input id="f-min-price" type="number" min="0" class="input" /></label>
+      <label>Max ₹ / person<input id="f-max-price" type="number" min="0" class="input" /></label>
+      <label>Min days<input id="f-min-dur" type="number" min="1" class="input" /></label>
+      <label>Max days<input id="f-max-dur" type="number" min="1" class="input" /></label>
+      <label>Travel dates<input id="f-dates" type="text" class="input" placeholder="flexible or YYYY-MM-DD" /></label>
+      <label>Group size<input id="f-group" type="number" min="1" max="100" class="input" /></label>
     </div>
-    <div class="toolbar">
-      <button id="btn-detail" class="btn small ghost">View details</button>
-      <button id="btn-share" class="btn small ghost">Share</button>
-      <button id="btn-undo" class="btn small ghost">↩ Undo</button>
-      <div class="menu-wrap">
-        <button id="btn-more" class="btn small ghost" aria-haspopup="true">⋯ More</button>
-        <div id="more-menu" class="menu hidden">
-          <button id="m-hide" type="button">Hide this package</button>
-          <button id="m-report" type="button">Report incorrect info</button>
-          <button id="m-operator" type="button">View operator</button>
+    <p class="muted small">Dates and group size apply only where packages record them — otherwise they guide matching, not exclusion.</p>
+  </div>
+
+  <div class="onboard-step">
+    <h2>Travel style (multi)</h2>
+    <fieldset><legend>Styles</legend>
+      <div id="f-styles">
+        {% for s in ['adventure','relaxation','nature','culture','luxury','family','romantic','wildlife','food'] %}
+        <label class="chip"><input type="checkbox" value="{{ s }}" /> {{ s }}</label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <div class="form-grid">
+      <label>Stay<input id="f-accom" class="input" placeholder="hotel, homestay…" /></label>
+      <label>Style tag<input id="f-style" class="input" placeholder="comfort, luxury…" /></label>
+    </div>
+  </div>
+
+  <div class="onboard-step">
+    <h2>Match quality</h2>
+    <div class="form-grid">
+      <label>Minimum match score (0–100)<input id="f-min-score" type="number" min="0" max="100" class="input" placeholder="e.g. 60" /></label>
+    </div>
+    <p class="muted small" id="refine-status" role="status"></p>
+    <div class="cta-row">
+      <button class="btn primary big" id="btn-find" type="button">Find my trips</button>
+      <button class="btn ghost" id="f-reset" type="button">Reset filters</button>
+    </div>
+  </div>
+</section>
+
+<!-- SCREEN 2: swipe interface (hidden until filters applied) -->
+<section id="swipe-screen" class="hidden" aria-label="Swipe packages">
+  <div class="discover-head">
+    <div>
+      <h1 style="margin:0">Swipe your VYBE</h1>
+      <p class="muted" style="margin:4px 0">Pass = not interested · ♥ = favourite · Interested = send enquiry · ☆ saved in toolbar</p>
+    </div>
+    <div class="cta-row" style="margin:0">
+      <button class="btn small ghost" id="btn-edit-prefs" type="button" aria-label="Edit preferences">⚙ Edit preferences</button>
+      <a class="btn small ghost" href="/saved">Saved packages</a>
+    </div>
+  </div>
+
+  <div class="discover-layout">
+    <button id="btn-prev" class="nav-arrow" aria-label="Previous package" title="Previous (←)">‹</button>
+    <div class="swipe-wrap">
+      <div id="card-stack" aria-live="polite"></div>
+      <div id="empty-state" class="empty state-card hidden">
+        <div class="state-art" aria-hidden="true">🧭</div>
+        <b id="empty-title">All caught up!</b>
+        <p class="muted" id="empty-text">No more packages right now.</p>
+        <div class="cta-row" style="justify-content:center">
+          <button class="btn small primary" id="empty-edit" type="button">Edit preferences</button>
+          <button class="btn small ghost" id="empty-clear" type="button">Clear filters</button>
+          <a class="btn small ghost" href="/saved">See saved &amp; liked</a>
         </div>
       </div>
+      <div id="loading-state" class="empty hidden" aria-live="polite">Loading trips…</div>
+      <div class="swipe-actions">
+        <button id="btn-pass" class="btn ghost circle" aria-label="Pass">✕</button>
+        <button id="btn-like" class="btn ghost circle" aria-label="Like favourite">♥</button>
+        <button id="btn-interested" class="btn primary big" aria-label="Interested">♥ Interested</button>
+      </div>
+      <div class="toolbar">
+        <button id="btn-detail" class="btn small ghost">View details</button>
+        <button id="btn-save" class="btn small ghost" aria-label="Save bookmark">☆ Save</button>
+        <button id="btn-share" class="btn small ghost">Share</button>
+        <div class="menu-wrap">
+          <button id="btn-more" class="btn small ghost" aria-haspopup="true">⋯ More</button>
+          <div id="more-menu" class="menu hidden">
+            <button id="m-hide" type="button">Hide this package</button>
+            <button id="m-report" type="button">Report incorrect info</button>
+            <button id="m-operator" type="button">View operator</button>
+          </div>
+        </div>
+      </div>
+      <p id="swipe-status" class="muted" role="status"></p>
     </div>
-    <p id="swipe-status" class="muted" role="status"></p>
+    <button id="btn-next" class="nav-arrow" aria-label="Next package" title="Next (→)">›</button>
   </div>
-  <button id="btn-next" class="nav-arrow" aria-label="Next package" title="Next (→)">›</button>
-</div>
+  <button id="fab-edit" class="fab" type="button" aria-label="Edit preferences">⚙<span>Edit preferences</span></button>
+</section>
 
 <div id="detail-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Package details">
   <div class="modal-card">

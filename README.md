@@ -20,7 +20,17 @@ cp .env.example .env        # Windows: copy .env.example .env
 python app.py               # seeds demo data on first run
 ```
 
-Windows shortcut: double-click `run.bat` (creates `.venv`, installs deps, starts the app).
+Windows shortcut: double-click `run.bat` (creates `.venv`, installs deps, starts the app on `0.0.0.0:5000` and prints your Wi-Fi IPv4 for phone access).
+
+```bash
+python seed.py --demo      # refresh the sample catalogue (idempotent,
+                           # never duplicates, never touches your own data)
+```
+
+Phone on the same Wi-Fi: `http://<LAPTOP_IPV4>:5000` (find it with `ipconfig`
+under "Wireless LAN adapter Wi-Fi"). If blocked, allow Python through Windows
+Firewall on **private** networks only. Demo prices/availability are illustrative
+sample data, never live inventory.
 
 Open http://127.0.0.1:5000
 
@@ -38,7 +48,14 @@ Demo logins (seeded sample data):
 - Operator: company profile + verification submit, publish gated on approval, package CRUD, incoming interests, conversations, enquiry → quotation → booking workflow
 - Admin: overview counts, user search/suspend/reactivate, verification queue + decision history, safety-report moderation
 - Messaging (polling) between travelers and operators
-- Seed data: 2 demo companies, 27 trips (5 originals across Kerala/Goa/Rajasthan + 22 expansion: Kerala, South, North/Northeast, islands, Sri Lanka, Bali, Dubai), 1 like, 1 save, 1 demo report
+- Seed data: 8 demo companies, 45 trips in the sample catalogue + 22 expansion trips (Kerala, South, North/Northeast, islands, Sri Lanka, Bali, Dubai), 1 like, 1 save, 1 demo report
+- Match Intelligence v1: likes/saves/enquiries boost similar trips, passes gently
+  demote them (rule-based, explainable reasons, no AI model claimed)
+- TruePrice: per-package cost breakdown with demo labelling; unknown costs show
+  "Not provided / needs operator confirmation"
+- Custom offers: traveller request → operator revision chain → accept/reject/revise
+- Trust: verified-trip reviews only (one per confirmed booking), demo labelling,
+  real cancellation terms or "Unavailable", report queue for admins
 - No AI key required — `services/vybe_ai.py` falls back to keyword rules
 
 ## API contract (agreed for parallel work)

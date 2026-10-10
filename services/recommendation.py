@@ -352,7 +352,8 @@ def rank_packages(packages, prefs: dict, weights: dict | None = None, apply_filt
     for pkg in packages:
         score, reasons, explanation = score_package(pkg, prefs or {}, weights)
         ranked.append({"package": pkg, "score": score, "reasons": reasons, "explanation": explanation})
-    ranked.sort(key=lambda r: r["score"], reverse=True)
+    ranked.sort(key=lambda r: (-r["score"], getattr(r["package"], "price", 0) or 0,
+                               getattr(r["package"], "id", 0) or 0))
     return ranked
 
 
@@ -364,31 +365,140 @@ def apply_swipe_boost(ranked, liked_packages, boost_max=8.0):
     with extra reason 'Picked for you based on your likes' when boosted.
     No ML model claimed.
     """
-    if not liked_packages or len(liked_packages) < 3:
-        return ranked
-    liked_tags = set()
-    for p in liked_packages:
-        for attr in ("interest_tags", "mood_tags", "region_tags", "scenery_tags"):
+    return apply_match_intelligence(
+        ranked,
+        {"liked": liked_packages or [], "saved": [], "passed": [], "enquired": []},
+        boost_max=boost_max,
+    )
+
+
+def _tag_set(packages, attrs=("interest_tags", "mood_tags", "region_tags", "scenery_tags")):
+    tags = set()
+    for p in packages or []:
+        for attr in attrs:
             for t in getattr(p, attr, None) or []:
-                liked_tags.add(str(t).lower())
-    if not liked_tags:
+                tags.add(str(t).lower())
+    return tags
+
+
+def apply_match_intelligence(ranked, history=None, boost_max=8.0):
+    """VYBE Match Intelligence v1 — deterministic, explainable, rule-based.
+
+    history = {liked:[], saved:[], passed:[], enquired:[]} lists of packages.
+    Signals (per-tag overlap, never whole-destination bans):
+      enquiry +6.0 (strong interest) · save +4.0 · like +3.0 ·
+      pass -4.0 damped (reduces similar ranking, never deletes a destination).
+    Reasons cite the actual signal ("Similar to packages you saved").
+    Not an AI model — transparent weighted rules; onboarding prefs stay primary.
+    """
+    history = history or {}
+    liked = history.get("liked") or []
+    saved = history.get("saved") or []
+    passed = history.get("passed") or []
+    enquired = history.get("enquired") or []
+    if not (liked or saved or passed or enquired):
         return ranked
+    sig_tags = {
+        "enquired": (_tag_set(enquired), 6.0, "Similar to packages you enquired about"),
+        "saved": (_tag_set(saved), 4.0, "Similar to packages you saved"),
+        "liked": (_tag_set(liked), 3.0, "Similar to packages you liked"),
+        "passed": (_tag_set(passed), -4.0, None),
+    }
+    # pass feedback counts only with >=2 passes (avoid overreacting to one swipe)
+    if len(passed) < 2:
+        sig_tags["passed"] = (set(), 0.0, None)
     out = []
     for r in ranked:
         pkg = r["package"]
-        tags = set()
-        for attr in ("interest_tags", "mood_tags", "region_tags", "scenery_tags"):
-            for t in getattr(pkg, attr, None) or []:
-                tags.add(str(t).lower())
-        overlap = len(tags & liked_tags) / max(len(tags | liked_tags), 1)
-        boost = round(overlap * boost_max, 1)
+        tags = _tag_set([pkg])
+        delta = 0.0
+        best = None
+        for name, (sig, weight, reason) in sig_tags.items():
+            if not sig:
+                continue
+            overlap = len(tags & sig) / max(len(tags | sig), 1)
+            if overlap < 0.2:
+                continue
+            if name == "passed":
+                delta += overlap * weight * 0.5  # damped: never bans a destination
+            else:
+                delta += overlap * weight
+                if best is None or weight > best[0]:
+                    best = (weight, reason)
         nr = dict(r)
-        if boost > 0:
-            nr["score"] = round(min(100.0, r["score"] + boost), 1)
-            rs = list(r["reasons"] or [])
-            if "Picked for you based on your likes" not in rs:
-                rs.append("Picked for you based on your likes")
-            nr["reasons"] = rs[:3]
+        if abs(delta) > 0.05:
+            nr["score"] = round(max(0.0, min(100.0, r["score"] + min(delta, boost_max))), 1)
+            if best and delta > 0:
+                rs = list(r["reasons"] or [])
+                if best[1] not in rs:
+                    rs.append(best[1])
+                nr["reasons"] = rs[:3]
         out.append(nr)
-    out.sort(key=lambda r: r["score"], reverse=True)
+    # deterministic tie-break: score desc, price asc, id asc
+    out.sort(key=lambda r: (-r["score"], getattr(r["package"], "price", 0) or 0,
+                            getattr(r["package"], "id", 0) or 0))
     return out
+
+
+def _strongest_label(sig_tags, tags):
+    best, best_w = None, 0
+    for name, (sig, weight, _reason) in sig_tags.items():
+        if weight <= 0 or not sig:
+            continue
+        overlap = len(tags & sig) / max(len(tags | sig), 1)
+        if overlap >= 0.2 and weight > best_w:
+            best, best_w = name, weight
+    return best
+
+
+def detect_contradictions(prefs: dict):
+    """Return a clarification string when prefs conflict, else None."""
+    budget = _effective_budget(prefs)
+    style = str(prefs.get("travel_style") or "").lower()
+    acc = [str(a).lower() for a in _as_list(prefs.get("accommodation_prefs"))]
+    luxury = style in ("luxury", "premium") or any("luxury" in a or "resort" in a or "premium" in a for a in acc)
+    if budget and budget <= 5000 and luxury:
+        return (f"You selected a maximum budget of ₹{budget:,} with a premium/luxury stay. "
+                "Would you prefer to increase your budget or keep the budget and explore homestays?")
+    if budget and budget <= 3000 and luxury:
+        return (f"You selected a maximum budget of ₹{budget:,} and a premium resort. "
+                "Would you prefer to increase your budget or keep the budget and explore homestays?")
+    return None
+
+
+SOFT_FILTERS = ("region", "style", "accommodation", "operator", "min_score", "min_price", "min_duration", "q")
+
+
+def closest_matches(all_packages, prefs: dict, strict_filters: dict, weights=None):
+    """Demo fallback: relax ONLY soft filters, preserve hard constraints.
+
+    Hard (preserved): is_active, max_price (budget ceiling), max_duration,
+    avoid list, inflexible dates, capacity.
+    Soft (relaxed): region/q/style/accommodation/operator/min_score/min_price/min_duration.
+    Returns (ranked, relaxed_fields, note).
+    """
+    relaxed = []
+    kept = list(all_packages)
+    # apply hard constraints only
+    def _num(v):
+        try:
+            return int(v) if v not in (None, "") else None
+        except (TypeError, ValueError):
+            return None
+    hard = {}
+    for k in ("max_price", "max_duration"):
+        hard[k] = _num(strict_filters.get(k))
+    for k in ("region", "style", "accommodation", "operator", "min_score", "min_price", "min_duration", "q"):
+        if strict_filters.get(k) not in (None, "", []):
+            relaxed.append(k)
+    if hard.get("max_price") is not None:
+        kept = [p for p in kept if (p.price or 0) <= hard["max_price"]]
+    if hard.get("max_duration") is not None:
+        kept = [p for p in kept if (p.duration_days or 0) <= hard["max_duration"]]
+    ranked = rank_packages(kept, prefs, weights, apply_filter=True)
+    if relaxed:
+        note = ("No exact matches — showing closest matches. Relaxed: "
+                + ", ".join(relaxed) + ". Your selections were kept for editing.")
+    else:
+        note = "No exact matches — showing closest available packages."
+    return ranked, relaxed, note

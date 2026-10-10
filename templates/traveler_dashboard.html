@@ -26,6 +26,7 @@
 {% if e.quotations %}
 <tr><td></td><td colspan="4" class="muted small">
   {% for q in e.quotations %}[Quote #{{ q.id }}: ₹{{ "{:,}".format(q.price_per_person) }}/person, total ₹{{ "{:,}".format(q.total_price or 0) }} — {{ q.status }}{% if q.message %}: {{ q.message }}{% endif %}] {% endfor %}
+  {% if e.quotations|length > 1 and e.total_cost %} <b>Latest total ₹{{ "{:,}".format(e.total_cost) }}</b> (original preserved above; review before accepting — price changes never auto-confirm.){% endif %}
 </td></tr>
 {% endif %}
 {% endfor %}
@@ -42,6 +43,23 @@
 {% endfor %}
 </table>
 {% else %}<p class="muted">No bookings yet.</p>{% endif %}
+
+<h2>Custom offers</h2>
+{% if offers %}
+<table class="table"><tr><th>ID</th><th>Package</th><th>Status</th><th>Revised</th><th>Action</th></tr>
+{% for o in offers %}
+<tr><td>#{{ o.id }} v{{ o.version }}</td>
+<td><a href="/packages/{{ o.package_id }}">{{ o.package.title if o.package else o.package_id }}</a></td>
+<td><span class="badge">{{ o.status }}</span></td>
+<td>{% if o.revised_price %}₹{{ "{:,}".format(o.revised_price) }} <span class="muted small">{{ o.operator_note or '' }} · valid {{ o.valid_until or '—' }}</span>{% else %}—{% endif %}</td>
+<td>{% if o.status in ['offer_submitted'] %}
+<button class="btn small primary" onclick="offerReply({{ o.id }}, 'accept')">Accept</button>
+<button class="btn small ghost" onclick="offerReply({{ o.id }}, 'reject')">Reject</button>
+<button class="btn small ghost" onclick="offerRevise({{ o.id }})">Ask revision</button>
+{% endif %}</td></tr>
+{% endfor %}
+</table>
+{% else %}<p class="muted">No custom offers yet — use “Request custom offer” on a package.</p>{% endif %}
 
 <h2>Likes & saves</h2>
 <div class="grid">
@@ -64,5 +82,7 @@ async function confirmEnq(id){
 async function declineEnq(id){ await fetch(`/api/enquiries/${id}/decline`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({})}); location.reload(); }
 async function cancelEnq(id){ await fetch(`/api/enquiries/${id}/cancel`, {method:'POST'}); location.reload(); }
 async function cancelBooking(id){ await fetch(`/api/bookings/${id}/cancel`, {method:'POST'}); location.reload(); }
+async function offerReply(id, action){ await fetch(`/api/custom-offers/${id}/reply`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action})}); location.reload(); }
+async function offerRevise(id){ const n = prompt('What should change?')||''; await fetch(`/api/custom-offers/${id}/reply`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'revise', notes:n})}); location.reload(); }
 </script>
 {% endblock %}

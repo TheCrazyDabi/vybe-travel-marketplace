@@ -4,18 +4,98 @@
       "company_name": "Misty Trails Kerala (demo)",
       "business_email": "hello@mistytrails.demo",
       "contact_details": "+91 98470 00001",
-      "description": "Demo company for hackathon — boutique hill & forest trips in Kerala.",
+      "description": "Sample operator for demo — boutique hill & forest trips in Kerala. Not a real business.",
       "licence_info": "DEMO-KER-0001 (sample data, not a real licence)",
-      "service_regions": ["Kerala", "Tamil Nadu"],
+      "service_regions": [
+        "Kerala",
+        "Tamil Nadu"
+      ],
       "logo": ""
     },
     {
       "company_name": "Sunset Routes Goa (demo)",
       "business_email": "namaste@sunsetroutes.demo",
       "contact_details": "+91 98220 00002",
-      "description": "Demo company for hackathon — coastal, food and nightlife experiences.",
+      "description": "Sample operator for demo — coastal, food and nightlife experiences. Not a real business.",
       "licence_info": "DEMO-GOA-0002 (sample data, not a real licence)",
-      "service_regions": ["Goa", "Rajasthan"],
+      "service_regions": [
+        "Goa",
+        "Rajasthan"
+      ],
+      "logo": ""
+    },
+    {
+      "company_name": "Backwater Bliss Alleppey (demo)",
+      "business_email": "hello@backwaterbliss.demo",
+      "contact_details": "+91 97460 00003",
+      "description": "Sample operator for demo — houseboats and backwater stays. Not a real business.",
+      "licence_info": "DEMO-ALP-0003 (sample data, not a real licence)",
+      "service_regions": [
+        "Kerala"
+      ],
+      "logo": ""
+    },
+    {
+      "company_name": "Himalaya Trail Co (demo)",
+      "business_email": "hello@himalayatrail.demo",
+      "contact_details": "+91 98160 00004",
+      "description": "Sample operator for demo — Himalayan treks and snow trips. Not a real business.",
+      "licence_info": "DEMO-HIM-0004 (sample data, not a real licence)",
+      "service_regions": [
+        "Himachal Pradesh",
+        "Uttarakhand"
+      ],
+      "logo": ""
+    },
+    {
+      "company_name": "Royal Sands Jaipur (demo)",
+      "business_email": "hello@royalsands.demo",
+      "contact_details": "+91 98290 00005",
+      "description": "Sample operator for demo — heritage and desert culture trips. Not a real business.",
+      "licence_info": "DEMO-RAJ-0005 (sample data, not a real licence)",
+      "service_regions": [
+        "Rajasthan",
+        "Goa"
+      ],
+      "logo": ""
+    },
+    {
+      "company_name": "Deccan Heritage Trails (demo)",
+      "business_email": "hello@deccanheritage.demo",
+      "contact_details": "+91 97410 00006",
+      "description": "Sample operator for demo — Karnataka, Tamil Nadu and Puducherry heritage. Not a real business.",
+      "licence_info": "DEMO-DEC-0006 (sample data, not a real licence)",
+      "service_regions": [
+        "Karnataka",
+        "Tamil Nadu",
+        "Puducherry"
+      ],
+      "logo": ""
+    },
+    {
+      "company_name": "Eastern Himalaya Escapes (demo)",
+      "business_email": "hello@easternhimalaya.demo",
+      "contact_details": "+91 98630 00007",
+      "description": "Sample operator for demo — Northeast hills and Himalayan villages. Not a real business.",
+      "licence_info": "DEMO-EH-0007 (sample data, not a real licence)",
+      "service_regions": [
+        "Meghalaya",
+        "Sikkim"
+      ],
+      "logo": ""
+    },
+    {
+      "company_name": "Island & International Getaways (demo)",
+      "business_email": "hello@islandintl.demo",
+      "contact_details": "+91 98200 00008",
+      "description": "Sample operator for demo — island and international trips. Not a real business.",
+      "licence_info": "DEMO-ISL-0008 (sample data, not a real licence)",
+      "service_regions": [
+        "Andaman & Nicobar",
+        "Sri Lanka",
+        "Bali",
+        "Dubai"
+      ],
       "logo": ""
     }
   ],
@@ -25,24 +105,52 @@
       "destination": "Munnar",
       "lat": 10.0889,
       "lng": 77.0595,
-      "cover_image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80",
+      "cover_image": "/static/images/packages/munnar-tea-hills.jpg",
       "short_desc": "Mist, tea gardens and slow mornings in the Western Ghats.",
-      "itinerary": "Day 1: Arrive Kochi → Munnar, sunset at Top Station. Day 2: Tea museum, Mattupetty trek, spice garden. Day 3: Kolukkumalai sunrise + return.",
+      "itinerary": "Day 1: Arrive Kochi, drive to Munnar, sunset at Top Station. Day 2: Tea museum, Mattupetty dam trek and spice garden visit. Day 3: Kolukkumalai sunrise trek and return to Kochi.",
       "price": 9999,
       "currency": "INR",
       "duration_days": 3,
       "available_dates": "Oct–Feb departures",
       "group_size": "2–12",
-      "included": ["Stay (3★)", "Breakfast", "Transfers", "Guided trek"],
-      "excluded": ["Lunch & dinner", "Personal expenses"],
-      "accommodation": "Tea-estate view rooms",
+      "included": [
+        "Stay (3-star tea-estate view)",
+        "Breakfast",
+        "Transfers ex-Kochi",
+        "Guided trek"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Personal expenses"
+      ],
+      "accommodation": "Tea-estate view rooms (3-star)",
       "transportation": "Private cab ex-Kochi",
-      "activities": ["nature", "trekking", "photography"],
-      "region_tags": ["mountains"],
-      "climate_tags": ["cool"],
-      "scenery_tags": ["mountains", "forests", "tea gardens"],
-      "interest_tags": ["nature", "adventure", "relaxation"],
-      "mood_tags": ["relaxation", "romantic", "nature"],
+      "activities": [
+        "nature",
+        "trekking",
+        "photography"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "forests",
+        "tea gardens"
+      ],
+      "interest_tags": [
+        "nature",
+        "adventure",
+        "relaxation"
+      ],
+      "mood_tags": [
+        "relaxation",
+        "romantic",
+        "nature"
+      ],
       "cancellation_terms": "Full refund before 7 days; 50% within 7 days."
     },
     {
@@ -50,96 +158,2238 @@
       "destination": "Wayanad",
       "lat": 11.6854,
       "lng": 76.132,
-      "cover_image": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&q=80",
+      "cover_image": "/static/images/packages/forest-trail.jpg",
       "short_desc": "Forests, Edakkal caves and Soochipara falls.",
-      "itinerary": "Day 1: Chembra trek. Day 2: Edakkal caves + Pookode lake. Day 3: Safari + Soochipara falls.",
+      "itinerary": "Day 1: Chembra peak trek and overnight in forest-edge cottage. Day 2: Edakkal caves and Pookode lake boating. Day 3: Morning safari and Soochipara waterfalls.",
       "price": 11500,
       "currency": "INR",
       "duration_days": 3,
       "available_dates": "Sep–Mar departures",
       "group_size": "2–15",
-      "included": ["Stay", "Breakfast", "Safari tickets", "Guide"],
-      "excluded": ["Lunch & dinner", "Camera fees"],
+      "included": [
+        "Stay",
+        "Breakfast",
+        "Safari tickets",
+        "Guide"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Camera fees"
+      ],
       "accommodation": "Forest-edge cottages",
       "transportation": "Tempo traveller",
-      "activities": ["wildlife", "trekking", "nature"],
-      "region_tags": ["forests", "mountains"],
-      "climate_tags": ["cool"],
-      "scenery_tags": ["forests", "waterfalls"],
-      "interest_tags": ["nature", "wildlife", "adventure"],
-      "mood_tags": ["adventure", "nature"]
+      "activities": [
+        "wildlife",
+        "trekking",
+        "nature"
+      ],
+      "region_tags": [
+        "forests",
+        "mountains"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "forests",
+        "waterfalls"
+      ],
+      "interest_tags": [
+        "nature",
+        "wildlife",
+        "adventure"
+      ],
+      "mood_tags": [
+        "adventure",
+        "nature"
+      ]
     },
     {
-      "title": "Goa Slow Coast Weekender",
-      "destination": "Goa",
-      "lat": 15.5553,
-      "lng": 73.7513,
-      "cover_image": "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=1200&q=80",
-      "short_desc": "Beach shacks, flea markets and Portuguese lanes.",
-      "itinerary": "Day 1: Baga + Tito's lane. Day 2: Fontainhas walk + food trail. Day 3: Palolem kayaking. Day 4: Flea market + sunset cruise.",
-      "price": 14999,
+      "title": "Alleppey Houseboat Slowdown",
+      "destination": "Alleppey",
+      "lat": 9.4981,
+      "lng": 76.3388,
+      "cover_image": "/static/images/packages/backwater-houseboat.jpg",
+      "short_desc": "Drift the backwaters on a private kettuvallam houseboat.",
+      "itinerary": "Day 1: Board houseboat at noon, cruise Vembanad lake, sunset anchoring. Day 2: Village canoe tour, toddy-shop lunch stop, night on board. Day 3: Sunrise cruise, disembark after breakfast.",
+      "price": 13499,
       "currency": "INR",
-      "duration_days": 4,
-      "available_dates": "Nov–Feb departures",
+      "duration_days": 3,
+      "available_dates": "Sep–Mar departures",
+      "group_size": "2–10",
+      "included": [
+        "Private houseboat",
+        "All Kerala meals on board",
+        "Village canoe tour"
+      ],
+      "excluded": [
+        "Transport to jetty",
+        "Alcohol"
+      ],
+      "accommodation": "Deluxe houseboat cabin",
+      "transportation": "Houseboat + shuttle",
+      "activities": [
+        "relaxation",
+        "photography",
+        "local food"
+      ],
+      "region_tags": [
+        "backwaters"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "backwaters",
+        "lakes"
+      ],
+      "interest_tags": [
+        "relaxation",
+        "nature",
+        "food"
+      ],
+      "mood_tags": [
+        "relaxation",
+        "romantic",
+        "family"
+      ]
+    },
+    {
+      "title": "Varkala Cliff & Beach Reset",
+      "destination": "Varkala",
+      "lat": 8.7379,
+      "lng": 76.7163,
+      "cover_image": "/static/images/packages/tropical-beach.jpg",
+      "short_desc": "Cliff-top yoga, quiet coves and sunset cafes.",
+      "itinerary": "Day 1: Cliff walk and Papanasam beach swim. Day 2: Sunrise yoga, Janardhana temple, cafe hopping. Day 3: Day trip to Kappil backwaters and farewell sunset.",
+      "price": 8999,
+      "currency": "INR",
+      "duration_days": 3,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–12",
+      "included": [
+        "Cliff-side stay",
+        "Breakfast",
+        "2 yoga sessions",
+        "Backwater day trip"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Surfboard rental"
+      ],
+      "accommodation": "Cliff-side guesthouse",
+      "transportation": "Shared cab ex-Trivandrum",
+      "activities": [
+        "wellness",
+        "beaches",
+        "photography"
+      ],
+      "region_tags": [
+        "beaches"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "beaches",
+        "cliffs"
+      ],
+      "interest_tags": [
+        "relaxation",
+        "wellness",
+        "nature"
+      ],
+      "mood_tags": [
+        "relaxation",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Kochi Fort Heritage Walk",
+      "destination": "Kochi",
+      "lat": 9.9658,
+      "lng": 76.2421,
+      "cover_image": "/static/images/packages/kochi-harbour.jpg",
+      "short_desc": "Chinese nets, synagogues and spice warehouses on foot.",
+      "itinerary": "Day 1: Fort Kochi walk — Chinese fishing nets, St. Francis church, Kathakali show. Day 2: Mattancherry palace, Jew Town, spice market and ferry to Vypeen.",
+      "price": 6499,
+      "currency": "INR",
+      "duration_days": 2,
+      "available_dates": "Year-round departures",
       "group_size": "2–20",
-      "included": ["Stay near Baga", "Breakfast", "Cruise", "Kayaking"],
-      "excluded": ["Flights", "Alcohol", "Water sports"],
-      "accommodation": "Beach-side boutique stay",
-      "transportation": "Scooter rental assist + cabs",
-      "activities": ["food", "nightlife", "beaches"],
-      "region_tags": ["beaches", "cities"],
-      "climate_tags": ["warm"],
-      "scenery_tags": ["beaches"],
-      "interest_tags": ["food", "nightlife", "relaxation"],
-      "mood_tags": ["party", "relaxation", "romantic"]
+      "included": [
+        "Heritage homestay",
+        "Breakfast",
+        "Walking guide",
+        "Kathakali tickets"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Shopping"
+      ],
+      "accommodation": "Heritage homestay",
+      "transportation": "Walk + ferry + auto",
+      "activities": [
+        "culture",
+        "heritage",
+        "local food"
+      ],
+      "region_tags": [
+        "cities"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "heritage streets",
+        "harbour"
+      ],
+      "interest_tags": [
+        "culture",
+        "heritage",
+        "food"
+      ],
+      "mood_tags": [
+        "culture",
+        "family"
+      ]
+    },
+    {
+      "title": "Thekkady Spice & Safari",
+      "destination": "Thekkady",
+      "lat": 9.6031,
+      "lng": 77.1615,
+      "cover_image": "/static/images/packages/tiger-safari.jpg",
+      "short_desc": "Periyar boating safari and spice plantation trails.",
+      "itinerary": "Day 1: Spice plantation walk and Kalaripayattu show. Day 2: Periyar lake boating safari, bamboo rafting option. Day 3: Tribal village visit and departure.",
+      "price": 10999,
+      "currency": "INR",
+      "duration_days": 3,
+      "available_dates": "Sep–Apr departures",
+      "group_size": "2–14",
+      "included": [
+        "Jungle lodge",
+        "Breakfast",
+        "Boating safari",
+        "Plantation tour"
+      ],
+      "excluded": [
+        "Park entry fees",
+        "Lunch & dinner"
+      ],
+      "accommodation": "Jungle lodge rooms",
+      "transportation": "Shared coach",
+      "activities": [
+        "wildlife",
+        "nature",
+        "culture"
+      ],
+      "region_tags": [
+        "forests"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "forests",
+        "lakes"
+      ],
+      "interest_tags": [
+        "wildlife",
+        "nature",
+        "culture"
+      ],
+      "mood_tags": [
+        "family",
+        "nature",
+        "adventure"
+      ]
     },
     {
       "title": "Ooty Heritage Toy-Train Trip",
       "destination": "Ooty",
       "lat": 11.4102,
       "lng": 76.695,
-      "cover_image": "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&q=80",
+      "cover_image": "/static/images/packages/misty-nilgiri-hills.jpg",
       "short_desc": "Nilgiri toy train, botanical gardens and lake picnics.",
-      "itinerary": "Day 1: Toy train Mettupalayam→Ooty. Day 2: Botanical garden + Doddabetta. Day 3: Pykara lake + return.",
+      "itinerary": "Day 1: Toy train Mettupalayam to Ooty, evening lake walk. Day 2: Botanical garden, Doddabetta peak, chocolate factory. Day 3: Pykara lake boating and return.",
       "price": 8999,
       "currency": "INR",
       "duration_days": 3,
       "available_dates": "Year-round, best Oct–Mar",
       "group_size": "2–12",
-      "included": ["Stay", "Breakfast", "Toy-train tickets", "Sightseeing"],
-      "excluded": ["Lunch & dinner"],
+      "included": [
+        "Stay",
+        "Breakfast",
+        "Toy-train tickets",
+        "Sightseeing"
+      ],
+      "excluded": [
+        "Lunch & dinner"
+      ],
       "accommodation": "Colonial-style guesthouse",
       "transportation": "Toy train + cab",
-      "activities": ["heritage", "nature", "photography"],
-      "region_tags": ["mountains"],
-      "climate_tags": ["cool"],
-      "scenery_tags": ["mountains", "lakes"],
-      "interest_tags": ["culture", "heritage", "relaxation"],
-      "mood_tags": ["family", "relaxation", "romantic"]
+      "activities": [
+        "heritage",
+        "nature",
+        "photography"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "lakes"
+      ],
+      "interest_tags": [
+        "culture",
+        "heritage",
+        "relaxation"
+      ],
+      "mood_tags": [
+        "family",
+        "relaxation",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Coorg Coffee Estate Retreat",
+      "destination": "Coorg",
+      "lat": 12.3375,
+      "lng": 75.8069,
+      "cover_image": "/static/images/packages/green-plantation-fields.jpg",
+      "short_desc": "Wake up inside a working coffee estate.",
+      "itinerary": "Day 1: Estate walk and coffee-cupping session. Day 2: Abbey Falls and Raja's Seat sunset. Day 3: Dubare elephant camp and departure.",
+      "price": 12499,
+      "currency": "INR",
+      "duration_days": 3,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–10",
+      "included": [
+        "Estate villa",
+        "Breakfast + estate lunch",
+        "Cupping session",
+        "Falls excursion"
+      ],
+      "excluded": [
+        "Dinner",
+        "Camp entry fees"
+      ],
+      "accommodation": "Coffee-estate villa (premium)",
+      "transportation": "Private cab ex-Bengaluru",
+      "activities": [
+        "nature",
+        "local food",
+        "relaxation"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "waterfalls",
+        "plantations"
+      ],
+      "interest_tags": [
+        "nature",
+        "relaxation",
+        "food"
+      ],
+      "mood_tags": [
+        "romantic",
+        "relaxation",
+        "family"
+      ]
+    },
+    {
+      "title": "Goa Slow Coast Weekender",
+      "destination": "Goa",
+      "lat": 15.5553,
+      "lng": 73.7513,
+      "cover_image": "/static/images/packages/goa-coast.jpg",
+      "short_desc": "Beach shacks, flea markets and Portuguese lanes.",
+      "itinerary": "Day 1: Baga beach and Tito's lane evening. Day 2: Fontainhas heritage walk and food trail. Day 3: Palolem kayaking and silent-noise party. Day 4: Anjuna flea market and sunset cruise.",
+      "price": 14999,
+      "currency": "INR",
+      "duration_days": 4,
+      "available_dates": "Nov–Feb departures",
+      "group_size": "2–20",
+      "included": [
+        "Stay near Baga",
+        "Breakfast",
+        "Cruise",
+        "Kayaking"
+      ],
+      "excluded": [
+        "Flights",
+        "Alcohol",
+        "Water sports"
+      ],
+      "accommodation": "Beach-side boutique stay",
+      "transportation": "Scooter rental assist + cabs",
+      "activities": [
+        "food",
+        "nightlife",
+        "beaches"
+      ],
+      "region_tags": [
+        "beaches",
+        "cities"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "beaches"
+      ],
+      "interest_tags": [
+        "food",
+        "nightlife",
+        "relaxation"
+      ],
+      "mood_tags": [
+        "party",
+        "relaxation",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Manali Snow Adventure",
+      "destination": "Manali",
+      "lat": 32.2396,
+      "lng": 77.1887,
+      "cover_image": "/static/images/packages/snow-peaks.jpg",
+      "short_desc": "Solang snow sports, paragliding and hot springs.",
+      "itinerary": "Day 1: Arrive Manali, Mall Road evening. Day 2: Solang valley skiing and snow scooter. Day 3: Paragliding and Vashisht hot springs. Day 4: Atal Tunnel excursion to Sissu. Day 5: Old Manali cafes and departure.",
+      "price": 16999,
+      "currency": "INR",
+      "duration_days": 5,
+      "available_dates": "Dec–Feb departures",
+      "group_size": "2–16",
+      "included": [
+        "Hotel stay",
+        "Breakfast + dinner",
+        "Ski gear",
+        "Bonfire"
+      ],
+      "excluded": [
+        "Paragliding fee",
+        "Lunch"
+      ],
+      "accommodation": "Mountain-view hotel",
+      "transportation": "Volvo ex-Delhi + local cabs",
+      "activities": [
+        "adventure",
+        "trekking",
+        "snow sports"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "snow"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "snow",
+        "valleys"
+      ],
+      "interest_tags": [
+        "adventure",
+        "nature"
+      ],
+      "mood_tags": [
+        "adventure",
+        "party",
+        "family"
+      ]
     },
     {
       "title": "Jaipur Royal Heritage Rush",
       "destination": "Jaipur",
       "lat": 26.9124,
       "lng": 75.7873,
-      "cover_image": "https://images.unsplash.com/photo-1477587458883-47145ed94245?w=1200&q=80",
+      "cover_image": "/static/images/packages/heritage-fort.jpg",
       "short_desc": "Forts, bazaars and thalis in the Pink City.",
-      "itinerary": "Day 1: Amber fort + City Palace. Day 2: Hawa Mahal + bazaars + food walk. Day 3: Nahargarh sunrise + Jantar Mantar. Day 4-5: Pushkar add-on (optional).",
+      "itinerary": "Day 1: Amber fort and City Palace. Day 2: Hawa Mahal, bazaars and food walk. Day 3: Nahargarh sunrise and Jantar Mantar. Day 4: Albert Hall museum and Chokhi Dhani evening. Day 5: Optional Pushkar day trip.",
       "price": 17999,
       "currency": "INR",
       "duration_days": 5,
       "available_dates": "Oct–Mar departures",
       "group_size": "2–25",
-      "included": ["Stay (heritage haveli)", "Breakfast", "Guides", "Food walk"],
-      "excluded": ["Monument entry fees", "Shopping"],
+      "included": [
+        "Stay (heritage haveli)",
+        "Breakfast",
+        "Guides",
+        "Food walk"
+      ],
+      "excluded": [
+        "Monument entry fees",
+        "Shopping"
+      ],
       "accommodation": "Heritage haveli rooms",
       "transportation": "AC coach",
-      "activities": ["heritage", "culture", "food"],
-      "region_tags": ["cities", "desert"],
-      "climate_tags": ["warm"],
-      "scenery_tags": ["monuments", "desert"],
-      "interest_tags": ["culture", "heritage", "food"],
-      "mood_tags": ["family", "spiritual", "culture"]
+      "activities": [
+        "heritage",
+        "culture",
+        "food"
+      ],
+      "region_tags": [
+        "cities",
+        "desert"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "monuments",
+        "desert"
+      ],
+      "interest_tags": [
+        "culture",
+        "heritage",
+        "food"
+      ],
+      "mood_tags": [
+        "family",
+        "spiritual",
+        "culture"
+      ]
+    },
+    {
+      "title": "Rishikesh Raft & Yoga",
+      "destination": "Rishikesh",
+      "lat": 30.0869,
+      "lng": 78.2676,
+      "cover_image": "/static/images/packages/river-ghats.jpg",
+      "short_desc": "White-water rafting by day, Ganga aarti by evening.",
+      "itinerary": "Day 1: Arrive riverside camp, evening Triveni Ghat aarti. Day 2: 16-km rafting stretch and cliff jumping. Day 3: Sunrise yoga, Beatles Ashram visit. Day 4: Bungee option and departure.",
+      "price": 9999,
+      "currency": "INR",
+      "duration_days": 4,
+      "available_dates": "Sep–Jun departures",
+      "group_size": "2–20",
+      "included": [
+        "Riverside camp",
+        "All veg meals",
+        "Rafting with gear",
+        "Yoga sessions"
+      ],
+      "excluded": [
+        "Bungee fee",
+        "Transport to camp"
+      ],
+      "accommodation": "Riverside tents + cottages",
+      "transportation": "Shuttle ex-Haridwar",
+      "activities": [
+        "adventure",
+        "wellness",
+        "water sports"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "rivers"
+      ],
+      "interest_tags": [
+        "adventure",
+        "wellness",
+        "nature"
+      ],
+      "mood_tags": [
+        "adventure",
+        "spiritual"
+      ]
+    },
+    {
+      "title": "Andaman Island Hopper",
+      "destination": "Andaman",
+      "lat": 11.7401,
+      "lng": 92.6586,
+      "cover_image": "/static/images/packages/island-reef.jpg",
+      "short_desc": "Radhanagar sunsets, Ross history and reef snorkelling.",
+      "itinerary": "Day 1: Arrive Port Blair, Cellular Jail light show. Day 2: Ferry to Havelock, Radhanagar beach. Day 3: Elephanta snorkelling trip. Day 4: Neil Island excursion. Day 5: Ross Island history walk. Day 6: Free beach morning and departure.",
+      "price": 24999,
+      "currency": "INR",
+      "duration_days": 6,
+      "available_dates": "Oct–Apr departures",
+      "group_size": "2–14",
+      "included": [
+        "Resort stays",
+        "Breakfast",
+        "Ferries",
+        "Snorkelling trip"
+      ],
+      "excluded": [
+        "Flights",
+        "Scuba dives",
+        "Lunch & dinner"
+      ],
+      "accommodation": "Beach resorts (premium)",
+      "transportation": "Ferries + cabs",
+      "activities": [
+        "beaches",
+        "snorkelling",
+        "photography"
+      ],
+      "region_tags": [
+        "beaches",
+        "islands"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "beaches",
+        "reefs",
+        "islands"
+      ],
+      "interest_tags": [
+        "nature",
+        "relaxation",
+        "adventure"
+      ],
+      "mood_tags": [
+        "romantic",
+        "family",
+        "adventure"
+      ]
+    },
+    {
+      "title": "Munnar Budget Homestay Weekend",
+      "destination": "Munnar",
+      "lat": 10.0889,
+      "lng": 77.0595,
+      "cover_image": "/static/images/packages/kodaikanal-mist.jpg",
+      "short_desc": "A simple, cheap Munnar escape with a local family.",
+      "itinerary": "Day 1: Arrive, tea-garden stroll with host family. Day 2: Shared jeep to Top Station and Kundala lake.",
+      "price": 4999,
+      "currency": "INR",
+      "duration_days": 2,
+      "available_dates": "Year-round departures",
+      "group_size": "1–6",
+      "included": [
+        "Homestay room",
+        "Home-cooked breakfast",
+        "Shared jeep tour"
+      ],
+      "excluded": [
+        "Transport to Munnar",
+        "Lunch & dinner"
+      ],
+      "accommodation": "Family homestay (budget)",
+      "transportation": "Shared jeep",
+      "activities": [
+        "nature",
+        "photography"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "tea gardens"
+      ],
+      "interest_tags": [
+        "nature",
+        "relaxation"
+      ],
+      "mood_tags": [
+        "relaxation",
+        "family"
+      ]
+    },
+    {
+      "title": "Wayanad Family Nature Camp",
+      "destination": "Wayanad",
+      "lat": 11.6854,
+      "lng": 76.132,
+      "cover_image": "/static/images/packages/meghalaya-forest.jpg",
+      "short_desc": "Easy trails, campfire stories and kid-friendly safaris.",
+      "itinerary": "Day 1: Nature walk and campfire. Day 2: Morning mini-safari, Pookode lake boating and departure.",
+      "price": 7999,
+      "currency": "INR",
+      "duration_days": 2,
+      "available_dates": "Year-round departures",
+      "group_size": "2–20",
+      "included": [
+        "Family tents",
+        "All meals",
+        "Nature guide",
+        "Campfire"
+      ],
+      "excluded": [
+        "Transport to camp"
+      ],
+      "accommodation": "Family camp tents",
+      "transportation": "Camp shuttle",
+      "activities": [
+        "nature",
+        "camping",
+        "wildlife"
+      ],
+      "region_tags": [
+        "forests"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "forests",
+        "lakes"
+      ],
+      "interest_tags": [
+        "nature",
+        "wildlife",
+        "family"
+      ],
+      "mood_tags": [
+        "family",
+        "nature"
+      ]
+    },
+    {
+      "title": "Alleppey Premium Lake Resort",
+      "destination": "Alleppey",
+      "lat": 9.4981,
+      "lng": 76.3388,
+      "cover_image": "/static/images/packages/resort-pool.jpg",
+      "short_desc": "Private pool villa facing the Vembanad lagoon.",
+      "itinerary": "Day 1: Check in, lagoon sunset cruise. Day 2: Ayurvedic spa, village tour. Day 3: Houseboat day cruise. Day 4: Checkout brunch and departure.",
+      "price": 21999,
+      "currency": "INR",
+      "duration_days": 4,
+      "available_dates": "Sep–Mar departures",
+      "group_size": "2–8",
+      "included": [
+        "Pool villa",
+        "Breakfast + dinner",
+        "Sunset cruise",
+        "Spa session"
+      ],
+      "excluded": [
+        "Lunch",
+        "Premium alcohol"
+      ],
+      "accommodation": "Lake resort pool villa (luxury)",
+      "transportation": "Private car + cruise",
+      "activities": [
+        "relaxation",
+        "wellness",
+        "photography"
+      ],
+      "region_tags": [
+        "backwaters"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "backwaters",
+        "lakes"
+      ],
+      "interest_tags": [
+        "relaxation",
+        "luxury",
+        "wellness"
+      ],
+      "mood_tags": [
+        "romantic",
+        "luxury"
+      ]
+    },
+    {
+      "title": "Varkala Surf & Stay",
+      "destination": "Varkala",
+      "lat": 8.7379,
+      "lng": 76.7163,
+      "cover_image": "/static/images/packages/surf-break.jpg",
+      "short_desc": "Four days of surf lessons and cliff life.",
+      "itinerary": "Day 1: Beach orientation and first surf lesson. Day 2: Two surf sessions and video analysis. Day 3: Free surf, backwater SUP trip. Day 4: Final surf and certification.",
+      "price": 11999,
+      "currency": "INR",
+      "duration_days": 4,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "1–10",
+      "included": [
+        "Surf hostel",
+        "Breakfast",
+        "4 surf lessons + board",
+        "SUP trip"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Photos package"
+      ],
+      "accommodation": "Surf hostel dorms/private",
+      "transportation": "Walk + auto",
+      "activities": [
+        "water sports",
+        "adventure",
+        "beaches"
+      ],
+      "region_tags": [
+        "beaches"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "beaches",
+        "cliffs"
+      ],
+      "interest_tags": [
+        "adventure",
+        "relaxation"
+      ],
+      "mood_tags": [
+        "adventure",
+        "party"
+      ]
+    },
+    {
+      "title": "Coorg Trek Challenge",
+      "destination": "Coorg",
+      "lat": 12.3375,
+      "lng": 75.8069,
+      "cover_image": "/static/images/packages/himalayan-trek.jpg",
+      "short_desc": "Tadiandamol summit push with camping under stars.",
+      "itinerary": "Day 1: Base camp briefing, acclimatisation walk. Day 2: Tadiandamol summit trek, campfire at high camp.",
+      "price": 8499,
+      "currency": "INR",
+      "duration_days": 2,
+      "available_dates": "Oct–Feb departures",
+      "group_size": "4–16",
+      "included": [
+        "Tents + sleeping bags",
+        "All trek meals",
+        "Certified guide",
+        "Forest permits"
+      ],
+      "excluded": [
+        "Transport to base",
+        "Personal gear"
+      ],
+      "accommodation": "Alpine tents (camping)",
+      "transportation": "Trek on foot + jeep",
+      "activities": [
+        "trekking",
+        "camping",
+        "adventure"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "forests"
+      ],
+      "interest_tags": [
+        "adventure",
+        "nature"
+      ],
+      "mood_tags": [
+        "adventure"
+      ]
+    },
+    {
+      "title": "Thekkady Tiger Trail",
+      "destination": "Thekkady",
+      "lat": 9.6031,
+      "lng": 77.1615,
+      "cover_image": "/static/images/packages/tiger-safari.jpg",
+      "short_desc": "Deep-jungle trekking with ex-poacher guides.",
+      "itinerary": "Day 1: Orientation and spice garden evening. Day 2: Full-day jungle trek. Day 3: Bamboo rafting. Day 4: Border hiking trail and departure.",
+      "price": 13999,
+      "currency": "INR",
+      "duration_days": 4,
+      "available_dates": "Oct–Apr departures",
+      "group_size": "4–12",
+      "included": [
+        "Eco lodge",
+        "All meals on trek",
+        "Two guides",
+        "Park fees"
+      ],
+      "excluded": [
+        "Transport to Thekkady",
+        "Tips"
+      ],
+      "accommodation": "Eco lodge + forest tents",
+      "transportation": "Trek + raft",
+      "activities": [
+        "trekking",
+        "wildlife",
+        "adventure"
+      ],
+      "region_tags": [
+        "forests"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "forests",
+        "lakes"
+      ],
+      "interest_tags": [
+        "wildlife",
+        "adventure",
+        "nature"
+      ],
+      "mood_tags": [
+        "adventure",
+        "nature"
+      ]
+    },
+    {
+      "title": "Kochi Food Trail",
+      "destination": "Kochi",
+      "lat": 9.9658,
+      "lng": 76.2421,
+      "cover_image": "/static/images/packages/kerala-food.jpg",
+      "short_desc": "Twelve tastings from toddy shops to Syrian-Christian thalis.",
+      "itinerary": "Day 1: Fort Kochi bites crawl and sunset seafood grill. Day 2: Mattancherry spice tasting, toddy-shop lunch and cooking class.",
+      "price": 5499,
+      "currency": "INR",
+      "duration_days": 2,
+      "available_dates": "Year-round departures",
+      "group_size": "2–14",
+      "included": [
+        "Boutique hostel",
+        "12 tastings",
+        "Cooking class",
+        "Local guide"
+      ],
+      "excluded": [
+        "Transport",
+        "Alcohol"
+      ],
+      "accommodation": "Boutique hostel",
+      "transportation": "Walk + tuk-tuk",
+      "activities": [
+        "local food",
+        "culture",
+        "photography"
+      ],
+      "region_tags": [
+        "cities"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "heritage streets",
+        "harbour"
+      ],
+      "interest_tags": [
+        "food",
+        "culture"
+      ],
+      "mood_tags": [
+        "culture",
+        "party"
+      ]
+    },
+    {
+      "title": "Manali Honeymoon Special",
+      "destination": "Manali",
+      "lat": 32.2396,
+      "lng": 77.1887,
+      "cover_image": "/static/images/packages/mountain-sunrise.jpg",
+      "short_desc": "Candlelight dinners and snow-capped privacy.",
+      "itinerary": "Day 1: Flower-bedecked arrival, private bonfire. Day 2: Solang snow point excursion. Day 3: Spa couple session, Old Manali walk. Day 4: Naggar castle day trip. Day 5: Checkout and departure.",
+      "price": 19999,
+      "currency": "INR",
+      "duration_days": 5,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–2",
+      "included": [
+        "Honeymoon suite",
+        "Breakfast + 2 candlelight dinners",
+        "Flower decor",
+        "Sightseeing cab"
+      ],
+      "excluded": [
+        "Adventure activities",
+        "Lunch"
+      ],
+      "accommodation": "Honeymoon suite (premium)",
+      "transportation": "Private cab",
+      "activities": [
+        "relaxation",
+        "photography",
+        "snow sports"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "snow"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "snow",
+        "valleys"
+      ],
+      "interest_tags": [
+        "romantic",
+        "relaxation",
+        "luxury"
+      ],
+      "mood_tags": [
+        "romantic",
+        "luxury"
+      ]
+    },
+    {
+      "title": "Goa Family Beach Holiday",
+      "destination": "Goa",
+      "lat": 15.5553,
+      "lng": 73.7513,
+      "cover_image": "/static/images/packages/goa-coast.jpg",
+      "short_desc": "Kid-safe beaches, dolphin trips and waterpark day.",
+      "itinerary": "Day 1: Check in, Benaulim beach evening. Day 2: Dolphin boat trip and waterpark. Day 3: Old Goa churches and river cruise. Day 4: Flea market morning. Day 5: Free beach day and departure.",
+      "price": 15999,
+      "currency": "INR",
+      "duration_days": 5,
+      "available_dates": "Nov–Feb departures",
+      "group_size": "2–12",
+      "included": [
+        "Family resort",
+        "Breakfast + dinner",
+        "Dolphin trip",
+        "Cruise tickets"
+      ],
+      "excluded": [
+        "Flights",
+        "Lunch"
+      ],
+      "accommodation": "Family beach resort",
+      "transportation": "AC coach",
+      "activities": [
+        "beaches",
+        "sightseeing",
+        "food"
+      ],
+      "region_tags": [
+        "beaches"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "beaches"
+      ],
+      "interest_tags": [
+        "family",
+        "relaxation",
+        "food"
+      ],
+      "mood_tags": [
+        "family",
+        "relaxation"
+      ]
+    },
+    {
+      "title": "Rishikesh Spiritual Retreat",
+      "destination": "Rishikesh",
+      "lat": 30.0869,
+      "lng": 78.2676,
+      "cover_image": "/static/images/packages/yoga-retreat.jpg",
+      "short_desc": "Silent mornings, philosophy talks and sattvic food.",
+      "itinerary": "Day 1: Ashram check-in, orientation, Ganga aarti. Day 2: Yoga, meditation, philosophy talk. Day 3: Sunrise trek to waterfall, closing circle.",
+      "price": 7499,
+      "currency": "INR",
+      "duration_days": 3,
+      "available_dates": "Year-round departures",
+      "group_size": "1–20",
+      "included": [
+        "Ashram room",
+        "Sattvic meals",
+        "All sessions",
+        "Aarti"
+      ],
+      "excluded": [
+        "Transport",
+        "Donations"
+      ],
+      "accommodation": "Ashram rooms (simple)",
+      "transportation": "Walk + shared auto",
+      "activities": [
+        "wellness",
+        "culture",
+        "nature"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "rivers"
+      ],
+      "interest_tags": [
+        "wellness",
+        "spiritual",
+        "culture"
+      ],
+      "mood_tags": [
+        "spiritual",
+        "relaxation"
+      ]
+    },
+    {
+      "title": "Andaman Scuba Week",
+      "destination": "Andaman",
+      "lat": 11.7401,
+      "lng": 92.6586,
+      "cover_image": "/static/images/packages/scuba-reef.jpg",
+      "short_desc": "Get PADI-certified in the clearest water in India.",
+      "itinerary": "Day 1: Arrive Havelock, theory session. Day 2: Confined-water training. Day 3: Open-water dives 1–2. Day 4: Open-water dives 3–4 + certification. Day 5: Wreck dive. Day 6: Beach rest. Day 7: Departure.",
+      "price": 27999,
+      "currency": "INR",
+      "duration_days": 7,
+      "available_dates": "Oct–Apr departures",
+      "group_size": "1–8",
+      "included": [
+        "Dive resort",
+        "Breakfast",
+        "All dives + gear",
+        "Certification fee"
+      ],
+      "excluded": [
+        "Flights",
+        "Lunch & dinner"
+      ],
+      "accommodation": "Dive resort rooms",
+      "transportation": "Ferries + dive boats",
+      "activities": [
+        "adventure",
+        "water sports",
+        "wildlife"
+      ],
+      "region_tags": [
+        "beaches",
+        "islands"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "beaches",
+        "reefs",
+        "islands"
+      ],
+      "interest_tags": [
+        "adventure",
+        "wildlife",
+        "nature"
+      ],
+      "mood_tags": [
+        "adventure"
+      ]
+    },
+    {
+      "title": "Alleppey Backwater Houseboat Escape",
+      "destination": "Alleppey",
+      "lat": 9.4981,
+      "lng": 76.3388,
+      "cover_image": "/static/images/packages/kumarakom-lagoon.jpg",
+      "short_desc": "A short, affordable houseboat taste of the backwaters.",
+      "itinerary": "Day 1: Noon boarding, afternoon cruise with village views, sunset anchoring. Day 2: Sunrise cruise and disembark after breakfast.",
+      "price": 6499,
+      "currency": "INR",
+      "duration_days": 2,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–12",
+      "included": [
+        "Shared houseboat",
+        "Kerala meals",
+        "Evening cruise"
+      ],
+      "excluded": [
+        "Transport to jetty",
+        "Alcohol"
+      ],
+      "accommodation": "Shared deluxe houseboat",
+      "transportation": "Houseboat + shuttle",
+      "activities": [
+        "relaxation",
+        "photography"
+      ],
+      "region_tags": [
+        "backwaters"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "backwaters",
+        "lakes"
+      ],
+      "interest_tags": [
+        "relaxation",
+        "nature"
+      ],
+      "mood_tags": [
+        "relaxation",
+        "family"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Backwater Bliss Alleppey (demo)"
+    },
+    {
+      "title": "Varkala Cliff & Coastal Escape",
+      "destination": "Varkala",
+      "lat": 8.7379,
+      "lng": 76.7163,
+      "cover_image": "/static/images/packages/tropical-beach.jpg",
+      "short_desc": "Cliff cafes, quiet coves and Ayurvedic evenings.",
+      "itinerary": "Day 1: Cliff-top stroll and Papanasam beach. Day 2: Ayurvedic massage, Kappil backwater trip. Day 3: Morning yoga and departure.",
+      "price": 7499,
+      "currency": "INR",
+      "duration_days": 3,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–12",
+      "included": [
+        "Cliff resort",
+        "Breakfast",
+        "Ayurveda session",
+        "Backwater trip"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Water sports"
+      ],
+      "accommodation": "Cliff-side resort (3-star)",
+      "transportation": "Cab ex-Trivandrum",
+      "activities": [
+        "wellness",
+        "beaches"
+      ],
+      "region_tags": [
+        "beaches"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "beaches",
+        "cliffs"
+      ],
+      "interest_tags": [
+        "relaxation",
+        "wellness"
+      ],
+      "mood_tags": [
+        "relaxation",
+        "romantic"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Backwater Bliss Alleppey (demo)"
+    },
+    {
+      "title": "Kochi Heritage & Café Trails",
+      "destination": "Kochi",
+      "lat": 9.9658,
+      "lng": 76.2421,
+      "cover_image": "/static/images/packages/kochi-harbour.jpg",
+      "short_desc": "Fort Kochi lanes, mõcha trails and sunset at the nets.",
+      "itinerary": "Day 1: Chinese nets, Santa Cruz basilica, café crawl and Kathakali. Day 2: Jew Town, spice warehouses and ferry ride.",
+      "price": 4499,
+      "currency": "INR",
+      "duration_days": 2,
+      "available_dates": "Year-round departures",
+      "group_size": "2–16",
+      "included": [
+        "Boutique hostel",
+        "Guided walks",
+        "Kathakali show"
+      ],
+      "excluded": [
+        "Meals",
+        "Shopping"
+      ],
+      "accommodation": "Boutique hostel",
+      "transportation": "Walk + ferry",
+      "activities": [
+        "culture",
+        "local food",
+        "photography"
+      ],
+      "region_tags": [
+        "cities"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "heritage streets",
+        "harbour"
+      ],
+      "interest_tags": [
+        "culture",
+        "food"
+      ],
+      "mood_tags": [
+        "culture"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Backwater Bliss Alleppey (demo)"
+    },
+    {
+      "title": "Athirappilly Waterfall Adventure",
+      "destination": "Athirappilly",
+      "lat": 10.2855,
+      "lng": 76.5698,
+      "cover_image": "/static/images/packages/forest-trail.jpg",
+      "short_desc": "Stand before Kerala's widest waterfall and trek its jungle rims.",
+      "itinerary": "Day 1: Top viewpoint, butterfly garden and evening at the falls base. Day 2: Jungle trek to Sholayar overlook and departure.",
+      "price": 5499,
+      "currency": "INR",
+      "duration_days": 2,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–12",
+      "included": [
+        "Eco lodge",
+        "Breakfast",
+        "Trek guide",
+        "Viewpoint entries"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Transport"
+      ],
+      "accommodation": "Eco lodge near falls",
+      "transportation": "Shared jeep",
+      "activities": [
+        "trekking",
+        "nature",
+        "photography"
+      ],
+      "region_tags": [
+        "forests"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "waterfalls",
+        "forests"
+      ],
+      "interest_tags": [
+        "adventure",
+        "nature"
+      ],
+      "mood_tags": [
+        "adventure",
+        "nature"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Misty Trails Kerala (demo)"
+    },
+    {
+      "title": "Kumarakom Lakeside Retreat",
+      "destination": "Kumarakom",
+      "lat": 9.6179,
+      "lng": 76.4305,
+      "cover_image": "/static/images/packages/backwater-houseboat.jpg",
+      "short_desc": "Slow lake mornings, bird sanctuary and village life.",
+      "itinerary": "Day 1: Lakeside check-in, sunset cruise. Day 2: Bird sanctuary walk, village canoe tour. Day 3: Sunrise yoga and departure.",
+      "price": 8999,
+      "currency": "INR",
+      "duration_days": 3,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–12",
+      "included": [
+        "Lake resort",
+        "Breakfast",
+        "Cruise",
+        "Canoe tour"
+      ],
+      "excluded": [
+        "Lunch & dinner"
+      ],
+      "accommodation": "Lakeside resort rooms",
+      "transportation": "Cab + cruise",
+      "activities": [
+        "relaxation",
+        "nature"
+      ],
+      "region_tags": [
+        "backwaters"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "backwaters",
+        "lakes"
+      ],
+      "interest_tags": [
+        "relaxation",
+        "nature"
+      ],
+      "mood_tags": [
+        "romantic",
+        "family"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Backwater Bliss Alleppey (demo)"
+    },
+    {
+      "title": "Bekal Fort & Northern Coast",
+      "destination": "Bekal",
+      "lat": 12.3926,
+      "lng": 75.033,
+      "cover_image": "/static/images/packages/hampi-ruins.jpg",
+      "short_desc": "Sea forts, empty beaches and Theyyam village evenings.",
+      "itinerary": "Day 1: Bekal Fort exploration and beach evening. Day 2: Chandragiri cruise and Theyyam performance. Day 3: Nileshwar backwaters and departure.",
+      "price": 7999,
+      "currency": "INR",
+      "duration_days": 3,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–12",
+      "included": [
+        "Beach resort",
+        "Breakfast",
+        "Fort guide",
+        "Cruise"
+      ],
+      "excluded": [
+        "Lunch & dinner"
+      ],
+      "accommodation": "Beach resort (3-star)",
+      "transportation": "Cab ex-Mangaluru",
+      "activities": [
+        "heritage",
+        "beaches",
+        "culture"
+      ],
+      "region_tags": [
+        "beaches",
+        "cities"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "beaches",
+        "monuments"
+      ],
+      "interest_tags": [
+        "culture",
+        "heritage",
+        "relaxation"
+      ],
+      "mood_tags": [
+        "family",
+        "culture"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Misty Trails Kerala (demo)"
+    },
+    {
+      "title": "Gokarna Beach & Coastal Trails",
+      "destination": "Gokarna",
+      "lat": 14.5479,
+      "lng": 74.3188,
+      "cover_image": "/static/images/packages/gokarna-beach.jpg",
+      "short_desc": "Trek across five beaches from Belekan to Paradise.",
+      "itinerary": "Day 1: Mahabaleshwar temple and Kudle sunset. Day 2: Full beach trek Om–Half Moon–Paradise. Day 3: Easy morning, Yana rocks trip.",
+      "price": 7499,
+      "currency": "INR",
+      "duration_days": 3,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–12",
+      "included": [
+        "Beach shacks stay",
+        "Breakfast",
+        "Trek guide"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Temple donations"
+      ],
+      "accommodation": "Beach shacks + tents",
+      "transportation": "Walk + auto",
+      "activities": [
+        "trekking",
+        "beaches",
+        "camping"
+      ],
+      "region_tags": [
+        "beaches"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "beaches",
+        "cliffs"
+      ],
+      "interest_tags": [
+        "adventure",
+        "nature"
+      ],
+      "mood_tags": [
+        "adventure",
+        "party"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Sunset Routes Goa (demo)"
+    },
+    {
+      "title": "Hampi Ancient Kingdom Explorer",
+      "destination": "Hampi",
+      "lat": 15.335,
+      "lng": 76.46,
+      "cover_image": "/static/images/packages/hampi-ruins.jpg",
+      "short_desc": "Boulder hills, Virupaksha mornings and coracle rides.",
+      "itinerary": "Day 1: Virupaksha temple and Hemakuta sunrise point. Day 2: Vittala complex, stone chariot, coracle ride. Day 3: Matanga sunrise trek and departure.",
+      "price": 8999,
+      "currency": "INR",
+      "duration_days": 3,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–12",
+      "included": [
+        "Heritage homestay",
+        "Breakfast",
+        "Archaeology guide"
+      ],
+      "excluded": [
+        "Monument fees",
+        "Lunch & dinner"
+      ],
+      "accommodation": "Heritage homestay",
+      "transportation": "Bicycle + auto",
+      "activities": [
+        "heritage",
+        "trekking",
+        "photography"
+      ],
+      "region_tags": [
+        "cities"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "monuments",
+        "boulders"
+      ],
+      "interest_tags": [
+        "culture",
+        "heritage",
+        "adventure"
+      ],
+      "mood_tags": [
+        "culture",
+        "adventure"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Deccan Heritage Trails (demo)"
+    },
+    {
+      "title": "Pondicherry French Quarter Escape",
+      "destination": "Pondicherry",
+      "lat": 11.9416,
+      "lng": 79.8083,
+      "cover_image": "/static/images/packages/pondicherry-street.jpg",
+      "short_desc": "Mustard-yellow streets, Auroville calm and Rock Beach dawn.",
+      "itinerary": "Day 1: French Quarter walk, Rock Beach promenade. Day 2: Auroville Matrimandir viewpoint and cafés. Day 3: Paradise Beach boat trip and departure.",
+      "price": 9499,
+      "currency": "INR",
+      "duration_days": 3,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–12",
+      "included": [
+        "French villa stay",
+        "Breakfast",
+        "Cycle rental",
+        "Heritage walk"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Auroville pass"
+      ],
+      "accommodation": "French-colonial villa",
+      "transportation": "Cycle + walk",
+      "activities": [
+        "culture",
+        "relaxation",
+        "local food"
+      ],
+      "region_tags": [
+        "cities",
+        "beaches"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "heritage streets",
+        "beaches"
+      ],
+      "interest_tags": [
+        "culture",
+        "relaxation",
+        "food"
+      ],
+      "mood_tags": [
+        "romantic",
+        "culture"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Deccan Heritage Trails (demo)"
+    },
+    {
+      "title": "Kodaikanal Misty Hills Weekend",
+      "destination": "Kodaikanal",
+      "lat": 10.2315,
+      "lng": 77.4869,
+      "cover_image": "/static/images/packages/kodaikanal-mist.jpg",
+      "short_desc": "Pine forests, lake cycling and Coaker's Walk clouds.",
+      "itinerary": "Day 1: Coaker's Walk and Bryant Park. Day 2: Pillar Rocks, Guna caves, lake cycling. Day 3: Dolphin's Nose trek and departure.",
+      "price": 7999,
+      "currency": "INR",
+      "duration_days": 3,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–12",
+      "included": [
+        "Hillside hotel",
+        "Breakfast",
+        "Sightseeing cab"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Boating fee"
+      ],
+      "accommodation": "Hillside hotel (3-star)",
+      "transportation": "Cab ex-Madurai",
+      "activities": [
+        "nature",
+        "photography",
+        "relaxation"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "lakes",
+        "forests"
+      ],
+      "interest_tags": [
+        "nature",
+        "relaxation"
+      ],
+      "mood_tags": [
+        "family",
+        "romantic"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Deccan Heritage Trails (demo)"
+    },
+    {
+      "title": "Mysuru Palaces & Heritage Trail",
+      "destination": "Mysuru",
+      "lat": 12.2958,
+      "lng": 76.6394,
+      "cover_image": "/static/images/packages/heritage-fort.jpg",
+      "short_desc": "Palace lights, silk, sandalwood and filter coffee.",
+      "itinerary": "Day 1: Mysore Palace, Devaraja market, palace illumination evening. Day 2: Chamundi Hills sunrise, St. Philomena's church, silk factory.",
+      "price": 5499,
+      "currency": "INR",
+      "duration_days": 2,
+      "available_dates": "Year-round departures",
+      "group_size": "2–20",
+      "included": [
+        "City hotel",
+        "Breakfast",
+        "Palace tickets",
+        "City guide"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Shopping"
+      ],
+      "accommodation": "City hotel (3-star)",
+      "transportation": "City cab",
+      "activities": [
+        "heritage",
+        "culture",
+        "shopping"
+      ],
+      "region_tags": [
+        "cities"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "monuments",
+        "markets"
+      ],
+      "interest_tags": [
+        "culture",
+        "heritage",
+        "food"
+      ],
+      "mood_tags": [
+        "family",
+        "culture"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Deccan Heritage Trails (demo)"
+    },
+    {
+      "title": "Manali Mountain Adventure",
+      "destination": "Manali",
+      "lat": 32.2396,
+      "lng": 77.1887,
+      "cover_image": "/static/images/packages/snow-peaks.jpg",
+      "short_desc": "Paragliding, river rappelling and Hampta day treks.",
+      "itinerary": "Day 1: Arrive, Old Manali acclimatisation. Day 2: Solang adventure day. Day 3: Hampta Valley day trek. Day 4: Paragliding and hot springs. Day 5: Departure.",
+      "price": 14999,
+      "currency": "INR",
+      "duration_days": 5,
+      "available_dates": "Apr–Jun, Dec–Feb departures",
+      "group_size": "4–16",
+      "included": [
+        "Hotel + camp",
+        "Breakfast + dinner",
+        "Adventure gear",
+        "Guide"
+      ],
+      "excluded": [
+        "Paragliding fee",
+        "Lunch"
+      ],
+      "accommodation": "Hotel + alpine camp",
+      "transportation": "Volvo ex-Delhi + cabs",
+      "activities": [
+        "adventure",
+        "trekking",
+        "camping"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "snow"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "snow",
+        "valleys"
+      ],
+      "interest_tags": [
+        "adventure",
+        "nature"
+      ],
+      "mood_tags": [
+        "adventure",
+        "party"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Himalaya Trail Co (demo)"
+    },
+    {
+      "title": "Rishikesh River & Yoga Retreat",
+      "destination": "Rishikesh",
+      "lat": 30.0869,
+      "lng": 78.2676,
+      "cover_image": "/static/images/packages/river-ghats.jpg",
+      "short_desc": "Morning asanas, afternoon rapids, evening aarti flames.",
+      "itinerary": "Day 1: Ashram check-in and Ganga aarti. Day 2: Yoga at dawn, 12-km rafting. Day 3: Waterfall trek and departure.",
+      "price": 8499,
+      "currency": "INR",
+      "duration_days": 3,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–12",
+      "included": [
+        "Ashram cottage",
+        "Sattvic meals",
+        "Rafting + yoga"
+      ],
+      "excluded": [
+        "Transport",
+        "Donations"
+      ],
+      "accommodation": "Ashram cottage",
+      "transportation": "Walk + shuttle",
+      "activities": [
+        "wellness",
+        "adventure"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "rivers"
+      ],
+      "interest_tags": [
+        "wellness",
+        "adventure",
+        "spiritual"
+      ],
+      "mood_tags": [
+        "spiritual",
+        "adventure"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Himalaya Trail Co (demo)"
+    },
+    {
+      "title": "Ladakh High-Altitude Explorer",
+      "destination": "Leh",
+      "lat": 34.1526,
+      "lng": 77.5771,
+      "cover_image": "/static/images/packages/mountain-sunrise.jpg",
+      "short_desc": "Khardung La, Pangong blues and Thiksey dawn prayers.",
+      "itinerary": "Day 1: Arrive Leh, acclimatise. Day 2: Thiksey monastery and Shanti Stupa. Day 3: Khardung La to Nubra dunes. Day 4: Pangong Tso excursion. Day 5: Hemis monastery. Day 6: Departure.",
+      "price": 24999,
+      "currency": "INR",
+      "duration_days": 6,
+      "available_dates": "May–Sep departures",
+      "group_size": "2–12",
+      "included": [
+        "Hotel + Nubra camp",
+        "Breakfast + dinner",
+        "Oxygen support",
+        "Inner-line permits"
+      ],
+      "excluded": [
+        "Flights",
+        "Lunch"
+      ],
+      "accommodation": "Hotel + luxury camp",
+      "transportation": "SUV with driver",
+      "activities": [
+        "adventure",
+        "culture",
+        "photography"
+      ],
+      "region_tags": [
+        "mountains",
+        "desert"
+      ],
+      "climate_tags": [
+        "snow"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "lakes",
+        "desert"
+      ],
+      "interest_tags": [
+        "adventure",
+        "culture"
+      ],
+      "mood_tags": [
+        "adventure",
+        "family"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Himalaya Trail Co (demo)"
+    },
+    {
+      "title": "Meghalaya Waterfalls & Living Root Bridges",
+      "destination": "Shillong",
+      "lat": 25.5788,
+      "lng": 91.8933,
+      "cover_image": "/static/images/packages/meghalaya-forest.jpg",
+      "short_desc": "Nohkalikai mist and double-decker root bridges.",
+      "itinerary": "Day 1: Shillong viewpoints and Ward's Lake. Day 2: Cherrapunji falls circuit. Day 3: Nongriat double-decker trek. Day 4: Dawki crystal boating. Day 5: Mawlynnong village and departure.",
+      "price": 16999,
+      "currency": "INR",
+      "duration_days": 5,
+      "available_dates": "Sep–Apr departures",
+      "group_size": "2–14",
+      "included": [
+        "Boutique stays",
+        "Breakfast",
+        "Trek guide",
+        "Boating"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Transport to Shillong"
+      ],
+      "accommodation": "Boutique homestays",
+      "transportation": "SUV ex-Guwahati",
+      "activities": [
+        "trekking",
+        "nature",
+        "photography"
+      ],
+      "region_tags": [
+        "mountains",
+        "forests"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "waterfalls",
+        "forests"
+      ],
+      "interest_tags": [
+        "adventure",
+        "nature"
+      ],
+      "mood_tags": [
+        "adventure",
+        "nature"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Eastern Himalaya Escapes (demo)"
+    },
+    {
+      "title": "Sikkim Himalayan Village Escape",
+      "destination": "Gangtok",
+      "lat": 27.3389,
+      "lng": 88.6065,
+      "cover_image": "/static/images/packages/mountain-lake.jpg",
+      "short_desc": "Monastery bells, momos and Kanchenjunga viewpoints.",
+      "itinerary": "Day 1: MG Marg evening. Day 2: Rumtek monastery. Day 3: Tsomgo Lake + Baba Mandir. Day 4: Village homestay day. Day 5: Departure.",
+      "price": 18999,
+      "currency": "INR",
+      "duration_days": 5,
+      "available_dates": "Mar–Jun, Sep–Dec departures",
+      "group_size": "2–12",
+      "included": [
+        "Hotel + homestay",
+        "Breakfast + dinner",
+        "Permits",
+        "Guide"
+      ],
+      "excluded": [
+        "Lunch",
+        "Cable-car fee"
+      ],
+      "accommodation": "Hotel + village homestay",
+      "transportation": "Shared SUV",
+      "activities": [
+        "culture",
+        "nature",
+        "local food"
+      ],
+      "region_tags": [
+        "mountains"
+      ],
+      "climate_tags": [
+        "cool"
+      ],
+      "scenery_tags": [
+        "mountains",
+        "lakes"
+      ],
+      "interest_tags": [
+        "culture",
+        "nature",
+        "spiritual"
+      ],
+      "mood_tags": [
+        "family",
+        "spiritual"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Eastern Himalaya Escapes (demo)"
+    },
+    {
+      "title": "Amritsar Heritage & Food Walk",
+      "destination": "Amritsar",
+      "lat": 31.634,
+      "lng": 74.8723,
+      "cover_image": "/static/images/packages/amritsar-water.jpg",
+      "short_desc": "Golden Temple at dawn and Hall Bazaar food lanes.",
+      "itinerary": "Day 1: Golden Temple, Jallianwala Bagh, Wagah ceremony evening. Day 2: Heritage food walk — kulchas, lassi, jalebis — and departure.",
+      "price": 5999,
+      "currency": "INR",
+      "duration_days": 2,
+      "available_dates": "Year-round departures",
+      "group_size": "2–20",
+      "included": [
+        "City hotel",
+        "Breakfast",
+        "Food walk",
+        "Ceremony transfers"
+      ],
+      "excluded": [
+        "Lunch & dinner",
+        "Shopping"
+      ],
+      "accommodation": "City hotel (3-star)",
+      "transportation": "Auto + walk",
+      "activities": [
+        "culture",
+        "local food",
+        "heritage"
+      ],
+      "region_tags": [
+        "cities"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "monuments",
+        "markets"
+      ],
+      "interest_tags": [
+        "culture",
+        "food",
+        "heritage"
+      ],
+      "mood_tags": [
+        "family",
+        "spiritual"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Himalaya Trail Co (demo)"
+    },
+    {
+      "title": "Andaman Island-Hopping Escape",
+      "destination": "Port Blair",
+      "lat": 11.7401,
+      "lng": 92.6586,
+      "cover_image": "/static/images/packages/island-reef.jpg",
+      "short_desc": "Three islands, one trip: history, reefs and hammocks.",
+      "itinerary": "Day 1: Cellular Jail and light show. Day 2: Ferry to Havelock, beach evening. Day 3: Snorkelling day. Day 4: Neil Island day trip. Day 5: Departure.",
+      "price": 24999,
+      "currency": "INR",
+      "duration_days": 5,
+      "available_dates": "Oct–Apr departures",
+      "group_size": "2–14",
+      "included": [
+        "Island resorts",
+        "Breakfast",
+        "Ferries",
+        "Snorkel trip"
+      ],
+      "excluded": [
+        "Flights",
+        "Lunch & dinner"
+      ],
+      "accommodation": "Island resorts (3-star)",
+      "transportation": "Ferries + cabs",
+      "activities": [
+        "beaches",
+        "snorkelling"
+      ],
+      "region_tags": [
+        "beaches",
+        "islands"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "beaches",
+        "reefs"
+      ],
+      "interest_tags": [
+        "relaxation",
+        "adventure"
+      ],
+      "mood_tags": [
+        "family",
+        "romantic"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Island & International Getaways (demo)"
+    },
+    {
+      "title": "Sri Lanka Coastal Discovery",
+      "destination": "Bentota",
+      "lat": 6.4211,
+      "lng": 80.0022,
+      "cover_image": "/static/images/packages/tropical-beach-aerial.jpg",
+      "short_desc": "Galle Fort ramparts, stilt fishermen and cinnamon island.",
+      "itinerary": "Day 1: Arrive Colombo, transfer to Bentota. Day 2: River safari and turtle hatchery. Day 3: Galle Fort day. Day 4: Whale watching Mirissa. Day 5: Departure.",
+      "price": 29999,
+      "currency": "INR",
+      "duration_days": 5,
+      "available_dates": "Nov–Apr departures",
+      "group_size": "2–14",
+      "included": [
+        "Beach resort",
+        "Breakfast",
+        "Safaris",
+        "Transfers"
+      ],
+      "excluded": [
+        "Flights",
+        "Visa fee",
+        "Lunch & dinner"
+      ],
+      "accommodation": "Beach resort (4-star)",
+      "transportation": "Private coach",
+      "activities": [
+        "beaches",
+        "wildlife",
+        "culture"
+      ],
+      "region_tags": [
+        "beaches",
+        "cities"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "beaches",
+        "heritage streets"
+      ],
+      "interest_tags": [
+        "culture",
+        "relaxation",
+        "wildlife"
+      ],
+      "mood_tags": [
+        "romantic",
+        "family"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Island & International Getaways (demo)"
+    },
+    {
+      "title": "Bali Tropical Adventure",
+      "destination": "Uluwatu",
+      "lat": -8.8104,
+      "lng": 115.1473,
+      "cover_image": "/static/images/packages/bali-shore.jpg",
+      "short_desc": "Cliff temples, surf beaches and jungle swings.",
+      "itinerary": "Day 1: Arrive, Jimbaran sunset dinner. Day 2: Uluwatu temple and kecak fire dance. Day 3: Nusa Penida day cruise. Day 4: Ubud swings and rice terraces. Day 5: Surf lesson. Day 6: Departure.",
+      "price": 39999,
+      "currency": "INR",
+      "duration_days": 6,
+      "available_dates": "Year-round departures",
+      "group_size": "2–12",
+      "included": [
+        "Cliff resort",
+        "Breakfast",
+        "Cruise",
+        "Temple guides"
+      ],
+      "excluded": [
+        "Flights",
+        "Visa",
+        "Lunch & dinner"
+      ],
+      "accommodation": "Cliff resort (4-star)",
+      "transportation": "Private driver",
+      "activities": [
+        "beaches",
+        "culture",
+        "adventure"
+      ],
+      "region_tags": [
+        "beaches"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "beaches",
+        "cliffs",
+        "temples"
+      ],
+      "interest_tags": [
+        "adventure",
+        "culture",
+        "relaxation"
+      ],
+      "mood_tags": [
+        "romantic",
+        "party"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Island & International Getaways (demo)"
+    },
+    {
+      "title": "Dubai City & Desert Experience",
+      "destination": "Dubai",
+      "lat": 25.2048,
+      "lng": 55.2708,
+      "cover_image": "/static/images/packages/dubai-skyline.jpg",
+      "short_desc": "Burj views by day, dune bashing by dusk.",
+      "itinerary": "Day 1: Marina walk and JBR beach. Day 2: Burj Khalifa + Dubai Mall. Day 3: Desert safari with BBQ dinner. Day 4: Old Dubai souks and departure.",
+      "price": 34999,
+      "currency": "INR",
+      "duration_days": 4,
+      "available_dates": "Oct–Mar departures",
+      "group_size": "2–16",
+      "included": [
+        "City hotel",
+        "Breakfast",
+        "Safari with dinner",
+        "Burj tickets"
+      ],
+      "excluded": [
+        "Flights",
+        "Visa fee",
+        "Lunch"
+      ],
+      "accommodation": "City hotel (4-star)",
+      "transportation": "Coach + 4x4 safari",
+      "activities": [
+        "sightseeing",
+        "shopping",
+        "desert safari"
+      ],
+      "region_tags": [
+        "cities",
+        "desert"
+      ],
+      "climate_tags": [
+        "warm"
+      ],
+      "scenery_tags": [
+        "skyline",
+        "desert",
+        "beaches"
+      ],
+      "interest_tags": [
+        "luxury",
+        "culture",
+        "shopping"
+      ],
+      "mood_tags": [
+        "family",
+        "luxury"
+      ],
+      "cancellation_terms": "Full refund before 7 days; 50% within 7 days.",
+      "company": "Island & International Getaways (demo)"
     }
   ]
 }

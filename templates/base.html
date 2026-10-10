@@ -2,31 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="VYBE — AI-powered travel marketplace. Discover trips that match your vibe." />
+  <meta name="theme-color" content="#0B2545" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="VYBE" />
   <title>{% block title %}VYBE — Find trips that match your vibe{% endblock %}</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='4') }}" />
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}" />
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='11') }}" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 </head>
 <body>
   <nav class="nav">
     <a class="brand" href="/">✦ VYBE</a>
-    <div class="nav-links">
+    <div class="nav-links nav-top">
       {% if current_user.is_authenticated %}
-        <a href="/packages">Explore</a>
-        <a href="/discover">Discover</a>
-        <a href="/saved">Saved <span id="nav-saved-count" class="count-badge hidden">0</span></a>
-        {% if current_user.role == 'traveler' %}<a href="/dashboard">My trips</a>{% endif %}
-        {% if current_user.role == 'traveler' %}<a href="/packing">Packing</a>{% endif %}
-        {% if current_user.role == 'traveler' %}<a href="/companion">AI Guide</a>{% endif %}
-        {% if current_user.role == 'operator' %}<a href="/operator">Dashboard</a>{% endif %}
-        {% if current_user.role == 'admin' %}<a href="/admin">Admin</a>{% endif %}
-        <a href="/chats">Chats</a>
-        <a href="/profile">Profile</a>
-        <a href="/onboarding">Preferences</a>
-        <span class="user">Hi, {{ current_user.name.split(' ')[0] }}</span>
-        <a class="btn small" href="/logout">Logout</a>
+        <div class="menu-wrap nav-menu">
+          <button id="nav-more-btn" type="button" class="btn small ghost nav-more" aria-haspopup="true" aria-expanded="false" aria-label="More options">⋮</button>
+          <div id="nav-more-menu" class="nav-dropdown hidden" role="menu" aria-label="More navigation">
+            <div class="nav-menu-head"><span class="user">Hi, {{ current_user.name.split(' ')[0] }}</span></div>
+            <a href="/discover" role="menuitem" class="{% if request.path.startswith('/discover') %}active{% endif %}">Discover</a>
+            <a href="/saved" role="menuitem" class="{% if request.path.startswith('/saved') %}active{% endif %}">Saved <span id="nav-saved-count" class="count-badge hidden">0</span></a>
+            <a href="/saved" id="nav-liked-link" role="menuitem" title="Liked packages">♥ Liked <span id="nav-like-count" class="count-badge hidden">0</span></a>
+            {% if current_user.role == 'traveler' %}<a href="/packing" role="menuitem" class="{% if request.path.startswith('/packing') %}active{% endif %}">Packing</a>{% endif %}
+            {% if current_user.role == 'operator' %}<a href="/operator" role="menuitem" class="{% if request.path.startswith('/operator') %}active{% endif %}">Dashboard</a>{% endif %}
+            {% if current_user.role == 'admin' %}<a href="/admin" role="menuitem" class="{% if request.path.startswith('/admin') %}active{% endif %}">Admin</a>{% endif %}
+            <a href="/chats" role="menuitem" class="{% if request.path.startswith('/chats') %}active{% endif %}">Chats</a>
+            <a href="/profile" role="menuitem" class="{% if request.path.startswith('/profile') %}active{% endif %}">Profile</a>
+            <a href="/logout" role="menuitem" class="btn small">Logout</a>
+          </div>
+        </div>
       {% elif request.path == '/login' %}
         <a class="btn small" href="/register">Create account</a>
       {% elif request.path == '/register' %}
@@ -52,10 +62,34 @@
     {% block content %}{% endblock %}
   </main>
 
+  {% if current_user.is_authenticated %}
+  <nav class="bottom-nav" aria-label="Primary">
+    <a href="/packages" class="bnav-item {% if request.path.startswith('/packages') %}active{% endif %}" aria-label="Explore trips">
+      <span class="bnav-icon" aria-hidden="true">🔍</span><span class="bnav-label">Explore</span>
+    </a>
+    <a href="/companion" class="bnav-item bnav-center {% if request.path.startswith('/companion') %}active{% endif %}" aria-label="AI Guide">
+      <span class="bnav-icon" aria-hidden="true">✦</span><span class="bnav-label">AI Guide</span>
+    </a>
+    {% if current_user.role == 'traveler' %}
+    <a href="/dashboard" class="bnav-item {% if request.path.startswith('/dashboard') or request.path.startswith('/saved') or request.path.startswith('/trips') %}active{% endif %}" aria-label="My trips">
+      <span class="bnav-icon" aria-hidden="true">🧳</span><span class="bnav-label">My Trips</span>
+    </a>
+    {% elif current_user.role == 'operator' %}
+    <a href="/operator" class="bnav-item {% if request.path.startswith('/operator') %}active{% endif %}" aria-label="Dashboard">
+      <span class="bnav-icon" aria-hidden="true">📊</span><span class="bnav-label">Dashboard</span>
+    </a>
+    {% elif current_user.role == 'admin' %}
+    <a href="/admin" class="bnav-item {% if request.path.startswith('/admin') %}active{% endif %}" aria-label="Admin">
+      <span class="bnav-icon" aria-hidden="true">🛡️</span><span class="bnav-label">Admin</span>
+    </a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
   <footer class="footer">
     <span><b>VYBE</b> · Your mood. Your trip. Your VYBE.</span>
   </footer>
-  <script src="{{ url_for('static', filename='js/main.js', v='2') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js', v='5') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

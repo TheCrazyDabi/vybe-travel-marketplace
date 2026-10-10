@@ -26,6 +26,8 @@ class TravelCompany(db.Model):
     business_type = db.Column(db.String(80), nullable=True)
     phone = db.Column(db.String(50), nullable=True)
     operating_regions = db.Column(db.JSON, default=list)
+    # Trust layer: marks seeded sample operators (displayed as demo, never as verified)
+    is_demo = db.Column(db.Boolean, default=False)
 
     packages = db.relationship(
         "TravelPackage", backref="operator", cascade="all, delete-orphan"
@@ -49,6 +51,7 @@ class TravelCompany(db.Model):
             "business_type": self.business_type,
             "phone": self.phone,
             "operating_regions": self.operating_regions or self.service_regions or [],
+            "is_demo": bool(self.is_demo),
         }
 
 

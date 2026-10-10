@@ -2,7 +2,9 @@
 {% block content %}
 <section class="hero hero-video">
   <!-- Decorative looping aerial coastline video (Wikimedia Commons, freely licensed).
-       Poster + ocean-gradient fallback show if playback fails or reduced motion is set. -->
+       Poster <img> guarantees full cover even before / without video; ocean-gradient
+       fallback shows if all media fails or reduced motion is set. -->
+  <img class="hero-poster" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80" alt="" aria-hidden="true" tabindex="-1" />
   <video id="hero-video" class="hero-bg" autoplay muted loop playsinline
          poster="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80" aria-hidden="true" tabindex="-1">
     <source src="https://upload.wikimedia.org/wikipedia/commons/4/40/Aerial_views_of_the_Great_Ocean_Road_and_nearby_coastline_in_Victoria%2C_Australia.webm" type="video/webm" />
@@ -20,7 +22,6 @@
     <div class="cta-row">
       {% if current_user.is_authenticated %}
         <a class="btn primary" href="/discover">Start swiping</a>
-        <a class="btn ghost" href="/onboarding">Update preferences</a>
       {% else %}
         <a class="btn primary" href="/register">Find your VYBE</a>
       {% endif %}
@@ -33,8 +34,11 @@
 (function () {
   var v = document.getElementById('hero-video');
   if (!v) return;
-  var still = function () { v.remove(); };  // poster/gradient fallback remains
+  var play = function () { v.classList.add('is-playing'); };  // reveal only real frames — never letterbox bars
+  var still = function () { v.remove(); };  // poster <img> + gradient fallback remains
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { still(); return; }
+  v.addEventListener('canplay', play);
+  v.addEventListener('playing', play);
   v.addEventListener('error', still, true);
   try { var p = v.play(); if (p && p.catch) p.catch(still); } catch (e) { still(); }
 })();

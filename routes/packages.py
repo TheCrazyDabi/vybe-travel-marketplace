@@ -16,7 +16,7 @@ PACKAGE_FIELDS = (
     # Phase 2 extras
     "nights", "min_group_size", "max_group_size", "suitable_travel_styles",
     "suitable_groups", "capacity", "seats_remaining", "customization_options",
-    "images", "departure_dates_list",
+    "images", "departure_dates_list", "price_breakdown", "price_kind",
 )
 
 
@@ -34,13 +34,25 @@ def detail_page(pkg_id: int):
         score, reasons, explanation = score_package(pkg, current_user.profile.to_dict())
     # traveller's enquiry for this package (if any)
     my_enquiry = None
+    quotations = []
+    my_offers = []
     if current_user.is_authenticated:
         my_enquiry = Enquiry.query.filter_by(
             traveler_id=current_user.id, package_id=pkg.id
         ).order_by(Enquiry.updated_at.desc()).first()
+        if my_enquiry:
+            quotations = sorted(my_enquiry.quotations, key=lambda q: q.id or 0)
+    from models.custom_offer import CustomOffer
+    if current_user.is_authenticated:
+        my_offers = CustomOffer.query.filter_by(
+            traveler_id=current_user.id, package_id=pkg.id
+        ).order_by(CustomOffer.version.desc()).all()
+    from models.review import Review
+    reviews = Review.query.filter_by(package_id=pkg.id, status="visible").order_by(
+        Review.created_at.desc()).limit(20).all()
     return render_template(
         "package_detail.html", pkg=pkg, score=score, reasons=reasons, explanation=explanation,
-        my_enquiry=my_enquiry,
+        my_enquiry=my_enquiry, quotations=quotations, my_offers=my_offers, reviews=reviews,
     )
 
 
@@ -150,7 +162,13 @@ def api_create():
         customization_options=data.get("customization_options"),
         images=data.get("images", []),
         departure_dates_list=data.get("departure_dates_list", []),
+        price_breakdown=data.get("price_breakdown"),
+        price_kind=(data.get("price_kind") if current_user.role == "admin"
+                    and data.get("price_kind") in ("demo_estimate", "operator_quote", "confirmed")
+                    else "operator_quote"),
     )
+    from datetime import datetime as _dt
+    pkg.price_confirmed_at = _dt.utcnow()
     # admin without company: attach to first approved company for demo
     if pkg.operator_id is None:
         from models import TravelCompany
@@ -197,7 +215,14 @@ def api_update(pkg_id: int):
             return jsonify({"error": "group sizes must be integers"}), 400
     for field in PACKAGE_FIELDS:
         if field in data:
+            if field == "price_kind" and current_user.role != "admin" and data[field] == "demo_estimate":
+                continue  # only seed/admin may mark demo estimates
             setattr(pkg, field, data[field])
+    from datetime import datetime as _dt2
+    if any(k in data for k in ("price", "price_breakdown")):
+        pkg.price_confirmed_at = _dt2.utcnow()
+        if not pkg.price_kind:
+            pkg.price_kind = "operator_quote"
     db.session.commit()
     return jsonify({"package": pkg.to_dict()})
 

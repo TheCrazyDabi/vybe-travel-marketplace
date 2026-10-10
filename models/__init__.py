@@ -15,6 +15,8 @@ from .booking import Booking, Enquiry, Quotation  # noqa: E402,F401
 from .companion import (  # noqa: E402,F401
     CompanionMessage, PackItem, Stop, StopActivity, TripDay, TripPlan,
 )
+from .custom_offer import CustomOffer  # noqa: E402,F401
+from .review import Review  # noqa: E402,F401
 
 __all__ = [
     "db",
@@ -37,4 +39,6 @@ __all__ = [
     "StopActivity",
     "PackItem",
     "CompanionMessage",
+    "CustomOffer",
+    "Review",
 ]

@@ -3,7 +3,10 @@ from flask_login import current_user, login_required
 
 from models import Interest, TravelerProfile, TravelPackage, UserPreference, db
 from models.booking import Booking, Enquiry
-from services.recommendation import apply_swipe_boost, rank_packages
+from services.recommendation import (
+    apply_match_intelligence, apply_swipe_boost, closest_matches,
+    detect_contradictions, rank_packages,
+)
 from services.vybe_ai import extract_preferences, onboarding_reply
 
 traveler_bp = Blueprint("traveler", __name__)
@@ -290,9 +293,16 @@ def dashboard():
         .limit(100)
         .all()
     )
+    from models.custom_offer import CustomOffer
+    offers = (
+        CustomOffer.query.filter_by(traveler_id=current_user.id)
+        .order_by(CustomOffer.updated_at.desc())
+        .limit(100)
+        .all()
+    )
     return render_template(
         "traveler_dashboard.html", interests=interests, enquiries=enquiries, bookings=bookings,
-        profile=current_user.profile,
+        offers=offers, profile=current_user.profile,
     )
 
 
@@ -411,7 +421,12 @@ def api_recommended():
     if q:
         pkgs = [p for p in pkgs if q in (p.title or "").lower() or q in (p.destination or "").lower()]
     if region:
-        pkgs = [p for p in pkgs if region in [str(t).lower() for t in ((p.region_tags or []) + (p.scenery_tags or []))] or region in (p.destination or "").lower()]
+        wants = [w.strip() for w in region.split(",") if w.strip()]
+        def _matches(p):
+            tags = [str(t).lower() for t in ((p.region_tags or []) + (p.scenery_tags or []))]
+            dest = (p.destination or "").lower()
+            return any(w in tags or w in dest for w in wants)
+        pkgs = [p for p in pkgs if _matches(p)]
     if min_price is not None:
         pkgs = [p for p in pkgs if (p.price or 0) >= min_price]
     if max_price is not None:
@@ -421,8 +436,12 @@ def api_recommended():
     if max_duration is not None:
         pkgs = [p for p in pkgs if (p.duration_days or 0) <= max_duration]
     if style:
-        pkgs = [p for p in pkgs if style in [str(t).lower() for t in (p.suitable_travel_styles or [])]
-                or style in (p.accommodation or "").lower()]
+        wants = [w.strip() for w in style.split(",") if w.strip()]
+        pkgs = [p for p in pkgs if any(
+            w in [str(t).lower() for t in (p.suitable_travel_styles or [])]
+            or w in (p.accommodation or "").lower()
+            or w in [str(t).lower() for t in ((p.interest_tags or []) + (p.mood_tags or []))]
+            for w in wants)]
     if accom:
         pkgs = [p for p in pkgs if accom in (p.accommodation or "").lower()
                 or accom in [str(t).lower() for t in (p.suitable_travel_styles or [])]]
@@ -430,16 +449,33 @@ def api_recommended():
         pkgs = [p for p in pkgs if p.operator and operator in (p.operator.company_name or "").lower()]
     prefs = _prefs_dict()
     weights = current_user.preference.weights if current_user.preference else None
+    total_active = TravelPackage.query.filter_by(is_active=True).count()
+    if total_active == 0:
+        return jsonify({"packages": [], "prefs": prefs,
+                        "setup_notice": "No packages in the database yet (demo). Run: py seed.py --demo"})
     ranked = rank_packages(pkgs, prefs, weights)
     if min_score is not None:
         ranked = [r for r in ranked if r["score"] >= min_score]
-    # swipe-history boost (transparent, only with >=3 likes)
+    # VYBE Match Intelligence v1: likes + saves + enquiries up, passes damped down.
+    # Onboarding prefs stay primary; history only re-ranks (never excludes).
     try:
-        liked_ids_all = [i.package_id for i in Interest.query.filter_by(traveler_id=current_user.id, action="like").all()]
-        if len(liked_ids_all) >= 3:
-            from models import TravelPackage as TP
-            liked_pkgs = TP.query.filter(TP.id.in_(liked_ids_all)).all()
-            ranked = apply_swipe_boost(ranked, liked_pkgs)
+        from models import TravelPackage as TP
+        from models.booking import Enquiry as EnqM
+
+        def _pkgs(ids):
+            ids = list({i for i in ids if i})
+            return TP.query.filter(TP.id.in_(ids)).all() if ids else []
+
+        liked = _pkgs([i.package_id for i in Interest.query.filter_by(
+            traveler_id=current_user.id, action="like").all()])
+        saved = _pkgs([i.package_id for i in Interest.query.filter_by(
+            traveler_id=current_user.id, action="save").all()])
+        passed = _pkgs([i.package_id for i in Interest.query.filter_by(
+            traveler_id=current_user.id, action="pass").all()])
+        enq_ids = [e.package_id for e in EnqM.query.filter_by(traveler_id=current_user.id).all()]
+        enquired = _pkgs(enq_ids)
+        ranked = apply_match_intelligence(
+            ranked, {"liked": liked, "saved": saved, "passed": passed, "enquired": enquired})
     except Exception:
         pass
     # exclude passed (hide) from deck; keep favourites/saves visible in panels
@@ -465,4 +501,64 @@ def api_recommended():
         d["is_liked"] = r["package"].id in liked_ids
         d["is_saved"] = r["package"].id in saved_ids
         out.append(d)
-    return jsonify({"packages": out, "prefs": prefs})
+    payload = {"packages": out, "prefs": prefs}
+    # contradiction clarification (never silent guessing)
+    contra = detect_contradictions(prefs)
+    if contra:
+        payload["clarification"] = contra
+    # Refined swipe-deck queries (?deck=1 from Discover, or ?closest=1) always
+    # return a usable deck: if exact filters leave the deck thin (<5), soft
+    # preferences are relaxed automatically (hard budget ceiling kept) and the
+    # top-up is honestly labelled. Bare API calls stay exact, and a truly
+    # impossible query (e.g. budget below every price) returns an explained
+    # empty deck. ?strict=1 always opts out.
+    strict_mode = (request.args.get("strict") or "").lower() in ("1", "true", "yes")
+    want_topup = not strict_mode and any(
+        (request.args.get(k) or "").lower() in ("1", "true", "yes") for k in ("deck", "closest"))
+    strict = {"region": region, "style": style, "accommodation": accom,
+              "operator": operator, "min_score": request.args.get("min_score"),
+              "min_price": request.args.get("min_price"),
+              "min_duration": request.args.get("min_duration"), "q": q,
+              "max_price": request.args.get("max_price"),
+              "max_duration": request.args.get("max_duration")}
+
+    def _relax():
+        all_pkgs = TravelPackage.query.filter_by(is_active=True).all()
+        return closest_matches(all_pkgs, prefs, strict, weights)
+
+    def _explain_empty():
+        payload["empty_reason"] = (
+            "These filters are stricter than everything in the demo catalogue "
+            "(even after relaxing soft preferences, the budget ceiling was kept). "
+            "Try widening the budget or dates, or edit preferences.")
+        payload["suggest_widen"] = True
+
+    if want_topup and len(out) < 5:
+        exact_n = len(out)
+        seen = {d["id"] for d in out}
+        relaxed_ranked, relaxed_fields, _note = _relax()
+        target = 10 if exact_n == 0 else 5
+        for r in relaxed_ranked:
+            if len(out) >= target:
+                break
+            if r["package"].id in seen or r["package"].id in swiped_ids:
+                continue
+            seen.add(r["package"].id)
+            out.append({**r["package"].to_dict(), "match_score": r["score"],
+                        "match_reasons": r["reasons"], "match_explanation": r["explanation"],
+                        "closest_match": True})
+        payload["relaxed"] = relaxed_fields
+        if not out:
+            payload["note"] = ("No exact matches, and nothing fit even after relaxing soft "
+                               "preferences (budget ceiling kept).")
+            _explain_empty()
+        elif exact_n == 0:
+            payload["note"] = ("No exact matches for those filters — showing the "
+                               "closest trips instead. Relaxed: "
+                               + ", ".join(relaxed_fields) + ".")
+        elif len(out) > exact_n:
+            payload["note"] = (f"Only {exact_n} exact match(es) — topped up with closest "
+                               "matches. Relaxed: " + ", ".join(relaxed_fields) + ".")
+    elif not out:
+        _explain_empty()
+    return jsonify(payload)
