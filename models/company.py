@@ -21,6 +21,12 @@ class TravelCompany(db.Model):
     is_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Phase 2: operator onboarding extras (additive)
+    contact_person = db.Column(db.String(120), nullable=True)
+    business_type = db.Column(db.String(80), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+    operating_regions = db.Column(db.JSON, default=list)
+
     packages = db.relationship(
         "TravelPackage", backref="operator", cascade="all, delete-orphan"
     )
@@ -39,6 +45,10 @@ class TravelCompany(db.Model):
             "logo": self.logo,
             "status": self.status,
             "is_verified": self.is_verified,
+            "contact_person": self.contact_person,
+            "business_type": self.business_type,
+            "phone": self.phone,
+            "operating_regions": self.operating_regions or self.service_regions or [],
         }
 
 

@@ -1,17 +1,70 @@
 {% extends "base.html" %}
 {% block title %}Discover — VYBE{% endblock %}
 {% block content %}
-<h1>Swipe your VYBE</h1>
-<p class="muted">Right = interested · Left = pass · Tap card for details. Works with mouse, touch & buttons.</p>
-<div class="swipe-wrap">
-  <div id="card-stack"></div>
-  <div id="empty-state" class="empty hidden">All caught up! <a href="/saved">See saved & interests</a> or <a href="/onboarding">tweak preferences</a>.</div>
-  <div class="swipe-actions">
-    <button id="btn-pass" class="btn ghost big">✕ Pass</button>
-    <button id="btn-detail" class="btn ghost big">Details</button>
-    <button id="btn-like" class="btn primary big">♥ Interested</button>
+<div class="discover-head">
+  <div>
+    <h1 style="margin:0">Swipe your VYBE</h1>
+    <p class="muted" style="margin:4px 0">Right = interested (creates enquiry, no charge) · Left = pass · ♥ = favourite only · ☆ = save</p>
   </div>
-  <p id="swipe-status" class="muted"></p>
+  <div class="cta-row" style="margin:0">
+    <a class="btn small ghost" href="/onboarding">Start Swiping / Preferences</a>
+    <a class="btn small ghost" href="/dashboard">My trips</a>
+  </div>
+</div>
+
+<details class="filters" id="filters-panel">
+  <summary>Filters (optional — onboarding prefs are the default)</summary>
+  <div class="form-grid">
+    <label>Destination<input id="f-destination" class="input" placeholder="Munnar, Goa…" /></label>
+    <label>Min ₹<input id="f-min-price" type="number" min="0" class="input" /></label>
+    <label>Max ₹<input id="f-max-price" type="number" min="0" class="input" /></label>
+    <label>Min days<input id="f-min-dur" type="number" min="1" class="input" /></label>
+    <label>Max days<input id="f-max-dur" type="number" min="1" class="input" /></label>
+    <label>Style<input id="f-style" class="input" placeholder="comfort, luxury…" /></label>
+    <label>Stay<input id="f-accom" class="input" placeholder="hotel, homestay…" /></label>
+    <label>Operator<input id="f-operator" class="input" placeholder="company name…" /></label>
+    <label>Min score<input id="f-min-score" type="number" min="0" max="100" class="input" placeholder="70" /></label>
+  </div>
+  <div class="cta-row">
+    <button class="btn small primary" id="f-apply" type="button">Apply</button>
+    <button class="btn small ghost" id="f-clear" type="button">Clear</button>
+  </div>
+</details>
+
+<div class="discover-layout">
+  <button id="btn-prev" class="nav-arrow" aria-label="Previous package" title="Previous (←)">‹</button>
+  <div class="swipe-wrap">
+    <div id="card-stack" aria-live="polite"></div>
+    <div id="empty-state" class="empty hidden">All caught up! <a href="/saved">See saved & liked</a> or <a href="/onboarding">tweak preferences</a>.</div>
+    <div class="swipe-actions">
+      <button id="btn-pass" class="btn ghost circle" aria-label="Pass">✕</button>
+      <button id="btn-like" class="btn ghost circle" aria-label="Like favourite">♥</button>
+      <button id="btn-interested" class="btn primary big" aria-label="Interested">♥ Interested</button>
+      <button id="btn-save" class="btn ghost circle" aria-label="Save">☆</button>
+    </div>
+    <div class="toolbar">
+      <button id="btn-detail" class="btn small ghost">View details</button>
+      <button id="btn-share" class="btn small ghost">Share</button>
+      <button id="btn-undo" class="btn small ghost">↩ Undo</button>
+      <div class="menu-wrap">
+        <button id="btn-more" class="btn small ghost" aria-haspopup="true">⋯ More</button>
+        <div id="more-menu" class="menu hidden">
+          <button id="m-hide" type="button">Hide this package</button>
+          <button id="m-report" type="button">Report incorrect info</button>
+          <button id="m-operator" type="button">View operator</button>
+        </div>
+      </div>
+    </div>
+    <p id="swipe-status" class="muted" role="status"></p>
+  </div>
+  <button id="btn-next" class="nav-arrow" aria-label="Next package" title="Next (→)">›</button>
+</div>
+
+<div id="detail-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Package details">
+  <div class="modal-card">
+    <div class="cta-row" style="justify-content:space-between"><b id="dm-title">Trip</b><button id="dm-close" class="btn small ghost">Close ✕</button></div>
+    <div id="dm-body"></div>
+  </div>
 </div>
 {% endblock %}
 {% block scripts %}

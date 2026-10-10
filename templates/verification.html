@@ -2,14 +2,35 @@
 {% block title %}Company verification — VYBE{% endblock %}
 {% block content %}
 <h1>Company profile & verification</h1>
-<p class="muted">Demo flow: submit → admin approves → verified badge. Demo approvals are sample data, not real verification.</p>
+<p class="muted">Demo flow: submit → admin approves → verified badge. Demo approvals are sample data, not real verification. New operators stay <b>pending</b> until reviewed.</p>
+{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
 <form method="post" enctype="multipart/form-data" class="form wide">
-  <label>Company name<input name="company_name" class="input" value="{{ company.company_name if company else '' }}" required /></label>
-  <label>Business email<input name="business_email" class="input" value="{{ company.business_email if company else '' }}" /></label>
+  <label>Company name*<input name="company_name" class="input" value="{{ company.company_name if company else '' }}" required /></label>
+  <div class="form-grid">
+    <label>Contact person<input name="contact_person" class="input" value="{{ company.contact_person if company else '' }}" /></label>
+    <label>Business email<input name="business_email" class="input" value="{{ company.business_email if company else '' }}" /></label>
+    <label>Phone<input name="phone" class="input" value="{{ company.phone or company.contact_details if company else '' }}" /></label>
+    <label>Business type
+      <select name="business_type" class="input">
+        <option value="">—</option>
+        {% for t in ['operator','agency','homestay','transport','guide','other'] %}
+        <option value="{{ t }}" {% if company and company.business_type==t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
   <label>Contact details<input name="contact_details" class="input" value="{{ company.contact_details if company else '' }}" /></label>
-  <label>Description<textarea name="description" class="input" rows="3">{{ company.description if company else '' }}</textarea></label>
+  <label>Business description<textarea name="description" class="input" rows="3">{{ company.description if company else '' }}</textarea></label>
+  <label>Operating regions (hold Ctrl to multi-select)
+    <select name="operating_regions" class="input" multiple size="5">
+      {% for r in ['Kerala','Goa','Tamil Nadu','Karnataka','Rajasthan','Himachal',' pan-India'] %}
+      <option value="{{ r.strip() }}" {% if company and r.strip() in ((company.operating_regions or company.service_regions) or []) %}selected{% endif %}>{{ r.strip() }}</option>
+      {% endfor %}
+    </select>
+  </label>
   <label>Licence / registration info<input name="licence_info" class="input" value="{{ company.licence_info if company else '' }}" /></label>
   <label>Supporting document (png/jpg/pdf, ≤5MB)<input type="file" name="document" class="input" /></label>
+  {% if company and company.document_path %}<p class="muted small">Uploaded: {{ company.document_path }}</p>{% endif %}
   <button class="btn primary" type="submit">Submit for verification</button>
 </form>
 {% endblock %}

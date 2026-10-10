@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}My trips — VYBE{% endblock %}
+{% block content %}
+<h1>My trips</h1>
+<p><a class="btn primary" href="/discover">Discover</a> <a class="btn ghost" href="/onboarding">Edit preferences</a> <a class="btn ghost" href="/saved">Saved</a></p>
+
+<h2>Active enquiries</h2>
+{% if enquiries %}
+<table class="table"><tr><th>ID</th><th>Package</th><th>Status</th><th>Total</th><th>Action</th></tr>
+{% for e in enquiries %}
+<tr>
+  <td>#{{ e.id }}</td>
+  <td><a href="/packages/{{ e.package_id }}">{{ e.package.title if e.package else e.package_id }}</a></td>
+  <td><span class="badge">{{ e.status }}</span></td>
+  <td>{% if e.total_cost %}₹{{ "{:,}".format(e.total_cost) }}{% else %}—{% endif %}</td>
+  <td>
+    {% if e.status in ['quote_received','awaiting_traveller'] %}
+    <button class="btn small primary" onclick="confirmEnq({{ e.id }})">Accept & confirm</button>
+    <button class="btn small ghost" onclick="declineEnq({{ e.id }})">Decline</button>
+    {% elif e.status not in ['confirmed','rejected','cancelled'] %}
+    <button class="btn small ghost" onclick="cancelEnq({{ e.id }})">Cancel</button>
+    {% endif %}
+    <a class="btn small ghost" href="/packages/{{ e.package_id }}">View</a>
+  </td>
+</tr>
+{% if e.quotations %}
+<tr><td></td><td colspan="4" class="muted small">
+  {% for q in e.quotations %}[Quote #{{ q.id }}: ₹{{ "{:,}".format(q.price_per_person) }}/person, total ₹{{ "{:,}".format(q.total_price or 0) }} — {{ q.status }}{% if q.message %}: {{ q.message }}{% endif %}] {% endfor %}
+</td></tr>
+{% endif %}
+{% endfor %}
+</table>
+{% else %}<p class="muted">No enquiries yet — swipe right or send an enquiry from a package.</p>{% endif %}
+
+<h2>Bookings</h2>
+{% if bookings %}
+<table class="table"><tr><th>ID</th><th>Package</th><th>Total</th><th>Status</th><th>Payment (demo)</th><th></th></tr>
+{% for b in bookings %}
+<tr><td>#{{ b.id }}</td><td><a href="/packages/{{ b.package_id }}">{{ b.package.title if b.package else b.package_id }}</a></td>
+<td>₹{{ "{:,}".format(b.total_cost or 0) }}</td><td>{{ b.status }}</td><td class="muted small">{{ b.payment_status }}</td>
+<td>{% if b.status!='cancelled' %}<button class="btn small ghost" onclick="cancelBooking({{ b.id }})">Cancel</button>{% endif %}</td></tr>
+{% endfor %}
+</table>
+{% else %}<p class="muted">No bookings yet.</p>{% endif %}
+
+<h2>Likes & saves</h2>
+<div class="grid">
+{% for i in interests %}
+  <a class="card" href="/packages/{{ i.package_id }}">
+    <img src="{{ i.package.cover_image if i.package else '' }}" alt="" loading="lazy" />
+    <div class="card-body"><b>{{ i.package.title if i.package else 'Trip #' ~ i.package_id }}</b>
+    <span class="badge">{{ i.action }}</span><span class="muted small">{{ i.created_at }}</span></div>
+  </a>
+{% else %}<p class="muted">Nothing yet.</p>{% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function confirmEnq(id){
+  const details = {name: prompt('Traveller name for booking?')||'', phone: prompt('Phone?')||''};
+  const r = await fetch(`/api/enquiries/${id}/confirm`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({traveller_details:details})});
+  location.reload();
+}
+async function declineEnq(id){ await fetch(`/api/enquiries/${id}/decline`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({})}); location.reload(); }
+async function cancelEnq(id){ await fetch(`/api/enquiries/${id}/cancel`, {method:'POST'}); location.reload(); }
+async function cancelBooking(id){ await fetch(`/api/bookings/${id}/cancel`, {method:'POST'}); location.reload(); }
+</script>
+{% endblock %}

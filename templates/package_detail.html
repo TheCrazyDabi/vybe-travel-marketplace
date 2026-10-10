@@ -3,29 +3,49 @@
 {% block content %}
 <a href="/packages" class="muted">← All trips</a>
 <div class="detail">
-  <img src="{{ pkg.cover_image }}" alt="{{ pkg.destination }}" />
+  <div>
+    <img src="{{ pkg.cover_image }}" alt="{{ pkg.destination }}" />
+    {% if pkg.images %}
+    <div class="badge-row" style="margin-top:8px">
+      {% for im in pkg.images[:4] %}<img src="{{ im }}" alt="" loading="lazy" style="width:80px;height:60px;object-fit:cover;border-radius:10px" />{% endfor %}
+    </div>
+    {% endif %}
+  </div>
   <div>
     <h1>{{ pkg.title }}</h1>
-    <p class="muted">{{ pkg.destination }} · {{ pkg.duration_days }} days · <b>₹{{ "{:,}".format(pkg.price) }}</b>
+    <p class="muted">{{ pkg.destination }} · {{ pkg.duration_days }} days{% if pkg.nights is not none %} / {{ pkg.nights }} nights{% endif %} · <b>₹{{ "{:,}".format(pkg.price) }}</b> / person
       {% if pkg.operator %} · by {{ pkg.operator.company_name }}
         {% if pkg.operator.is_verified %}<span class="badge verified">✓ Verified</span>{% else %}<span class="badge">Unverified demo</span>{% endif %}
       {% endif %}
+      <span class="badge">{{ pkg.availability_status if pkg.availability_status else ('Available' if pkg.is_active else 'Hidden') }}</span>
     </p>
-    {% if score %}<div class="match">Match {{ score }} — {{ explanation }}</div>{% endif %}
+    {% if score %}<div class="match">Match {{ score }} — {{ explanation }}</div>
+    <p class="muted small">{{ reasons|join(' · ') }}</p>{% endif %}
     <p>{{ pkg.short_desc }}</p>
     <h3>Itinerary</h3><p>{{ pkg.itinerary }}</p>
     <div class="cols">
-      <div><h4>Included</h4><ul>{% for x in pkg.included or [] %}<li>{{ x }}</li>{% endfor %}</ul></div>
+      <div><h4>Included</h4><ul>{% for x in pkg.included or [] %}<li>{{ x }}</li>{% endfor %}</ul>
+      <h4>Excluded</h4><ul>{% for x in pkg.excluded or [] %}<li>{{ x }}</li>{% endfor %}</ul></div>
       <div><h4>Details</h4>
-        <p class="muted">Stay: {{ pkg.accommodation }}<br/>Travel: {{ pkg.transportation }}<br/>Group: {{ pkg.group_size }}<br/>Dates: {{ pkg.available_dates }}</p>
+        <p class="muted">Stay: {{ pkg.accommodation }}<br/>Travel: {{ pkg.transportation }}<br/>Group: {{ pkg.group_size }}{% if pkg.min_group_size or pkg.max_group_size %} ({{ pkg.min_group_size or '?' }}–{{ pkg.max_group_size or '?' }}){% endif %}<br/>Dates: {{ pkg.available_dates }}<br/>Seats: {{ pkg.seats_remaining if pkg.seats_remaining is not none else '—' }}<br/>Styles: {{ (pkg.suitable_travel_styles or [])|join(', ') }}<br/>Groups: {{ (pkg.suitable_groups or [])|join(', ') }}</p>
+        <h4>Cancellation</h4><p class="muted small">{{ pkg.cancellation_terms or 'Contact operator.' }}</p>
+        {% if pkg.customization_options %}<h4>Customizable</h4><p class="muted small">{{ pkg.customization_options }}</p>{% endif %}
       </div>
     </div>
     <div class="cta-row">
       <button class="btn primary" onclick="expressInterest({{ pkg.id }})">♥ I'm interested</button>
       <button class="btn ghost" onclick="savePkg({{ pkg.id }})">Bookmark</button>
       <button class="btn ghost" onclick="startChat({{ pkg.operator.id if pkg.operator else 'null' }}, {{ pkg.id }})">Chat with operator</button>
+      <button class="btn ghost" onclick="sendEnquiry({{ pkg.id }})">Send enquiry</button>
+    </div>
+    <div class="form-grid" style="margin-top:10px">
+      <label>Travellers<input id="enq-num" type="number" min="1" max="100" value="2" class="input" /></label>
+      <label>Date<input id="enq-date" type="date" class="input" /></label>
     </div>
     <p id="detail-status" class="muted"></p>
+    {% if my_enquiry %}
+    <div class="match">Your enquiry: <b>{{ my_enquiry.status }}</b> (#{{ my_enquiry.id }}) — <a href="/dashboard">track in My trips</a></div>
+    {% endif %}
   </div>
 </div>
 <div id="map" class="map"></div>
@@ -38,8 +58,15 @@ if (LAT && LNG && window.L) {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '© OpenStreetMap contributors'}).addTo(m);
   L.marker([LAT, LNG]).addTo(m).bindPopup({{ (pkg.title + ' — ' + pkg.destination)|tojson }}).openPopup();
 } else { document.getElementById('map').innerHTML = '<p class="muted">Map unavailable for this package.</p>'; }
-async function expressInterest(id){ await fetch(`/api/packages/${id}/swipe`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'like'})}); document.getElementById('detail-status').textContent='Interest recorded! The operator can now see it.'; }
+async function expressInterest(id){ await fetch(`/api/packages/${id}/swipe`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'like'})}); document.getElementById('detail-status').textContent='Interest recorded! The operator can now see it. No charge, no booking yet.'; }
 async function savePkg(id){ await fetch(`/api/packages/${id}/save`, {method:'POST'}); document.getElementById('detail-status').textContent='Bookmarked ✓'; }
 async function startChat(companyId, packageId){ const r = await fetch('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({company_id: companyId, package_id: packageId})}); const j = await r.json(); if(j.conversation) location.href = `/chats/${j.conversation.id}`; }
+async function sendEnquiry(id){
+  const num = parseInt((document.getElementById('enq-num')||{}).value||'2',10);
+  const date = (document.getElementById('enq-date')||{}).value||'';
+  const r = await fetch('/api/enquiries', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({package_id:id, num_travellers:num, travel_date:date})});
+  const j = await r.json();
+  document.getElementById('detail-status').textContent = r.ok ? `Enquiry ${j.enquiry.status} (#${j.enquiry.id}) — track in My trips` : (j.error||'Enquiry failed');
+}
 </script>
 {% endblock %}

@@ -3,19 +3,34 @@ TITLE VYBE - Your mood. Your trip. Your VYBE.
 cd /d %~dp0
 setlocal
 
-REM --- Check Python ---
-where python >nul 2>nul
-if errorlevel 1 (
+REM --- Check Python (prefer py launcher; avoids MS Store stub) ---
+set PYCMD=
+py --version >nul 2>nul
+if not errorlevel 1 (
+  set PYCMD=py
+) else (
+  python --version >nul 2>nul
+  if not errorlevel 1 (
+    set PYCMD=python
+  ) else (
+    python3 --version >nul 2>nul
+    if not errorlevel 1 set PYCMD=python3
+  )
+)
+if "%PYCMD%"=="" (
   echo [ERROR] Python not found on PATH. Install Python 3.11+ from https://www.python.org/downloads/
   echo         Make sure "Add python.exe to PATH" is checked during install.
+  echo         Or install from Microsoft Store, or use the 'py' launcher.
   pause
   exit /b 1
 )
+echo Using Python: %PYCMD%
+%PYCMD% --version
 
 REM --- Create venv on first run ---
 if not exist .venv\Scripts\python.exe (
   echo Creating virtual environment...
-  python -m venv .venv
+  %PYCMD% -m venv .venv
   if errorlevel 1 (
     echo [ERROR] Failed to create virtual environment.
     pause

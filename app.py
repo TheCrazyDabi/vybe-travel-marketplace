@@ -33,6 +33,7 @@ def create_app(config_class=Config):
 
     from routes.admin import admin_bp
     from routes.auth import auth_bp
+    from routes.bookings import bookings_bp
     from routes.main import main_bp
     from routes.messaging import messaging_bp
     from routes.operator import operator_bp
@@ -40,7 +41,7 @@ def create_app(config_class=Config):
     from routes.reports import reports_bp
     from routes.traveler import traveler_bp
 
-    for bp in (main_bp, auth_bp, traveler_bp, packages_bp, operator_bp, messaging_bp, admin_bp, reports_bp):
+    for bp in (main_bp, auth_bp, traveler_bp, packages_bp, operator_bp, messaging_bp, admin_bp, reports_bp, bookings_bp):
         app.register_blueprint(bp)
 
     @app.context_processor
@@ -86,12 +87,75 @@ def _migrate_schema():
     """
     from sqlalchemy import text
 
+    def ensure(table: str, col_ddl: dict):
+        try:
+            cols = {r[1] for r in db.session.execute(text(f"PRAGMA table_info({table})"))}
+        except Exception:
+            return
+        for col, ddl in col_ddl.items():
+            if col not in cols:
+                try:
+                    db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
+                except Exception:
+                    pass
+
     cols = {r[1] for r in db.session.execute(text("PRAGMA table_info(users)"))}
     if "status" not in cols:
         db.session.execute(text("ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'active'"))
     if "status_reason" not in cols:
         db.session.execute(text("ALTER TABLE users ADD COLUMN status_reason VARCHAR(255)"))
     db.session.execute(text("UPDATE users SET status='active' WHERE status IS NULL"))
+
+    ensure("traveler_profiles", {
+        "travel_moods": "JSON",
+        "travel_pace": "VARCHAR(20)",
+        "trip_desires": "JSON",
+        "destination_prefs": "JSON",
+        "activity_prefs": "JSON",
+        "preferred_destinations": "JSON",
+        "avoid_destinations": "JSON",
+        "preferred_region_text": "VARCHAR(200)",
+        "start_city": "VARCHAR(120)",
+        "destination_text": "VARCHAR(200)",
+        "budget_per_person": "INTEGER",
+        "budget_flex_pct": "INTEGER DEFAULT 20",
+        "travel_start_date": "VARCHAR(20)",
+        "travel_end_date": "VARCHAR(20)",
+        "date_flexible": "BOOLEAN DEFAULT 1",
+        "num_travellers": "INTEGER DEFAULT 2",
+        "accommodation_prefs": "JSON",
+        "transport_prefs": "JSON",
+        "trip_mode": "VARCHAR(20)",
+        "travel_style": "VARCHAR(20)",
+        "group_size_pref": "VARCHAR(30)",
+        "itinerary_pref": "VARCHAR(20)",
+        "priority": "VARCHAR(20)",
+        "disliked_activities": "JSON",
+        "accessibility_notes": "TEXT",
+        "dietary_notes": "TEXT",
+        "other_notes": "TEXT",
+        "ideal_trip_text": "TEXT",
+        "onboarding_completed": "BOOLEAN DEFAULT 0",
+        "onboarding_step": "INTEGER DEFAULT 1",
+    })
+    ensure("travel_companies", {
+        "contact_person": "VARCHAR(120)",
+        "business_type": "VARCHAR(80)",
+        "phone": "VARCHAR(50)",
+        "operating_regions": "JSON",
+    })
+    ensure("travel_packages", {
+        "nights": "INTEGER",
+        "min_group_size": "INTEGER",
+        "max_group_size": "INTEGER",
+        "suitable_travel_styles": "JSON",
+        "suitable_groups": "JSON",
+        "capacity": "INTEGER",
+        "seats_remaining": "INTEGER",
+        "customization_options": "TEXT",
+        "images": "JSON",
+        "departure_dates_list": "JSON",
+    })
     db.session.commit()
 
 

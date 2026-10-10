@@ -17,7 +17,9 @@
       {% if current_user.is_authenticated %}
         <a href="/discover">Discover</a>
         <a href="/map">Map</a>
-        <a href="/saved">Saved</a>
+        <a href="/saved">Saved <span id="nav-save-count" class="count-badge hidden">0</span></a>
+        <a href="/saved" id="nav-liked-link" title="Liked packages">♥ <span id="nav-like-count" class="count-badge hidden">0</span></a>
+        {% if current_user.role == 'traveler' %}<a href="/dashboard">My trips</a>{% endif %}
         {% if current_user.role == 'operator' %}<a href="/operator">Dashboard</a>{% endif %}
         {% if current_user.role == 'admin' %}<a href="/admin">Admin</a>{% endif %}
         <a href="/chats">Chats</a>

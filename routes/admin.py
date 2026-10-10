@@ -21,6 +21,8 @@ def dashboard():
 
 
 def _overview_stats():
+    from models.booking import Booking, Enquiry
+
     return {
         "users_total": User.query.count(),
         "travelers": User.query.filter_by(role="traveler").count(),
@@ -32,6 +34,10 @@ def _overview_stats():
         "packages": TravelPackage.query.filter_by(is_active=True).count(),
         "interests": Interest.query.filter_by(action="like").count(),
         "open_reports": Report.query.filter(Report.status.in_(["new", "review"])).count(),
+        "enquiries": Enquiry.query.count(),
+        "active_enquiries": Enquiry.query.filter(Enquiry.status.notin_(["confirmed", "rejected", "cancelled"])).count(),
+        "bookings": Booking.query.count(),
+        "confirmed_bookings": Booking.query.filter_by(status="confirmed").count(),
     }
 
 

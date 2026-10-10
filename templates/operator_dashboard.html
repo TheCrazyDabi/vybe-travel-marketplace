@@ -15,6 +15,7 @@
     <a class="btn small primary" href="/operator/packages/new">+ New package</a>
     {% endif %}
   </p>
+  {% if company.contact_person or company.business_type %}<p class="muted small">{{ company.contact_person or '' }} · {{ company.business_type or '' }} · {{ company.phone or '' }}</p>{% endif %}
   {% if company.status == 'pending' %}
     <p class="match">⏳ <b>Pending Verification</b> — an administrator is reviewing your company. Publishing unlocks after approval.</p>
   {% elif company.status == 'rejected' %}
@@ -27,21 +28,62 @@
       <img src="{{ p.cover_image }}" alt="" loading="lazy" />
       <div class="card-body">
         <b>{{ p.title }}</b>
-        <span class="muted">{{ p.destination }} · ₹{{ "{:,}".format(p.price) }} · {% if p.is_active %}Active{% else %}Hidden{% endif %}</span>
+        <span class="muted">{{ p.destination }} · ₹{{ "{:,}".format(p.price) }} / person · {% if p.is_active %}Active{% else %}Hidden{% endif %}{% if p.seats_remaining is not none %} · {{ p.seats_remaining }} seats{% endif %}</span>
         <span class="badge-row"><a class="btn small ghost" href="/packages/{{ p.id }}">View</a><a class="btn small ghost" href="/operator/packages/{{ p.id }}/edit">Edit</a></span>
       </div>
     </div>
     {% else %}<p class="muted">No packages yet.</p>{% endfor %}
   </div>
+  <h2>Enquiries (booking workflow)</h2>
+  {% if enquiries %}
+  <table class="table"><tr><th>ID</th><th>When</th><th>Package</th><th>Traveler</th><th>Status</th><th>Quote</th></tr>
+    {% for e in enquiries %}
+    <tr>
+      <td>#{{ e.id }}</td><td class="muted small">{{ e.updated_at }}</td>
+      <td>{{ e.package.title if e.package else e.package_id }}</td>
+      <td>#{{ e.traveler_id }} (×{{ e.num_travellers or 1 }})</td>
+      <td><span class="badge">{{ e.status }}</span></td>
+      <td>
+        <div class="form-grid">
+          <input class="input" id="q-ppp-{{ e.id }}" type="number" min="0" placeholder="₹/person" value="{{ e.package.price if e.package else '' }}" />
+          <input class="input" id="q-msg-{{ e.id }}" placeholder="Quote note" />
+        </div>
+        <div class="cta-row">
+          <button class="btn small primary" onclick="sendQuote({{ e.id }})">Send quote</button>
+          <button class="btn small ghost" onclick="rejectEnq({{ e.id }})">Reject</button>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="muted">No enquiries yet — share your packages with travelers.</p>{% endif %}
+
   <h2>Incoming interests (swipe-right)</h2>
   {% if interests %}
   <table class="table"><tr><th>When</th><th>Package</th><th>Traveler</th></tr>
     {% for i in interests %}<tr><td>{{ i.created_at }}</td><td>{{ i.package.title if i.package else i.package_id }}</td><td>#{{ i.traveler_id }}</td></tr>{% endfor %}
   </table>
-  {% else %}<p class="muted">No interests yet — share your packages with travelers.</p>{% endif %}
+  {% else %}<p class="muted">No interests yet.</p>{% endif %}
+  <h2>Bookings</h2>
+  {% if bookings %}
+  <table class="table"><tr><th>ID</th><th>Enquiry</th><th>Traveler</th><th>Total</th><th>Status</th></tr>
+    {% for b in bookings %}<tr><td>#{{ b.id }}</td><td>#{{ b.enquiry_id }}</td><td>#{{ b.traveler_id }}</td><td>₹{{ "{:,}".format(b.total_cost or 0) }}</td><td>{{ b.status }} ({{ b.payment_status }})</td></tr>{% endfor %}
+  </table>
+  {% else %}<p class="muted">No bookings yet.</p>{% endif %}
   <h2>Conversations</h2>
   {% if conversations %}
   <ul>{% for c in conversations %}<li><a href="/chats/{{ c.id }}">#{{ c.id }} — package {{ c.package_id }} — {{ c.status }}</a></li>{% endfor %}</ul>
   {% else %}<p class="muted">No conversations yet.</p>{% endif %}
 {% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+async function sendQuote(id){
+  const ppp = parseInt((document.getElementById('q-ppp-'+id)||{}).value||'0',10);
+  const msg = (document.getElementById('q-msg-'+id)||{}).value||'';
+  const r = await fetch(`/api/enquiries/${id}/quote`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({price_per_person:ppp, message:msg})});
+  location.reload();
+}
+async function rejectEnq(id){ await fetch(`/api/enquiries/${id}/reject`, {method:'POST'}); location.reload(); }
+</script>
 {% endblock %}

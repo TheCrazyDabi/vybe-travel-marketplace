@@ -2,45 +2,253 @@
 {% block title %}Preferences — VYBE{% endblock %}
 {% block content %}
 <h1>What’s your travel VYBE?</h1>
+<p class="muted">5 quick steps → personalized matches. Returning? Edit any step, progress auto-saves.</p>
 {% if message %}<div class="flash success">{{ message }}</div>{% endif %}
-<form method="post" class="form wide">
-  <div class="form-grid">
-    <label>Budget max (₹)<input name="budget_max" type="number" class="input" value="{{ profile.budget_max or 15000 }}" /></label>
-    <label>Days<input name="duration_days" type="number" class="input" value="{{ profile.duration_days or 3 }}" /></label>
-    <label>Current mood
-      <select name="current_mood" class="input">
-        {% for m in ['relaxation','adventure','romantic','family','party','nature','spiritual','culture'] %}
-        <option value="{{ m }}" {% if profile.current_mood==m %}selected{% endif %}>{{ m }}</option>
-        {% endfor %}
-      </select>
+
+<div class="steps" role="progressbar" aria-label="Onboarding progress">
+  <div class="step-dot active" data-dot="1">1 Mood</div>
+  <div class="step-dot" data-dot="2">2 Places</div>
+  <div class="step-dot" data-dot="3">3 Budget</div>
+  <div class="step-dot" data-dot="4">4 Style</div>
+  <div class="step-dot" data-dot="5">5 Review</div>
+</div>
+<div class="progress"><div id="progress-bar"></div></div>
+
+<form method="post" class="form wide" id="onboard-form">
+  <input type="hidden" name="onboarding_step" id="onboarding_step" value="{{ profile.onboarding_step or 1 }}" />
+  <input type="hidden" name="onboarding_completed" id="onboarding_completed" value="" />
+
+  <!-- STEP 1 -->
+  <section class="onboard-step" data-step="1">
+    <h2>What kind of trip are you craving?</h2>
+    <p class="muted small">Pick as many as you like.</p>
+    <div class="pill-grid">
+      {% for m in ['Peaceful escape','Adventure','Beach and relaxation','Nature and wildlife','Cultural exploration','Romantic getaway','Family vacation','Luxury experience','Spiritual journey','Snow and winter','Social group trip'] %}
+      {% set key = m.lower() %}
+      <label class="pill"><input type="checkbox" name="travel_moods" value="{{ key }}" {% if key in (profile.travel_moods or []) %}checked{% endif %}/> {{ m }}</label>
+      {% endfor %}
+    </div>
+    <div class="form-grid">
+      <label>Travel pace
+        <select name="travel_pace" class="input">
+          {% for p in [('slow','Slow and relaxed'),('balanced','Balanced'),('packed','Activity-packed')] %}
+          <option value="{{ p[0] }}" {% if profile.travel_pace==p[0] %}selected{% endif %}>{{ p[1] }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Current mood (legacy)
+        <select name="current_mood" class="input">
+          {% for m in ['relaxation','adventure','romantic','family','party','nature','spiritual','culture'] %}
+          <option value="{{ m }}" {% if profile.current_mood==m %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <fieldset><legend>What do you want most? (multi)</legend>
+      {% for d in ['relaxation','excitement','romance','family bonding','socializing','discovery','personal adventure'] %}
+      <label class="chip"><input type="checkbox" name="trip_desires" value="{{ d }}" {% if d in (profile.trip_desires or []) %}checked{% endif %}/> {{ d }}</label>
+      {% endfor %}
+    </fieldset>
+    <div class="cta-row"><span></span><button type="button" class="btn primary next">Continue →</button></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="onboard-step hidden" data-step="2">
+    <h2>Where & what do you love?</h2>
+    <fieldset><legend>Destinations (multi)</legend>
+      {% for d in ['Hills and mountains','Beaches and sea','Snowy regions','Forests and wildlife','Waterfalls','Islands','Deserts','Cities and nightlife','Historical places','Religious and cultural destinations'] %}
+      {% set key = d.lower() %}
+      <label class="chip"><input type="checkbox" name="destination_prefs" value="{{ key }}" {% if key in (profile.destination_prefs or []) %}checked{% endif %}/> {{ d }}</label>
+      {% endfor %}
+    </fieldset>
+    <fieldset><legend>Activities (multi)</legend>
+      {% for a in ['Trekking','Camping','Water sports','Sightseeing','Local food','Photography','Shopping','Wildlife experiences','Wellness','Cultural activities'] %}
+      {% set key = a.lower() %}
+      <label class="chip"><input type="checkbox" name="activity_prefs" value="{{ key }}" {% if key in (profile.activity_prefs or []) %}checked{% endif %}/> {{ a }}</label>
+      {% endfor %}
+    </fieldset>
+    <div class="form-grid">
+      <label>Preferred destinations (comma separated)<input name="preferred_destinations_text" class="input" value="{{ (profile.preferred_destinations or [])|join(', ') }}" placeholder="Munnar, Goa" /></label>
+      <label>Destinations to avoid<input name="avoid_destinations_text" class="input" value="{{ (profile.avoid_destinations or [])|join(', ') }}" placeholder="e.g. crowded cities" /></label>
+    </div>
+    <label>Preferred region<input name="preferred_region_text" class="input" value="{{ profile.preferred_region_text or '' }}" placeholder="Kerala, North India…" /></label>
+    <fieldset><legend>Quick picks (legacy compatibility)</legend>
+      {% for r in ['mountains','beaches','forests','cities','desert'] %}
+      <label class="chip"><input type="checkbox" name="regions" value="{{ r }}" {% if r in (profile.preferred_regions or []) %}checked{% endif %}/> {{ r }}</label>
+      {% endfor %}
+      {% for c in ['cool','warm'] %}
+      <label class="chip"><input type="checkbox" name="climate" value="{{ c }}" {% if c in (profile.preferred_climate or []) %}checked{% endif %}/> {{ c }}</label>
+      {% endfor %}
+      {% for i in ['nature','adventure','relaxation','culture','heritage','food','wildlife','nightlife'] %}
+      <label class="chip"><input type="checkbox" name="interests" value="{{ i }}" {% if i in (profile.interests or []) %}checked{% endif %}/> {{ i }}</label>
+      {% endfor %}
+    </fieldset>
+    <div class="cta-row"><button type="button" class="btn ghost back">← Back</button><button type="button" class="btn primary next">Continue →</button></div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="onboard-step hidden" data-step="3">
+    <h2>Budget & trip needs</h2>
+    <div class="form-grid">
+      <label>Starting city<input name="start_city" class="input" value="{{ profile.start_city or '' }}" placeholder="Kochi" /></label>
+      <label>Destination / region<input name="destination_text" class="input" value="{{ profile.destination_text or '' }}" placeholder="Munnar" /></label>
+      <label>Budget per person (₹)<input name="budget_per_person" type="number" min="0" class="input" id="budget_pp" value="{{ profile.budget_per_person or profile.budget_max or 15000 }}" /></label>
+      <label>Budget max (legacy ₹)<input name="budget_max" type="number" min="0" class="input" value="{{ profile.budget_max or 15000 }}" /></label>
+      <label>Budget flex %<input name="budget_flex_pct" type="number" min="0" max="200" class="input" value="{{ profile.budget_flex_pct if profile.budget_flex_pct is not none else 20 }}" /></label>
+      <label>Days<input name="duration_days" type="number" min="1" max="365" class="input" value="{{ profile.duration_days or 3 }}" /></label>
+      <label>Travellers<input name="num_travellers" type="number" min="1" max="100" class="input" id="num_trav" value="{{ profile.num_travellers or 2 }}" /></label>
+      <label>Group
+        <select name="group_type" class="input">
+          {% for g in ['solo','friends','couple','family'] %}
+          <option value="{{ g }}" {% if profile.group_type==g %}selected{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Start date<input name="travel_start_date" type="date" class="input" value="{{ profile.travel_start_date or '' }}" /></label>
+      <label>End date<input name="travel_end_date" type="date" class="input" value="{{ profile.travel_end_date or '' }}" /></label>
+      <label>Dates
+        <select name="date_flexible" class="input">
+          <option value="1" {% if profile.date_flexible %}selected{% endif %}>Flexible</option>
+          <option value="0" {% if profile.date_flexible is sameas false %}selected{% endif %}>Fixed</option>
+        </select>
+      </label>
+      <label>Trip mode
+        <select name="trip_mode" class="input">
+          <option value="">—</option>
+          <option value="private" {% if profile.trip_mode=='private' %}selected{% endif %}>Private trip</option>
+          <option value="group" {% if profile.trip_mode=='group' %}selected{% endif %}>Group tour</option>
+        </select>
+      </label>
+    </div>
+    <p class="muted small" id="budget-hint"></p>
+    <fieldset><legend>Stay (multi)</legend>
+      {% for s in ['hotel','homestay','resort','hostel','camp','villa','houseboat'] %}
+      <label class="chip"><input type="checkbox" name="accommodation_prefs" value="{{ s }}" {% if s in (profile.accommodation_prefs or []) %}checked{% endif %}/> {{ s }}</label>
+      {% endfor %}
+    </fieldset>
+    <fieldset><legend>Transport (multi)</legend>
+      {% for t in ['flight','train','bus','cab','bike','trek','boat'] %}
+      <label class="chip"><input type="checkbox" name="transport_prefs" value="{{ t }}" {% if t in (profile.transport_prefs or []) %}checked{% endif %}/> {{ t }}</label>
+      {% endfor %}
+    </fieldset>
+    <div class="cta-row"><button type="button" class="btn ghost back">← Back</button><button type="button" class="btn primary next">Continue →</button></div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="onboard-step hidden" data-step="4">
+    <h2>Your travel style</h2>
+    <div class="form-grid">
+      <label>Style
+        <select name="travel_style" class="input">
+          <option value="">Skip</option>
+          {% for s in ['budget','comfort','premium','luxury'] %}
+          <option value="{{ s }}" {% if profile.travel_style==s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Group size
+        <select name="group_size_pref" class="input">
+          <option value="">Skip</option>
+          {% for g in ['small (2-6)','medium (7-15)','large (16+)'] %}
+          <option value="{{ g }}" {% if profile.group_size_pref==g %}selected{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Itinerary
+        <select name="itinerary_pref" class="input">
+          <option value="">Skip</option>
+          <option value="planned" {% if profile.itinerary_pref=='planned' %}selected{% endif %}>Planned itinerary</option>
+          <option value="flexible" {% if profile.itinerary_pref=='flexible' %}selected{% endif %}>Flexible exploration</option>
+        </select>
+      </label>
+      <label>Priority
+        <select name="priority" class="input">
+          <option value="">Skip</option>
+          {% for p in ['price','comfort','uniqueness'] %}
+          <option value="{{ p }}" {% if profile.priority==p %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <fieldset><legend>Disliked activities (won’t be pushed)</legend>
+      {% for a in ['trekking','nightlife','shopping','wildlife','water sports','camping'] %}
+      <label class="chip"><input type="checkbox" name="disliked_activities" value="{{ a }}" {% if a in (profile.disliked_activities or []) %}checked{% endif %}/> {{ a }}</label>
+      {% endfor %}
+    </fieldset>
+    <label>Accessibility needs (optional)<input name="accessibility_notes" class="input" value="{{ profile.accessibility_notes or '' }}" /></label>
+    <label>Dietary needs (optional)<input name="dietary_notes" class="input" value="{{ profile.dietary_notes or '' }}" /></label>
+    <label>Other needs (optional)<input name="other_notes" class="input" value="{{ profile.other_notes or '' }}" /></label>
+    <label>Describe your ideal trip<textarea name="ideal_trip_text" class="input" rows="3" placeholder="Slow mornings, tea gardens, no crowds…">{{ profile.ideal_trip_text or '' }}</textarea></label>
+    <label>Or describe in words (AI fallback parses this)
+      <textarea name="free_text" class="input" rows="2" placeholder="e.g. cool mountains, 3 days, trekking under 12000, relaxing mood"></textarea>
     </label>
-    <label>Group
-      <select name="group_type" class="input">
-        {% for g in ['solo','friends','couple','family'] %}
-        <option value="{{ g }}" {% if profile.group_type==g %}selected{% endif %}>{{ g }}</option>
-        {% endfor %}
-      </select>
-    </label>
-  </div>
-  <fieldset><legend>Regions</legend>
-    {% for r in ['mountains','beaches','forests','cities','desert'] %}
-    <label class="chip"><input type="checkbox" name="regions" value="{{ r }}" {% if r in (profile.preferred_regions or []) %}checked{% endif %}/> {{ r }}</label>
-    {% endfor %}
-  </fieldset>
-  <fieldset><legend>Climate</legend>
-    {% for c in ['cool','warm'] %}
-    <label class="chip"><input type="checkbox" name="climate" value="{{ c }}" {% if c in (profile.preferred_climate or []) %}checked{% endif %}/> {{ c }}</label>
-    {% endfor %}
-  </fieldset>
-  <fieldset><legend>Interests</legend>
-    {% for i in ['nature','adventure','relaxation','culture','heritage','food','wildlife','nightlife'] %}
-    <label class="chip"><input type="checkbox" name="interests" value="{{ i }}" {% if i in (profile.interests or []) %}checked{% endif %}/> {{ i }}</label>
-    {% endfor %}
-  </fieldset>
-  <label>Or describe in words (AI fallback parses this)
-    <textarea name="free_text" class="input" rows="2" placeholder="e.g. cool mountains, 3 days, trekking under 12000, relaxing mood"></textarea>
-  </label>
-  <button class="btn primary" type="submit">Save & get recommendations</button>
-  <a class="btn ghost" href="/discover">Go to Discover →</a>
+    <div class="cta-row"><button type="button" class="btn ghost back">← Back</button><button type="button" class="btn primary next">Review →</button></div>
+  </section>
+
+  <!-- STEP 5 -->
+  <section class="onboard-step hidden" data-step="5">
+    <h2>Review & save</h2>
+    <div id="review-box" class="empty"></div>
+    <div class="cta-row">
+      <button type="button" class="btn ghost back">← Back</button>
+      <button class="btn primary" type="submit" onclick="document.getElementById('onboarding_completed').value='1'">Save & discover →</button>
+    </div>
+    <p><a class="btn ghost" href="/discover">Go to Discover →</a></p>
+  </section>
 </form>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+  let step = parseInt(document.getElementById('onboarding_step').value || '1', 10) || 1;
+  const steps = [...document.querySelectorAll('.onboard-step')];
+  const dots = [...document.querySelectorAll('.step-dot')];
+  const bar = document.getElementById('progress-bar');
+  function show(n){
+    step = Math.max(1, Math.min(5, n));
+    steps.forEach(s => s.classList.toggle('hidden', parseInt(s.dataset.step,10) !== step));
+    dots.forEach(d => d.classList.toggle('active', parseInt(d.dataset.dot,10) <= step));
+    if(bar) bar.style.width = (step/5*100)+'%';
+    document.getElementById('onboarding_step').value = step;
+    try{ localStorage.setItem('vybe_onboard_step', String(step)); }catch(e){}
+    if(step===5) buildReview();
+    updateBudgetHint();
+  }
+  function validate(n){
+    if(n===3){
+      const b = parseInt((document.getElementById('budget_pp')||{}).value||'0',10);
+      if(b && b < 0){ alert('Budget must be >= 0'); return false; }
+    }
+    return true;
+  }
+  document.querySelectorAll('.next').forEach(b=>b.addEventListener('click',()=>{ if(validate(step)) show(step+1); }));
+  document.querySelectorAll('.back').forEach(b=>b.addEventListener('click',()=>show(step-1)));
+  dots.forEach(d=>d.addEventListener('click',()=>show(parseInt(d.dataset.dot,10))));
+  // pill highlight
+  document.querySelectorAll('.pill input, .chip input').forEach(i=>{
+    const sync=()=>i.closest('.pill,.chip').classList.toggle('selected', i.checked);
+    i.addEventListener('change',sync); sync();
+  });
+  function updateBudgetHint(){
+    const pp = parseInt((document.getElementById('budget_pp')||{}).value||'0',10);
+    const n = parseInt((document.getElementById('num_trav')||{}).value||'1',10);
+    const h = document.getElementById('budget-hint');
+    if(h && pp) h.textContent = `Per person ₹${pp.toLocaleString('en-IN')} × ${n} traveller(s) = total ~₹${(pp*n).toLocaleString('en-IN')}`;
+  }
+  document.getElementById('budget_pp')?.addEventListener('input',updateBudgetHint);
+  document.getElementById('num_trav')?.addEventListener('input',updateBudgetHint);
+  function buildReview(){
+    const f = document.getElementById('onboard-form');
+    const fd = new FormData(f);
+    const getAll = k => fd.getAll(k).join(', ') || '—';
+    document.getElementById('review-box').innerHTML =
+      `<b>Moods:</b> ${getAll('travel_moods')}<br/><b>Pace:</b> ${fd.get('travel_pace')||'—'}<br/>`+
+      `<b>Places:</b> ${getAll('destination_prefs')}<br/><b>Activities:</b> ${getAll('activity_prefs')}<br/>`+
+      `<b>Budget pp:</b> ₹${fd.get('budget_per_person')||'—'} · <b>Travellers:</b> ${fd.get('num_travellers')||'—'}<br/>`+
+      `<b>Style:</b> ${fd.get('travel_style')||'—'} · <b>Ideal:</b> ${(fd.get('ideal_trip_text')||'').slice(0,120)}`;
+  }
+  try{ const s = parseInt(localStorage.getItem('vybe_onboard_step')||'',10); if(s>=1&&s<=5) step=s; }catch(e){}
+  show(step);
+})();
+</script>
 {% endblock %}

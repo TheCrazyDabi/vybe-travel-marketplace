@@ -2,22 +2,42 @@
 {% block title %}Package editor — VYBE{% endblock %}
 {% block content %}
 <h1>{{ 'Edit' if pkg else 'New' }} package</h1>
-{% if error %}<p class="error">{{ error }}</p>{% endif %}
+{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
 <form method="post" class="form wide">
   <label>Title<input name="title" class="input" value="{{ pkg.title if pkg else '' }}" required /></label>
   <label>Destination<input name="destination" class="input" value="{{ pkg.destination if pkg else '' }}" required /></label>
   <div class="form-grid">
-    <label>Price (₹)<input name="price" type="number" class="input" value="{{ pkg.price if pkg else 9999 }}" required /></label>
-    <label>Days<input name="duration_days" type="number" class="input" value="{{ pkg.duration_days if pkg else 3 }}" /></label>
+    <label>Price per person (₹)<input name="price" type="number" min="0" class="input" value="{{ pkg.price if pkg else 9999 }}" required /></label>
+    <label>Days<input name="duration_days" type="number" min="1" max="365" class="input" value="{{ pkg.duration_days if pkg else 3 }}" /></label>
+    <label>Nights<input name="nights" type="number" min="0" class="input" value="{{ pkg.nights if pkg and pkg.nights is not none else '' }}" placeholder="auto = days-1" /></label>
+    <label>Min group<input name="min_group_size" type="number" min="0" class="input" value="{{ pkg.min_group_size if pkg and pkg.min_group_size is not none else '' }}" /></label>
+    <label>Max group<input name="max_group_size" type="number" min="0" class="input" value="{{ pkg.max_group_size if pkg and pkg.max_group_size is not none else '' }}" /></label>
+    <label>Capacity<input name="capacity" type="number" min="0" class="input" value="{{ pkg.capacity if pkg and pkg.capacity is not none else '' }}" /></label>
+    <label>Seats left<input name="seats_remaining" type="number" min="0" class="input" value="{{ pkg.seats_remaining if pkg and pkg.seats_remaining is not none else '' }}" /></label>
   </div>
   <label>Cover image URL<input name="cover_image" class="input" value="{{ pkg.cover_image if pkg else '' }}" /></label>
+  <label>More images (comma URLs)<input name="images" class="input" value="{{ (pkg.images or [])|join(', ') if pkg else '' }}" /></label>
   <label>Short description<textarea name="short_desc" class="input" rows="2">{{ pkg.short_desc if pkg else '' }}</textarea></label>
   <label>Itinerary<textarea name="itinerary" class="input" rows="4">{{ pkg.itinerary if pkg else '' }}</textarea></label>
+  <div class="form-grid">
+    <label>Group size label<input name="group_size" class="input" value="{{ pkg.group_size if pkg else '' }}" placeholder="2–12" /></label>
+    <label>Stay<input name="accommodation" class="input" value="{{ pkg.accommodation if pkg else '' }}" /></label>
+    <label>Transport<input name="transportation" class="input" value="{{ pkg.transportation if pkg else '' }}" /></label>
+    <label>Dates<input name="available_dates" class="input" value="{{ pkg.available_dates if pkg else '' }}" placeholder="Oct–Feb" /></label>
+  </div>
+  <label>Departure dates (comma YYYY-MM-DD)<input name="departure_dates_list" class="input" value="{{ (pkg.departure_dates_list or [])|join(', ') if pkg else '' }}" /></label>
+  <label>Included (comma)<input name="included" class="input" value="{{ (pkg.included or [])|join(', ') if pkg else '' }}" /></label>
+  <label>Excluded (comma)<input name="excluded" class="input" value="{{ (pkg.excluded or [])|join(', ') if pkg else '' }}" /></label>
+  <label>Activities (comma)<input name="activities" class="input" value="{{ (pkg.activities or [])|join(', ') if pkg else '' }}" /></label>
   <label>Region tags (comma separated)<input name="region_tags" class="input" value="{{ (pkg.region_tags or [])|join(', ') if pkg else 'mountains' }}" /></label>
   <label>Interest tags (comma separated)<input name="interest_tags" class="input" value="{{ (pkg.interest_tags or [])|join(', ') if pkg else 'nature, adventure' }}" /></label>
   <label>Mood tags (comma separated)<input name="mood_tags" class="input" value="{{ (pkg.mood_tags or [])|join(', ') if pkg else 'relaxation, adventure' }}" /></label>
   <label>Climate tags (comma separated)<input name="climate_tags" class="input" value="{{ (pkg.climate_tags or [])|join(', ') if pkg else 'cool' }}" /></label>
-  <label class="chip"><input type="checkbox" name="is_active" checked /> Active / visible</label>
+  <label>Suitable styles (comma: budget,comfort,premium,luxury)<input name="suitable_travel_styles" class="input" value="{{ (pkg.suitable_travel_styles or [])|join(', ') if pkg else '' }}" /></label>
+  <label>Suitable groups (comma: solo,friends,couple,family)<input name="suitable_groups" class="input" value="{{ (pkg.suitable_groups or [])|join(', ') if pkg else '' }}" /></label>
+  <label>Cancellation & rescheduling<textarea name="cancellation_terms" class="input" rows="2">{{ pkg.cancellation_terms if pkg else '' }}</textarea></label>
+  <label>Customization options<textarea name="customization_options" class="input" rows="2">{{ pkg.customization_options if pkg else '' }}</textarea></label>
+  <label class="chip"><input type="checkbox" name="is_active" {% if not pkg or pkg.is_active %}checked{% endif %} /> Active / visible</label>
   <button class="btn primary" type="submit">Save package</button>
 </form>
 {% endblock %}

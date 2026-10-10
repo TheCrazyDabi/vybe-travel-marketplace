@@ -11,6 +11,7 @@ from .package import TravelPackage  # noqa: E402,F401
 from .interaction import Interest  # noqa: E402,F401
 from .messaging import Conversation, Message  # noqa: E402,F401
 from .moderation import Report  # noqa: E402,F401
+from .booking import Booking, Enquiry, Quotation  # noqa: E402,F401
 
 __all__ = [
     "db",
@@ -24,4 +25,7 @@ __all__ = [
     "Conversation",
     "Message",
     "Report",
+    "Enquiry",
+    "Quotation",
+    "Booking",
 ]

@@ -1,19 +1,47 @@
 {% extends "base.html" %}
-{% block title %}Saved — VYBE{% endblock %}
+{% block title %}Saved & liked — VYBE{% endblock %}
 {% block content %}
-<h1>Saved & interests</h1>
-<div class="grid">
+<h1>Liked & saved</h1>
+<p class="muted">♥ Liked = favourites (no enquiry). ☆ Saved = shortlist. Interested enquiries live in <a href="/dashboard">My trips</a>.</p>
+<div class="tabs">
+  <button class="btn small ghost tab-btn" data-tab="all">All</button>
+  <button class="btn small ghost tab-btn" data-tab="like">♥ Liked</button>
+  <button class="btn small ghost tab-btn" data-tab="save">☆ Saved</button>
+</div>
+<div class="grid" id="saved-grid">
   {% for i in interests %}
-  <a class="card" href="/packages/{{ i.package_id }}">
-    <img src="{{ i.package.cover_image if i.package else '' }}" alt="" loading="lazy" />
+  <div class="card" data-action="{{ i.action }}">
+    <a href="/packages/{{ i.package_id }}"><img src="{{ i.package.cover_image if i.package else '' }}" alt="" loading="lazy" /></a>
     <div class="card-body">
       <b>{{ i.package.title if i.package else 'Trip #' ~ i.package_id }}</b>
       <span class="badge">{{ i.action }}</span>
       <span class="muted small">{{ i.created_at }}</span>
+      <span class="badge-row">
+        <a class="btn small ghost" href="/packages/{{ i.package_id }}">View details</a>
+        {% if i.action == 'like' %}<button class="btn small ghost" onclick="unlike({{ i.package_id }})">Unlike</button>{% endif %}
+        {% if i.action == 'save' %}<button class="btn small ghost" onclick="unsave({{ i.package_id }})">Remove</button>{% endif %}
+        <button class="btn small primary" onclick="interested({{ i.package_id }})">Interested</button>
+      </span>
     </div>
-  </a>
+  </div>
   {% else %}
   <p class="muted">Nothing yet — <a href="/discover">discover trips</a>.</p>
   {% endfor %}
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>{
+  const t=b.dataset.tab;
+  document.querySelectorAll('#saved-grid .card').forEach(c=>{
+    c.style.display = (t==='all' || c.dataset.action===t) ? '' : 'none';
+  });
+}));
+async function unlike(id){ await fetch(`/api/packages/${id}/like`,{method:'DELETE'}); location.reload(); }
+async function unsave(id){ await fetch(`/api/packages/${id}/save`,{method:'DELETE'}); location.reload(); }
+async function interested(id){
+  const r = await fetch('/api/enquiries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({package_id:id,num_travellers:2})});
+  if(r.ok) location.href='/dashboard'; else alert('Could not create enquiry');
+}
+</script>
 {% endblock %}

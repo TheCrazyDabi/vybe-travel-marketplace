@@ -36,6 +36,18 @@ class TravelPackage(db.Model):
     is_active = db.Column(db.Boolean, default=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Phase 2: package management extras (additive, all nullable)
+    nights = db.Column(db.Integer, nullable=True)
+    min_group_size = db.Column(db.Integer, nullable=True)
+    max_group_size = db.Column(db.Integer, nullable=True)
+    suitable_travel_styles = db.Column(db.JSON, default=list)
+    suitable_groups = db.Column(db.JSON, default=list)
+    capacity = db.Column(db.Integer, nullable=True)
+    seats_remaining = db.Column(db.Integer, nullable=True)
+    customization_options = db.Column(db.Text, nullable=True)
+    images = db.Column(db.JSON, default=list)
+    departure_dates_list = db.Column(db.JSON, default=list)
+
     def to_dict(self, include_operator=True):
         data = {
             "id": self.id,
@@ -63,6 +75,23 @@ class TravelPackage(db.Model):
             "mood_tags": self.mood_tags or [],
             "cancellation_terms": self.cancellation_terms,
             "is_active": self.is_active,
+            # Phase 2 extras
+            "nights": self.nights,
+            "min_group_size": self.min_group_size,
+            "max_group_size": self.max_group_size,
+            "suitable_travel_styles": self.suitable_travel_styles or [],
+            "suitable_groups": self.suitable_groups or [],
+            "capacity": self.capacity,
+            "seats_remaining": self.seats_remaining,
+            "customization_options": self.customization_options,
+            "images": self.images or [],
+            "departure_dates_list": self.departure_dates_list or [],
+            # availability derived from real data only (never fabricated)
+            "availability_status": (
+                "Available"
+                if (self.seats_remaining is None or (self.seats_remaining or 0) > 0) and self.is_active
+                else "Sold out / Hidden"
+            ),
         }
         if include_operator and self.operator:
             data["operator"] = {
