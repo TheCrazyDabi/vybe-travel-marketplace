@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vybe.app.auth.AuthUi
@@ -35,6 +36,7 @@ import com.vybe.app.ui.theme.Ocean
 fun LoginScreen(vm: AuthViewModel, onLoggedIn: (User) -> Unit, onRegister: () -> Unit, onServer: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var shown by remember { mutableStateOf(false) }
     val state by vm.state.collectAsState()
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp)
@@ -46,7 +48,9 @@ fun LoginScreen(vm: AuthViewModel, onLoggedIn: (User) -> Unit, onRegister: () ->
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             password, { password = it }, Modifier.fillMaxWidth(), label = { Text("Password") },
-            singleLine = true, visualTransformation = PasswordVisualTransformation()
+            singleLine = true,
+            visualTransformation = if (shown) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = { TextButton(onClick = { shown = !shown }) { Text(if (shown) "Hide" else "Show") } }
         )
         if (state is AuthUi.Error) {
             Spacer(Modifier.height(8.dp))
@@ -72,6 +76,7 @@ fun RegisterScreen(vm: AuthViewModel, onDone: (User) -> Unit, onLogin: () -> Uni
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var shown by remember { mutableStateOf(false) }
     var role by remember { mutableStateOf("traveler") }
     val state by vm.state.collectAsState()
     Column(
@@ -85,7 +90,9 @@ fun RegisterScreen(vm: AuthViewModel, onDone: (User) -> Unit, onLogin: () -> Uni
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             password, { password = it }, Modifier.fillMaxWidth(), label = { Text("Password (6+ chars)") },
-            singleLine = true, visualTransformation = PasswordVisualTransformation()
+            singleLine = true,
+            visualTransformation = if (shown) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = { TextButton(onClick = { shown = !shown }) { Text(if (shown) "Hide" else "Show") } }
         )
         Spacer(Modifier.height(12.dp))
         Text("I am a:", fontWeight = FontWeight.Bold)

@@ -5,9 +5,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -37,21 +40,30 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.vybe.app.auth.AuthViewModel
+import com.vybe.app.data.repository.ChatRepository
 import com.vybe.app.data.repository.SessionRepository
 import com.vybe.app.data.repository.TravelRepository
-import com.vybe.app.data.repository.TravelRepository
+import com.vybe.app.data.repository.TripsRepository
 import com.vybe.app.discover.DiscoverViewModel
 import com.vybe.app.navigation.Destinations
+import com.vybe.app.ui.screens.ChatDetailScreen
+import com.vybe.app.ui.screens.ChatDetailViewModel
+import com.vybe.app.ui.screens.ChatsScreen
+import com.vybe.app.ui.screens.ChatsViewModel
 import com.vybe.app.ui.screens.DetailScreen
 import com.vybe.app.ui.screens.DetailViewModel
 import com.vybe.app.ui.screens.DiscoverScreen
 import com.vybe.app.ui.screens.ExploreScreen
 import com.vybe.app.ui.screens.ExploreViewModel
 import com.vybe.app.ui.screens.LoginScreen
+import com.vybe.app.ui.screens.ProfileScreen
+import com.vybe.app.ui.screens.ProfileViewModel
 import com.vybe.app.ui.screens.RegisterScreen
 import com.vybe.app.ui.screens.SavedScreen
 import com.vybe.app.ui.screens.SavedViewModel
 import com.vybe.app.ui.screens.ServerScreen
+import com.vybe.app.ui.screens.TripsScreen
+import com.vybe.app.ui.screens.TripsViewModel
 import com.vybe.app.ui.theme.VybeTheme
 
 class MainActivity : ComponentActivity() {
@@ -70,8 +82,10 @@ private fun vmFactory(app: VybeApp): ViewModelProvider.Factory =
     object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            val session = SessionRepository(app.settings, { app.api() })
+            val session = SessionRepository(app.settings) { app.api() }
             val travel = TravelRepository { app.api() }
+            val trips = TripsRepository { app.api() }
+            val chat = ChatRepository { app.api() }
             return when {
                 modelClass.isAssignableFrom(AuthViewModel::class.java) ->
                     AuthViewModel(session, app.settings) as T
@@ -83,6 +97,14 @@ private fun vmFactory(app: VybeApp): ViewModelProvider.Factory =
                     DetailViewModel(travel) as T
                 modelClass.isAssignableFrom(SavedViewModel::class.java) ->
                     SavedViewModel(travel) as T
+                modelClass.isAssignableFrom(TripsViewModel::class.java) ->
+                    TripsViewModel(trips) as T
+                modelClass.isAssignableFrom(ChatsViewModel::class.java) ->
+                    ChatsViewModel(chat) as T
+                modelClass.isAssignableFrom(ChatDetailViewModel::class.java) ->
+                    ChatDetailViewModel(chat) as T
+                modelClass.isAssignableFrom(ProfileViewModel::class.java) ->
+                    ProfileViewModel(travel) as T
                 else -> throw IllegalArgumentException("Unknown VM")
             }
         }
@@ -93,6 +115,8 @@ private data class Tab(val route: String, val label: String, val icon: ImageVect
 private val TABS = listOf(
     Tab(Destinations.DISCOVER, "Discover", Icons.Filled.Home),
     Tab(Destinations.EXPLORE, "Explore", Icons.Filled.Search),
+    Tab(Destinations.TRIPS, "Trips", Icons.Filled.DateRange),
+    Tab(Destinations.CHATS, "Chats", Icons.Filled.Send),
     Tab(Destinations.SAVED, "Saved", Icons.Filled.Star)
 )
 
@@ -111,7 +135,9 @@ fun VybeRoot(app: VybeApp) {
 
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
-    val inMain = route in TABS.map { it.route } || (route?.startsWith("detail/") == true)
+    val tabRoutes = TABS.map { it.route }
+    val inMain = route in tabRoutes || (route?.startsWith("detail/") == true) ||
+        route == Destinations.PROFILE || (route?.startsWith("chat/") == true)
 
     Scaffold(
         topBar = {
@@ -119,6 +145,9 @@ fun VybeRoot(app: VybeApp) {
                 title = { Text("✦ VYBE") },
                 actions = {
                     if (user != null) {
+                        IconButton(onClick = { nav.navigate(Destinations.PROFILE) }) {
+                            Icon(Icons.Filled.Person, contentDescription = "Profile")
+                        }
                         IconButton(onClick = {
                             authVm.logout {
                                 nav.navigate(Destinations.LOGIN) {
@@ -154,7 +183,7 @@ fun VybeRoot(app: VybeApp) {
         androidx.compose.foundation.layout.Box(Modifier.padding(pad)) {
             NavHost(nav, startDestination = Destinations.SPLASH) {
                 composable(Destinations.SPLASH) {
-                    SplashGate(app, authVm, nav)
+                    SplashGate(authVm, nav)
                 }
                 composable(Destinations.LOGIN) {
                     LoginScreen(
@@ -187,11 +216,37 @@ fun VybeRoot(app: VybeApp) {
                     arguments = listOf(navArgument("packageId") { type = NavType.IntType })
                 ) { entry ->
                     val vm: DetailViewModel = viewModel(factory = factory)
-                    DetailScreen(vm, entry.arguments?.getInt("packageId") ?: 0) { }
+                    DetailScreen(vm, entry.arguments?.getInt("packageId") ?: 0)
+                }
+                composable(Destinations.TRIPS) {
+                    val vm: TripsViewModel = viewModel(factory = factory)
+                    TripsScreen(vm)
+                }
+                composable(Destinations.CHATS) {
+                    val myId = user?.id ?: 0
+                    val vm: ChatsViewModel = viewModel(factory = factory)
+                    ChatsScreen(vm, myId) { id -> nav.navigate(Destinations.chat(id)) }
+                }
+                composable(
+                    Destinations.CHAT_DETAIL,
+                    arguments = listOf(navArgument("conversationId") { type = NavType.IntType })
+                ) { entry ->
+                    val vm: ChatDetailViewModel = viewModel(factory = factory)
+                    ChatDetailScreen(vm, entry.arguments?.getInt("conversationId") ?: 0, user?.id ?: 0)
                 }
                 composable(Destinations.SAVED) {
                     val vm: SavedViewModel = viewModel(factory = factory)
                     SavedScreen(vm) { id -> nav.navigate(Destinations.detail(id)) }
+                }
+                composable(Destinations.PROFILE) {
+                    val vm: ProfileViewModel = viewModel(factory = factory)
+                    ProfileScreen(vm) {
+                        authVm.logout {
+                            nav.navigate(Destinations.LOGIN) {
+                                popUpTo(Destinations.SPLASH) { inclusive = true }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -200,7 +255,7 @@ fun VybeRoot(app: VybeApp) {
 
 /** Restores the server session if the cookie is still valid; else login. */
 @Composable
-fun SplashGate(app: VybeApp, authVm: AuthViewModel, nav: NavHostController) {
+fun SplashGate(authVm: AuthViewModel, nav: NavHostController) {
     LaunchedEffect(Unit) {
         val ok = authVm.restore()
         nav.navigate(if (ok) Destinations.DISCOVER else Destinations.LOGIN) {

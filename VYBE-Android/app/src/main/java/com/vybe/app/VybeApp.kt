@@ -4,8 +4,11 @@ import android.app.Application
 import com.vybe.app.data.api.Network
 import com.vybe.app.data.api.SettingsStore
 import com.vybe.app.data.api.VybeApi
+import com.vybe.app.data.repository.ChatRepository
 import com.vybe.app.data.repository.SessionRepository
 import com.vybe.app.data.repository.TravelRepository
+import com.vybe.app.data.repository.TripsRepository
+import kotlinx.coroutines.flow.first
 
 /** Manual service locator: one OkHttp client (cookie session), Retrofit per base URL. */
 class VybeApp : Application() {
@@ -22,6 +25,12 @@ class VybeApp : Application() {
     val travel: TravelRepository by lazy {
         TravelRepository { api() }
     }
+    val trips: TripsRepository by lazy {
+        TripsRepository { api() }
+    }
+    val chat: ChatRepository by lazy {
+        ChatRepository { api() }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -30,7 +39,7 @@ class VybeApp : Application() {
 
     /** Rebuilds Retrofit only when the configured base URL changed. */
     suspend fun api(): VybeApi {
-        val url = kotlinx.coroutines.flow.first(settings.baseUrlFlow())
+        val url = settings.baseUrlFlow().first()
         return apiFor(url)
     }
 

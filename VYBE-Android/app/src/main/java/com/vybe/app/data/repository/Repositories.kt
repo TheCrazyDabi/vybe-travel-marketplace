@@ -1,29 +1,32 @@
 package com.vybe.app.data.repository
 
 import com.vybe.app.data.api.ApiError
-import com.vybe.app.data.api.NetworkError
 import com.vybe.app.data.api.SettingsStore
 import com.vybe.app.data.api.VybeApi
-import com.vybe.app.data.api.currentBaseUrl
 import com.vybe.app.data.api.ioCall
+import com.vybe.app.data.models.Booking
+import com.vybe.app.data.models.ChatMessage
+import com.vybe.app.data.models.Conversation
+import com.vybe.app.data.models.Enquiry
 import com.vybe.app.data.models.Interest
+import com.vybe.app.data.models.LoginBody
+import com.vybe.app.data.models.MessageBody
+import com.vybe.app.data.models.RegisterBody
+import com.vybe.app.data.models.SwipeBody
 import com.vybe.app.data.models.TravelPackage
 import com.vybe.app.data.models.TravelerProfile
 import com.vybe.app.data.models.User
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 /** Auth + identity state. Server is the source of truth; client never trusts stored role. */
 class SessionRepository(
     private val settings: SettingsStore,
     private val apiOf: suspend () -> VybeApi
 ) {
-    private val _user = MutableStateFlow<User?>(null)
-    val user: StateFlow<User?> = _user.asStateFlow()
+    private val _user = kotlinx.coroutines.flow.MutableStateFlow<User?>(null)
+    val user: kotlinx.coroutines.flow.StateFlow<User?> = _user
 
     suspend fun login(email: String, password: String): User {
-        val u = ioCall { apiOf().login(com.vybe.app.data.models.LoginBody(email.trim(), password)) }.user
+        val u = ioCall { apiOf().login(LoginBody(email.trim(), password)) }.user
         if (u.status != "active") throw ApiError(403, "Account suspended")
         _user.value = u
         settings.cacheIdentity(u.name, u.role)
@@ -32,7 +35,7 @@ class SessionRepository(
 
     suspend fun register(name: String, email: String, password: String, role: String): User {
         val u = ioCall {
-            apiOf().register(com.vybe.app.data.models.RegisterBody(name.trim(), email.trim(), password, role))
+            apiOf().register(RegisterBody(name.trim(), email.trim(), password, role))
         }.user
         _user.value = u
         settings.cacheIdentity(u.name, u.role)
@@ -73,7 +76,7 @@ class TravelRepository(private val apiOf: suspend () -> VybeApi) {
         return r.packages to r.prefs
     }
     suspend fun swipe(id: Int, action: String) {
-        ioCall { apiOf().swipe(id, com.vybe.app.data.models.SwipeBody(action)) }
+        ioCall { apiOf().swipe(id, SwipeBody(action)) }
     }
     suspend fun like(id: Int, on: Boolean) {
         if (on) ioCall { apiOf().like(id) } else ioCall { apiOf().unlike(id) }
@@ -93,4 +96,22 @@ class TravelRepository(private val apiOf: suspend () -> VybeApi) {
         val r = ioCall { apiOf().updateProfile(fields) }
         return r.user to r.profile
     }
+}
+
+/** My Trips: enquiries + bookings, straight from the server (no invented states). */
+class TripsRepository(private val apiOf: suspend () -> VybeApi) {
+    suspend fun enquiries(): List<Enquiry> = ioCall { apiOf().enquiries() }.enquiries
+    suspend fun bookings(): List<Booking> = ioCall { apiOf().bookings() }.bookings
+}
+
+/** Chats: polling-friendly list + messages (matches web polling strategy). */
+class ChatRepository(private val apiOf: suspend () -> VybeApi) {
+    suspend fun conversations(): List<Conversation> =
+        ioCall { apiOf().conversations() }.conversations
+
+    suspend fun messages(conversationId: Int): List<ChatMessage> =
+        ioCall { apiOf().messages(conversationId) }.messages
+
+    suspend fun send(conversationId: Int, body: String): ChatMessage =
+        ioCall { apiOf().sendMessage(conversationId, MessageBody(body)) }.message
 }

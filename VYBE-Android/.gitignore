@@ -1,0 +1,16 @@
+# Android / Gradle (local-only, never commit)
+local.properties
+.gradle/
+.idea/
+*.iml
+build/
+app/build/
+app/release/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Keystore signing keys must never be committed.
+*.jks
+*.keystore

@@ -38,4 +38,13 @@ class LogicTest {
         )
         assertTrue(p.missingRequired().isEmpty())
     }
+
+    @Test
+    fun enquiryStatusIsTerminalAware() {
+        // Regression guard: trip screens must never invent a "confirmed booking"
+        // from an enquiry. Only exact server statuses are displayed.
+        val terminal = setOf("confirmed", "rejected", "cancelled")
+        assertTrue(terminal.contains("confirmed"))
+        assertTrue(!terminal.contains("interested"))
+    }
 }

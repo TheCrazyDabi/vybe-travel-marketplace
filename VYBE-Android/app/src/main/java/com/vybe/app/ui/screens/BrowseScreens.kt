@@ -150,7 +150,7 @@ class DetailViewModel(private val travel: TravelRepository) : ViewModel() {
 }
 
 @Composable
-fun DetailScreen(vm: DetailViewModel, packageId: Int, onChatHint: () -> Unit) {
+fun DetailScreen(vm: DetailViewModel, packageId: Int) {
     val ui by vm.ui.collectAsState()
     var msg by remember(packageId) { mutableStateOf<String?>(null) }
     LaunchedEffect(packageId) { vm.load(packageId) }
@@ -180,9 +180,6 @@ fun DetailScreen(vm: DetailViewModel, packageId: Int, onChatHint: () -> Unit) {
                 Button(onClick = { vm.interested(p.id) { ok ->
                     msg = if (ok) "Interest recorded — the operator can now see it." else "Failed. Check connection."
                 } }, modifier = Modifier.fillMaxWidth()) { Text("♥ I'm interested") }
-                OutlinedButton(onClick = onChatHint, modifier = Modifier.fillMaxWidth()) {
-                    Text("Chat with operator (web app for now)")
-                }
             }
         }
     }

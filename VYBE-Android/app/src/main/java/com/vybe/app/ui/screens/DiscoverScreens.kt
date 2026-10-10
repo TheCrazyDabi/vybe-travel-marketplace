@@ -177,7 +177,7 @@ fun SwipeDeck(
                     }
                 }
         ) {
-            PackageCard(pkg, { onOpenDetail() })
+            PackageCard(pkg) { onDetail() }
         }
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {

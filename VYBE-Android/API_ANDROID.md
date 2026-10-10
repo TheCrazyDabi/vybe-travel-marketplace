@@ -15,8 +15,8 @@ needed for JSON: the backend only enforces CSRF on HTML forms).
 | `POST api/auth/register {name,email,password,role}` | signup (201) / 409 duplicate / 400 invalid |
 | `POST api/auth/login {email,password}` | login (401 bad, 403 suspended) |
 | `POST api/auth/logout` | logout |
-| `GET api/profile` | session restore + prefs gate (401 logged out) |
-| `PUT api/profile {fields}` | save prefs subset (also `name`) |
+| `GET api/profile` | session restore + prefs gate + profile screen (401 logged out) |
+| `PUT api/profile {fields incl. name,start_city}` | save prefs + name edit |
 | `GET api/packages` | explore list (active only) |
 | `GET api/packages/{id}` | detail (404 unknown) |
 | `GET api/packages/recommended[?max_price,destination,min_duration,min_score]` | ranked deck + scores/reasons |
@@ -24,10 +24,15 @@ needed for JSON: the backend only enforces CSRF on HTML forms).
 | `POST|DELETE api/packages/{id}/like` | favourite toggle |
 | `POST|DELETE api/packages/{id}/save` | bookmark toggle |
 | `GET api/interests[?action=]` | saved/interests list |
+| `GET api/enquiries` | My Trips enquiries (exact server statuses) |
+| `GET api/bookings` | My Trips bookings (never invented) |
+| `GET api/conversations` | chat list (role-scoped by server) |
+| `GET api/conversations/{id}/messages` | messages (polled) |
+| `POST api/conversations/{id}/messages {body}` | send (201) |
 
 ## Planned (backend already supports, app not yet wired)
 
-Conversations (`/api/conversations*`), enquiries/bookings (`/api/enquiries*`,
-`/api/bookings*`), operator (`/api/packages` POST/PUT, `/api/companies/verification`),
-admin (`/api/admin/*`), packing (`/api/packing*`), companion (`/api/companion/ask`),
-reports (`/api/reports`). No new backend endpoints are required for any of them.
+Operator (`/api/packages` POST/PUT, `/api/companies/verification`,
+`/api/enquiries/<id>/quote`), admin (`/api/admin/*`), packing
+(`/api/packing*`), companion (`/api/companion/ask`), reports
+(`/api/reports`). No new backend endpoints are required for any of them.

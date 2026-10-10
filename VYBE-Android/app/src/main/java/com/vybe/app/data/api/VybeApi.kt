@@ -1,7 +1,13 @@
 package com.vybe.app.data.api
 
+import com.vybe.app.data.models.BookingList
+import com.vybe.app.data.models.ConversationList
+import com.vybe.app.data.models.EnquiryList
 import com.vybe.app.data.models.InterestList
 import com.vybe.app.data.models.LoginBody
+import com.vybe.app.data.models.MessageBody
+import com.vybe.app.data.models.MessageList
+import com.vybe.app.data.models.MessageWrapper
 import com.vybe.app.data.models.OkResult
 import com.vybe.app.data.models.PackageList
 import com.vybe.app.data.models.PackageWrapper
@@ -21,11 +27,10 @@ import retrofit2.http.Query
 
 /**
  * 1:1 mapping of the Flask JSON API (see web README "API contract").
- * Auth is session-cookie based; the OkHttp client holds the cookie jar,
- * so no token plumbing is needed. 401/403 surfaced to ViewModels.
+ * Auth is session-cookie based; the OkHttp client holds the cookie jar.
+ * 401/403 surfaced to ViewModels (logout / suspend handling).
  */
 interface VybeApi {
-    // auth
     @POST("api/auth/register")
     suspend fun register(@Body body: RegisterBody): Response<UserWrapper>
 
@@ -35,7 +40,6 @@ interface VybeApi {
     @POST("api/auth/logout")
     suspend fun logout(): Response<OkResult>
 
-    // traveler profile + preferences
     @GET("api/profile")
     suspend fun getProfile(): Response<ProfileWrapper>
 
@@ -45,7 +49,6 @@ interface VybeApi {
     @POST("api/preferences")
     suspend fun savePreferences(@Body fields: Map<String, @JvmSuppressWildcards Any?>): Response<ProfileWrapper>
 
-    // packages + discovery
     @GET("api/packages")
     suspend fun packages(): Response<PackageList>
 
@@ -77,4 +80,19 @@ interface VybeApi {
 
     @GET("api/interests")
     suspend fun interests(@Query("action") action: String? = null): Response<InterestList>
+
+    @GET("api/enquiries")
+    suspend fun enquiries(): Response<EnquiryList>
+
+    @GET("api/bookings")
+    suspend fun bookings(): Response<BookingList>
+
+    @GET("api/conversations")
+    suspend fun conversations(): Response<ConversationList>
+
+    @GET("api/conversations/{id}/messages")
+    suspend fun messages(@Path("id") id: Int): Response<MessageList>
+
+    @POST("api/conversations/{id}/messages")
+    suspend fun sendMessage(@Path("id") id: Int, @Body body: MessageBody): Response<MessageWrapper>
 }

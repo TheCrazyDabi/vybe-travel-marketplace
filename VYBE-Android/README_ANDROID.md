@@ -4,14 +4,17 @@ Native Kotlin + Jetpack Compose + Material 3 client for the laptop-hosted
 VYBE Flask backend. Sunset Coral + Deep Ocean theme. See `PARITY_CHECKLIST.md`
 for feature coverage and `API_ANDROID.md` for backend usage.
 
+**Flask protection note:** this project consumes the backend read-only.
+No Flask file, route, model, seed, or database change is needed for any
+currently wired screen. Backend changes require double approval — none
+proposed.
+
 ## Prerequisites (Windows)
 
 - **Android Studio** (any recent version; project targets the bundled JDK 17+).
-  Confirm: Help → About shows a 2024.x+ build.
 - **Android SDK**: platform `android-36` + build-tools `36.0.0` via
-  Tools → SDK Manager → SDK Platforms / SDK Tools. (Already present on the
-  dev laptop: `%LOCALAPPDATA%\Android\Sdk`.)
-- **JDK**: Studio's bundled JBR works (Gradle JVM 17+). No separate install needed.
+  Tools → SDK Manager (already present on the dev laptop).
+- **JDK**: Studio's bundled JBR works. No separate install needed.
 - **Backend running**: VYBE `run.bat` on the laptop (`http://127.0.0.1:5000`).
 - No Gradle install needed (wrapper; first sync downloads Gradle 8.11.1).
 
@@ -45,15 +48,17 @@ APK: `app\build\outputs\apk\debug\app-debug.apk`. Install:
 ## Tests
 
 - JVM unit tests: `./gradlew testDebugUnitTest` (pure-logic: prefs gating rules).
-- Backend contract: the Flask suite (`pytest -q` in repo root, 43 pass) guards
+- Backend contract: the Flask suite (`pytest -q` in repo root) guards
   every endpoint this app consumes — run it after backend changes.
 
 ## Status (honest)
 
-- Implemented + wired: auth, session restore, server config, Explore, detail,
-  Discover (prefs gate, ranked deck, swipe gestures + buttons, like/save, edit prefs), Saved.
-- NOT yet built: My Trips, Chats, Profile, operator tools, admin tools, Packing,
-  AI Guide (see parity checklist). Backend endpoints for all of them already exist.
+- Implemented + wired: auth (+Show/Hide passwords), session restore, server config,
+  Explore, detail, Discover (prefs gate, ranked deck, swipe gestures + buttons,
+  like/save, edit prefs), Saved, **My Trips (enquiries+bookings), Chats (list,
+  detail, 8s polling, send), Profile (info + name/city edit)**.
+- NOT yet built: operator tools, admin tools, Packing, AI Guide (see parity checklist).
+  Backend endpoints for all of them already exist.
 - **Not compiled here**: this environment has no Gradle distribution; open in
   Android Studio and sync before trusting the build. No APK produced yet.
-- **Not tested end-to-end**: phone + laptop run is still manual (checklist §E2).
+- **Not tested end-to-end**: phone + laptop run is still manual.

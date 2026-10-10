@@ -50,7 +50,6 @@ data class TravelPackage(
     val is_active: Boolean = true,
     val availability_status: String? = null,
     val operator: OperatorInfo? = null,
-    // recommendation extras (only present on /recommended)
     val match_score: Double? = null,
     val match_reasons: List<String> = emptyList(),
     val match_explanation: String? = null
@@ -116,13 +115,81 @@ data class Interest(
     @SerializedName("package") val pkg: TravelPackage? = null
 )
 
+data class Quotation(
+    val id: Int = 0,
+    val enquiry_id: Int = 0,
+    val price_per_person: Int = 0,
+    val total_price: Int? = null,
+    val message: String? = null,
+    val status: String = ""
+)
+
+data class Enquiry(
+    val id: Int = 0,
+    val traveler_id: Int = 0,
+    val package_id: Int = 0,
+    val company_id: Int = 0,
+    val status: String = "",
+    val num_travellers: Int? = null,
+    val travel_date: String? = null,
+    val message: String? = null,
+    val total_cost: Int? = null,
+    val created_at: String? = null,
+    val updated_at: String? = null,
+    @SerializedName("package") val pkg: TravelPackage? = null,
+    val quotations: List<Quotation> = emptyList(),
+    val booking: Booking? = null
+)
+
+data class Booking(
+    val id: Int = 0,
+    val enquiry_id: Int = 0,
+    val traveler_id: Int = 0,
+    val package_id: Int = 0,
+    val company_id: Int = 0,
+    val status: String = "",
+    val total_cost: Int? = null,
+    val payment_status: String? = null,
+    val created_at: String? = null,
+    val confirmed_at: String? = null,
+    @SerializedName("package") val pkg: TravelPackage? = null
+)
+
+data class ChatMessage(
+    val id: Int = 0,
+    val conversation_id: Int = 0,
+    val sender_id: Int = 0,
+    val body: String = "",
+    val is_read: Boolean = false,
+    val created_at: String? = null
+)
+
+data class Conversation(
+    val id: Int = 0,
+    val traveler_id: Int = 0,
+    val company_id: Int = 0,
+    val package_id: Int? = null,
+    val status: String = "",
+    val created_at: String? = null,
+    val updated_at: String? = null,
+    val messages: List<ChatMessage> = emptyList()
+)
+
 data class UserWrapper(val user: User)
 data class ProfileWrapper(val user: User, val profile: TravelerProfile)
 data class PackageList(val packages: List<TravelPackage>)
 data class PackageWrapper(@SerializedName("package") val pkg: TravelPackage)
 data class InterestList(val interests: List<Interest>)
 data class Recommended(val packages: List<TravelPackage>, val prefs: TravelerProfile?)
+data class EnquiryList(val enquiries: List<Enquiry>)
+data class EnquiryWrapper(val enquiry: Enquiry)
+data class BookingList(val bookings: List<Booking>)
+data class ConversationList(val conversations: List<Conversation>)
+data class ConversationWrapper(val conversation: Conversation)
+data class MessageList(val messages: List<ChatMessage>)
+data class MessageWrapper(val message: ChatMessage)
 data class OkResult(val ok: Boolean = false)
-data class SwipeBody(val action: String)
 data class LoginBody(val email: String, val password: String)
 data class RegisterBody(val name: String, val email: String, val password: String, val role: String)
+data class SwipeBody(val action: String)
+data class MessageBody(val body: String)

@@ -235,7 +235,7 @@ html, body { overflow-x: clip; }
 img { max-width: 100%; }
 .nav { flex-wrap: wrap; row-gap: 8px; }
 .table-wrap { overflow-x: auto; }
-.table { min-width: 560px; }
+.table { min-width: 0; }
 @media (max-width: 800px) { .detail, .chat-layout { grid-template-columns: 1fr; } .hero h1 { font-size: 36px; } .discover-layout { grid-template-columns: 40px minmax(0,1fr) 40px; } .filters .form-grid { grid-template-columns: 1fr 1fr; } .swipe-wrap { max-width: none; } #card-stack { height: 480px; } .swipe-card img { height: 200px; } .nav-arrow { width: 40px; height: 40px; } .auth-wrap { grid-template-columns: 1fr; } .auth-visual { min-height: 180px; } .auth-form { padding: 22px 18px; } .btn.big, .auth-submit { min-height: 48px; } .input { font-size: 16px; } .role-cards { grid-template-columns: 1fr; } .cols, .form-grid { grid-template-columns: 1fr; } .cta-row .btn { min-height: 44px; } .modal { padding: 10px; } .hero-video .hero-text { padding: 36px 18px; } }
 @media (max-width: 380px) { .filters .form-grid { grid-template-columns: 1fr; } .container { padding: 16px; } }
 
@@ -271,7 +271,7 @@ img, video, svg { max-width: 100%; }
 /* Small phones (≤360px): tighten bottom nav + filters so nothing overflows. */
 @media (max-width: 360px) {
   .bnav-item { min-width: 0; flex: 1; padding: 8px 10px; font-size: 10px; }
-  .bnav-center { min-width: 84px; margin-top: -20px; }
+  .bnav-center { min-width: 60px; margin-top: -16px; }
   .bottom-nav { gap: 2px; padding: 6px; width: calc(100vw - 16px); }
   .filters .form-grid { grid-template-columns: 1fr; }
   .discover-layout { grid-template-columns: 44px minmax(0,1fr) 44px; }

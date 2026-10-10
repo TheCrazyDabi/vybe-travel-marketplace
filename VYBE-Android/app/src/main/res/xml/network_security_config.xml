@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Release-safe default: HTTPS only, no cleartext. The debug overlay
      (src/debug/res/xml/network_security_config.xml) permits cleartext
-     for laptop development (10.0.2.2 emulator loopback + LAN). -->
+     for laptop development. -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
