@@ -33,9 +33,11 @@ def test_provision_and_pages(client):
     r = client.get("/api/trips/current").get_json()["trip"]
     assert r["destination"] == "Singapore" and len(r["days"]) == 5
     assert sum(len(d["stops"]) for d in r["days"]) == 11
-    assert client.get("/trips").status_code == 200
     assert client.get("/packing").status_code == 200
     assert client.get("/companion").status_code == 200
+    # itinerary page temporarily hidden -> redirects to My Trips (data/APIs intact)
+    r = client.get("/trips")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/dashboard")
     p = client.get("/api/packing").get_json()
     assert p["total"] == 23 and set(
         i["category"] for i in p["items"]) >= {"documents", "health"}
@@ -99,6 +101,6 @@ def test_packing_crud_and_isolation(client):
 
 
 def test_requires_login(client):
-    assert client.get("/trips").status_code == 302
+    assert client.get("/packing").status_code == 302
     assert client.get("/api/trips/current").status_code == 302
     assert client.post("/api/companion/ask", json={"message": "hi"}).status_code in (302, 401)

@@ -4,7 +4,7 @@
 <a href="/packages" class="muted">← All trips</a>
 <div class="detail">
   <div>
-    <img src="{{ pkg.cover_image }}" alt="{{ pkg.destination }}" />
+    <img src="{{ pkg.cover_image }}" alt="{{ pkg.destination }}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80&auto=format&fit=crop'" />
     {% if pkg.images %}
     <div class="badge-row" style="margin-top:8px">
       {% for im in pkg.images[:4] %}<img src="{{ im }}" alt="" loading="lazy" style="width:80px;height:60px;object-fit:cover;border-radius:10px" />{% endfor %}

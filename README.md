@@ -34,11 +34,11 @@ Demo logins (seeded sample data):
 - Landing page with VYBE branding (logo, hero, how-it-works, demo accounts)
 - Auth with role-based redirects — pages + `/api/auth/*` (traveler/operator self-register; no admin self-register; suspendable accounts)
 - Traveler: 5-step onboarding + free-text AI preference extraction, swipe deck (`/discover`) with like/pass/save + undo, filters, detail modal, ranked recommendations with scores + reasons, saved trips, map (Leaflet/OpenStreetMap)
-- Roamly companion (offline, no key): 5-day Singapore itinerary with day tabs, stop checkoffs and non-destructive departure checks (`/trips`), categorized packing checklist + document guides + emergency numbers (`/packing`), deterministic AI travel guide with suggestion chips (`/companion`)
+- Roamly companion (offline, no key): day-by-day itinerary data + APIs kept but `/trips` page temporarily hidden (redirects to My Trips; restore anytime), categorized packing checklist + document guides + emergency numbers (`/packing`), deterministic AI travel guide with suggestion chips (`/companion`)
 - Operator: company profile + verification submit, publish gated on approval, package CRUD, incoming interests, conversations, enquiry → quotation → booking workflow
 - Admin: overview counts, user search/suspend/reactivate, verification queue + decision history, safety-report moderation
 - Messaging (polling) between travelers and operators
-- Seed data: 2 demo companies, 5 trips (Munnar, Wayanad, Goa, Ooty, Jaipur), 1 like, 1 save, 1 demo report
+- Seed data: 2 demo companies, 27 trips (5 originals across Kerala/Goa/Rajasthan + 22 expansion: Kerala, South, North/Northeast, islands, Sri Lanka, Bali, Dubai), 1 like, 1 save, 1 demo report
 - No AI key required — `services/vybe_ai.py` falls back to keyword rules
 
 ## API contract (agreed for parallel work)

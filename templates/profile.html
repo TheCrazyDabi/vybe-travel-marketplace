@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Profile — VYBE{% endblock %}
+{% block content %}
+<h1>Your profile</h1>
+{% set parts = current_user.name.split(' ') %}
+{% set initials = (parts[0][0] + (parts[1][0] if parts|length > 1 else ''))|upper %}
+
+<div class="profile-head card">
+  <div class="avatar" aria-hidden="true">{{ initials }}</div>
+  <div class="profile-id">
+    <b id="profile-display-name">{{ current_user.name }}</b>
+    <span class="muted">{{ current_user.email }}</span>
+    <span class="badge-row"><span class="badge verified">{{ current_user.role|capitalize }}</span></span>
+  </div>
+  <button class="btn small ghost" onclick="document.getElementById('pf-name').focus();document.getElementById('personal-form').scrollIntoView({behavior:'smooth',block:'center'});">Edit Profile</button>
+</div>
+
+<div class="card" style="margin-top:16px;">
+  <div class="card-body">
+    <h2 style="margin-top:0;">Personal information</h2>
+    <form id="personal-form" class="form wide" onsubmit="return saveProfile(event)">
+      <label>Full name<input id="pf-name" name="name" class="input" value="{{ current_user.name }}" maxlength="120" required /></label>
+      <label>Email (read-only)<input class="input" value="{{ current_user.email }}" readonly disabled title="Email identifies your account and cannot be changed here" /></label>
+      <div class="form-grid">
+        <label>Phone (demo)<input id="pf-phone" class="input" placeholder="+91 98XXX XXXXX" /></label>
+        <label>Home / departure city<input id="pf-city" name="start_city" class="input" value="{{ profile.get('start_city') or '' }}" placeholder="Kochi" /></label>
+      </div>
+      <label>Travel bio (demo)<textarea id="pf-bio" class="input" rows="2" placeholder="Slow mornings, tea gardens, no crowds…"></textarea></label>
+      <p class="muted small">Name and departure city save to your account. Phone and bio are a <b>demo preview</b> — kept only in this browser, not on your account.</p>
+      <div class="cta-row" style="justify-content:flex-start;">
+        <button class="btn primary" type="submit">Save Changes</button>
+        <button class="btn ghost" type="button" onclick="location.reload()">Cancel</button>
+      </div>
+      <p id="pf-status" class="muted small" role="status"></p>
+    </form>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+  <div class="card-body">
+    <h2 style="margin-top:0;">Account settings</h2>
+    <table class="table">
+      <tr><th>Password</th><td aria-label="Password hidden">•••••••• <span class="muted small">Password changes are disabled in this demo build.</span></td></tr>
+      <tr><th>Member since</th><td>{{ (current_user.created_at|string)[:10] if current_user.created_at else '—' }}</td></tr>
+    </table>
+    <p><a class="btn small ghost" href="/logout">Sign Out</a></p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var uid = {{ current_user.id }};
+  var key = 'vybe_demo_profile_' + uid;
+  function demo() { try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { return {}; } }
+  var d = demo();
+  if (d.phone) document.getElementById('pf-phone').value = d.phone;
+  if (d.bio) document.getElementById('pf-bio').value = d.bio;
+})();
+async function saveProfile(e) {
+  e.preventDefault();
+  var status = document.getElementById('pf-status');
+  var name = document.getElementById('pf-name').value.trim();
+  var city = document.getElementById('pf-city').value.trim();
+  if (!name) { status.textContent = 'Name is required.'; return false; }
+  status.textContent = 'Saving…';
+  try {
+    const r = await fetch('/api/profile', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name, start_city: city})});
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'save failed');
+    try { localStorage.setItem('vybe_demo_profile_' + {{ current_user.id }}, JSON.stringify({phone: document.getElementById('pf-phone').value.trim(), bio: document.getElementById('pf-bio').value.trim()})); } catch (err) {}
+    document.getElementById('profile-display-name').textContent = j.user.name;
+    status.textContent = 'Name and departure city saved to your account. Phone and bio kept as a demo preview in this browser only.';
+  } catch (err) { status.textContent = 'Could not save: ' + err.message; }
+  return false;
+}
+</script>
+{% endblock %}

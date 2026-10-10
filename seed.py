@@ -9,6 +9,67 @@ from models import (
 )
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "data", "sample_packages.json")
+MORE_FILE = os.path.join(os.path.dirname(__file__), "data", "more_packages.json")
+
+
+def _build_package(p, company_id):
+    return TravelPackage(
+        operator_id=company_id,
+        title=p["title"], destination=p["destination"],
+        lat=p.get("lat"), lng=p.get("lng"),
+        cover_image=p.get("cover_image"), short_desc=p.get("short_desc"),
+        itinerary=p.get("itinerary"), price=p.get("price", 0),
+        currency=p.get("currency", "INR"),
+        duration_days=p.get("duration_days", 3),
+        available_dates=p.get("available_dates"),
+        group_size=p.get("group_size"),
+        included=p.get("included", []), excluded=p.get("excluded", []),
+        accommodation=p.get("accommodation"), transportation=p.get("transportation"),
+        activities=p.get("activities", []),
+        region_tags=p.get("region_tags", []), climate_tags=p.get("climate_tags", []),
+        scenery_tags=p.get("scenery_tags", []), interest_tags=p.get("interest_tags", []),
+        mood_tags=p.get("mood_tags", []),
+        cancellation_terms=p.get("cancellation_terms"),
+        is_active=True,
+    )
+
+
+def seed_demo_packages():
+    """Idempotently add demo expansion packages. Safe to run on every boot.
+
+    - Matches existing rows by title: never duplicates, never overwrites
+      user-edited packages or touches interests/chats/bookings.
+    - Attaches new packages to approved demo companies only.
+    - Returns the number of packages added.
+    """
+    try:
+        with open(MORE_FILE, encoding="utf-8") as f:
+            payload = json.load(f)
+    except (OSError, ValueError) as e:
+        print(f"Demo expansion pack unavailable ({e}); skipping.")
+        return 0
+    companies = TravelCompany.query.filter_by(status="approved").all()
+    if not companies:
+        print("No approved companies; skipping demo expansion pack.")
+        return 0
+    existing = {t for (t,) in db.session.query(TravelPackage.title).all()}
+    added = 0
+    try:
+        for i, p in enumerate(payload.get("packages", [])):
+            if not p.get("title") or p["title"] in existing:
+                continue
+            company = companies[i % len(companies)]
+            db.session.add(_build_package(p, company.id))
+            existing.add(p["title"])
+            added += 1
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Demo expansion pack partially applied ({e}); rolled back batch.")
+        return 0
+    if added:
+        print(f"Seeded {added} demo expansion packages.")
+    return added
 
 
 def seed_if_empty():
@@ -96,3 +157,4 @@ if __name__ == "__main__":
     app = create_app()
     with app.app_context():
         seed_if_empty()
+        seed_demo_packages()

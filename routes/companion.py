@@ -1,6 +1,6 @@
 """Roamly companion: My Trips itinerary, packing checklist, AI guide chat."""
 
-from flask import Blueprint, abort, jsonify, render_template, request
+from flask import Blueprint, abort, jsonify, redirect, render_template, request
 from flask_login import current_user, login_required
 
 from models import CompanionMessage, PackItem, Stop, StopActivity, db
@@ -27,15 +27,9 @@ def _user_stop(stop_id: int) -> Stop:
 @companion_bp.get("/trips")
 @login_required
 def trips_page():
-    trip = ensure_companion(current_user.id)
-    try:
-        day_n = int(request.args.get("day", 1))
-    except (TypeError, ValueError):
-        day_n = 1
-    days = trip.days
-    day = next((d for d in days if d.day_number == day_n), days[0] if days else None)
-    return render_template("trips.html", trip=trip, days=days, day=day,
-                           departure_items=dataset()["departure_items"])
+    # Itinerary UI temporarily hidden (backend + data preserved for restore).
+    # The day-by-day view, trips.html, and /api/trips/* are untouched.
+    return redirect("/dashboard")
 
 
 @companion_bp.get("/api/trips/current")

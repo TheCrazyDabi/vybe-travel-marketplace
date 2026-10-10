@@ -153,6 +153,12 @@ fieldset { border: 1px solid var(--color-border); border-radius: 12px; }
 .role-card .role-text small { color: var(--color-text-muted); font-size: 13px; }
 .role-card.selected, .role-card:has(input:checked) { border-color: var(--color-primary); background: rgba(255,107,94,.10); }
 .role-card:focus-within { outline: 2px solid var(--color-ocean); outline-offset: 2px; }
+/* Profile page */
+.profile-head { display: flex; align-items: center; gap: 16px; padding: 18px; flex-wrap: wrap; }
+.avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--color-primary); color: var(--color-ocean); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; flex-shrink: 0; }
+.profile-id { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 200px; }
+.profile-id b { font-size: 20px; }
+.card h2 { font-size: 18px; }
 /* Global responsive hardening: no horizontal overflow, fluid media */
 html, body { overflow-x: clip; }
 img { max-width: 100%; }

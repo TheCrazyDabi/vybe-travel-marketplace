@@ -4,6 +4,7 @@
 <h1>What’s your travel VYBE?</h1>
 <p class="muted">5 quick steps → personalized matches. Returning? Edit any step, progress auto-saves.</p>
 {% if message %}<div class="flash success">{{ message }}</div>{% endif %}
+{% if error %}<div class="flash error" role="alert">{{ error }}</div>{% endif %}
 
 <div class="steps" role="progressbar" aria-label="Onboarding progress">
   <div class="step-dot active" data-dot="1">1 Mood</div>

@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from models import Interest, TravelerProfile, TravelPackage, UserPreference, db
@@ -44,6 +44,25 @@ def _prefs_dict():
     if current_user.is_authenticated and current_user.profile:
         return current_user.profile.to_dict()
     return {}
+
+
+def _missing_required_prefs(profile) -> list:
+    """Genuinely required fields for personalized recommendations."""
+    d = profile.to_dict()
+    missing = []
+    if not (d.get("current_mood") or (d.get("travel_moods") or [])):
+        missing.append("travel mood")
+    if not (d.get("budget_per_person") or d.get("budget_max")):
+        missing.append("budget per person")
+    if not d.get("duration_days"):
+        missing.append("trip duration")
+    dest = (
+        (d.get("preferred_destinations") or []) + (d.get("destination_prefs") or [])
+        + (d.get("preferred_regions") or []) + ([d.get("destination_text")] if d.get("destination_text") else [])
+    )
+    if not [x for x in dest if x]:
+        missing.append("destinations or regions")
+    return missing
 
 
 def _parse_list(form, *keys):
@@ -206,15 +225,28 @@ def onboarding():
         # progress
         step = _to_int(data.get("onboarding_step"), profile.onboarding_step or 1) or 1
         profile.onboarding_step = max(1, min(5, step))
-        if data.get("onboarding_completed") or data.get("complete") or step >= 5:
-            profile.onboarding_completed = True
-            profile.onboarding_step = 5
+        wants_complete = bool(
+            data.get("onboarding_completed") or data.get("complete") or step >= 5
+        )
+        error = None
+        if wants_complete:
+            missing = _missing_required_prefs(profile)
+            if missing:
+                # never mark complete on failed validation; let them retry
+                error = "Almost there — please add: " + ", ".join(missing) + "."
+            else:
+                profile.onboarding_completed = True
+                profile.onboarding_step = 5
         db.session.commit()
+        if wants_complete and not error:
+            flash("Preferences saved — here are trips picked for you.", "success")
+            return redirect(url_for("traveler.discover"))
         return render_template(
             "onboarding.html",
             profile=profile,
-            message=onboarding_reply(dict(data)),
-            saved=True,
+            message=None if error else onboarding_reply(dict(data)),
+            saved=not error,
+            error=error,
         )
     return render_template("onboarding.html", profile=profile, message=None, saved=False)
 
@@ -222,6 +254,18 @@ def onboarding():
 @traveler_bp.get("/discover")
 @login_required
 def discover():
+    # Travelers must complete preferences first; deck needs them for ranking.
+    # Completeness of the saved record decides (not the flag), so API-saved
+    # prefs count and cleared prefs correctly bounce back to onboarding.
+    if current_user.role == "traveler":
+        profile = _get_or_create_profile()
+        missing = _missing_required_prefs(profile)
+        if missing:
+            flash(
+                "Tell us your preferences first — your answers personalize the trips you see.",
+                "error",
+            )
+            return redirect(url_for("traveler.onboarding"))
     return render_template("discover.html")
 
 
@@ -266,8 +310,9 @@ def saved():
 @traveler_bp.get("/map")
 @login_required
 def map_view():
-    pkgs = TravelPackage.query.filter_by(is_active=True).all()
-    return render_template("map.html", packages=[p.to_dict() for p in pkgs])
+    # Map UI temporarily hidden (implementation + map.html kept for restore;
+    # coordinates stay in the API for other features). Redirect into flow.
+    return redirect("/discover")
 
 
 # ---- JSON API ----
@@ -287,13 +332,27 @@ def api_put_profile():
     for field in ALL_PROFILE_FIELDS:
         if field in data:
             setattr(p, field, data[field])
+    # display name lives on User (no migration needed); validated, persistent
+    if "name" in data:
+        name = (data.get("name") or "").strip()
+        if not name or len(name) > 120:
+            return jsonify({"error": "name must be 1-120 characters"}), 400
+        current_user.name = name
     # sync budget aliases
     if "budget_per_person" in data and data["budget_per_person"] and not data.get("budget_max"):
         p.budget_max = data["budget_per_person"]
     if "budget_max" in data and data["budget_max"] and not data.get("budget_per_person"):
         p.budget_per_person = data["budget_max"]
     db.session.commit()
-    return jsonify({"profile": p.to_dict()})
+    return jsonify({"profile": p.to_dict(), "user": current_user.to_dict()})
+
+
+@traveler_bp.get("/profile")
+@login_required
+def profile_page():
+    """Dedicated Profile page (distinct from /onboarding preferences flow)."""
+    profile = _get_or_create_profile()
+    return render_template("profile.html", profile=profile.to_dict())
 
 
 @traveler_bp.post("/api/preferences")

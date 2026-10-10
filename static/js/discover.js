@@ -81,7 +81,7 @@ function renderCard(){
   const topReason = (p.match_reasons || [])[0] || '';
   el.innerHTML = `
     <div class="stamp like">INTERESTED</div><div class="stamp nope">PASS</div>
-    <img src="${esc(p.cover_image || '')}" alt="${esc(p.destination||'trip')}" loading="lazy" />
+    <img src="${esc(p.cover_image || '')}" alt="${esc(p.destination||'trip')}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80&auto=format&fit=crop'" />
     <div class="info">
       <b>${esc(p.title||'Trip')}</b><br/>
       <span class="muted">${esc(p.destination||'')} · ${esc(p.duration_days||'?')} days · ₹${price} <span class="muted small">/ person</span></span><br/>
@@ -191,7 +191,7 @@ function openDetail(){
   const orEmpty = v => (v==null || v==='' || (Array.isArray(v)&&v.length===0)) ? 'Not provided' : v;
   const price = Number(p.price||0).toLocaleString('en-IN');
   body.innerHTML = `
-    <img src="${esc(p.cover_image||'')}" alt="" style="width:100%;border-radius:12px;max-height:280px;object-fit:cover" />
+    <img src="${esc(p.cover_image||'')}" alt="" style="width:100%;border-radius:12px;max-height:280px;object-fit:cover" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80&auto=format&fit=crop'" />
     <p class="muted">${esc(p.destination||'')} · ${esc(p.duration_days||'?')} days${p.nights!=null?` / ${esc(p.nights)} nights`:''} · <b>₹${price}</b> / person</p>
     <p><b>Operator:</b> ${esc((p.operator&&p.operator.company_name)||'Not provided')} ${p.operator&&p.operator.is_verified?'<span class="badge verified">✓ Verified</span>':'<span class="badge">Unverified</span>'}</p>
     <p><b>Availability:</b> ${esc(p.availability_status||'Not provided')} ${p.seats_remaining!=null?`(${esc(p.seats_remaining)} seats)`:''}</p>

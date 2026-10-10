@@ -53,6 +53,11 @@ def test_list_and_detail_preview(client):
     assert client.get(f"/api/packages/{pid}").status_code == 200
     assert client.get("/api/packages/9999").status_code == 404
     login(client, "t@t.com")
+    # discover requires completed preferences: fresh user is redirected
+    r = client.get("/discover")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/onboarding")
+    client.put("/api/profile", json={"current_mood": "relaxation", "budget_max": 20000,
+                                     "duration_days": 3, "preferred_regions": ["mountains"]})
     assert client.get("/discover").status_code == 200
     assert client.get(f"/packages/{pid}").status_code == 200
 

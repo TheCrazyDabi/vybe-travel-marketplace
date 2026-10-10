@@ -16,16 +16,15 @@
       {% if current_user.is_authenticated %}
         <a href="/packages">Explore</a>
         <a href="/discover">Discover</a>
-        <a href="/map">Map</a>
         <a href="/saved">Saved <span id="nav-saved-count" class="count-badge hidden">0</span></a>
         {% if current_user.role == 'traveler' %}<a href="/dashboard">My trips</a>{% endif %}
-        {% if current_user.role == 'traveler' %}<a href="/trips">Itinerary</a>{% endif %}
         {% if current_user.role == 'traveler' %}<a href="/packing">Packing</a>{% endif %}
         {% if current_user.role == 'traveler' %}<a href="/companion">AI Guide</a>{% endif %}
         {% if current_user.role == 'operator' %}<a href="/operator">Dashboard</a>{% endif %}
         {% if current_user.role == 'admin' %}<a href="/admin">Admin</a>{% endif %}
         <a href="/chats">Chats</a>
-        <a href="/onboarding">Profile</a>
+        <a href="/profile">Profile</a>
+        <a href="/onboarding">Preferences</a>
         <span class="user">Hi, {{ current_user.name.split(' ')[0] }}</span>
         <a class="btn small" href="/logout">Logout</a>
       {% elif request.path == '/login' %}

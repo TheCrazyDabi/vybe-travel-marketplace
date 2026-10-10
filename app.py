@@ -73,9 +73,10 @@ def create_app(config_class=Config):
         # Lazy seed on first run so `python app.py` just works.
         # Skip auto-seed under TESTING so tests get an isolated DB.
         if not app.config.get("TESTING"):
-            from seed import seed_if_empty
+            from seed import seed_demo_packages, seed_if_empty
 
             seed_if_empty()
+            seed_demo_packages()  # idempotent: only adds missing demo titles
 
     return app
 
