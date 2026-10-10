@@ -32,14 +32,29 @@ async function refreshState(){
 }
 
 async function loadDeck(){
+  const empty = document.getElementById('empty-state');
   status('Loading trips…');
+  if(empty) empty.classList.add('hidden');
   try {
     const j = await (await fetch('/api/packages/recommended' + filtersQS())).json();
     deck = j.packages || []; idx = 0;
     await refreshState();
-    status(deck.length ? `${deck.length} trips for your VYBE` : 'No trips match — clear filters or update preferences.');
+    if(!deck.length){
+      showEmpty('No packages match these filters.', 'Try widening the price or days range, or clearing filters.');
+    } else {
+      status(`${deck.length} trips for your VYBE — use ‹ › to browse, ♥ to decide.`);
+    }
     renderCard();
-  } catch(e){ status('Could not load trips. Are you logged in?'); }
+  } catch(e){ status('Could not load trips — check your connection, then reload.'); showEmpty('Could not load trips.', 'Check your connection and try again.'); }
+}
+
+function showEmpty(title, text){
+  const empty = document.getElementById('empty-state');
+  if(!empty) return;
+  const t = document.getElementById('empty-title'), x = document.getElementById('empty-text');
+  if(t) t.textContent = title;
+  if(x) x.textContent = text;
+  empty.classList.remove('hidden');
 }
 
 function current(){ return deck[idx]; }
@@ -49,16 +64,21 @@ function renderCard(){
   const empty = document.getElementById('empty-state');
   if(!stack) return;
   stack.innerHTML = '';
-  if(idx >= deck.length || deck.length === 0){ empty.classList.remove('hidden'); updateArrows(); return; }
+  if(idx >= deck.length || deck.length === 0){
+    if(deck.length === 0 && empty.classList.contains('hidden')) showEmpty('All caught up!', 'You have reviewed every package. New trips appear here.');
+    else empty.classList.remove('hidden');
+    updateArrows(); return;
+  }
   empty.classList.add('hidden');
   const p = current();
   const el = document.createElement('div');
   el.className = 'swipe-card';
   el.setAttribute('tabindex','0');
   const price = Number(p.price||0).toLocaleString('en-IN');
-  const tags = [...(p.interest_tags||[]), ...(p.mood_tags||[]), ...(p.region_tags||[])].slice(0,6);
+  const tags = [...(p.interest_tags||[]), ...(p.mood_tags||[]), ...(p.region_tags||[])].slice(0,3);
   const liked = likedSet.has(p.id);
   const saved = savedSet.has(p.id);
+  const topReason = (p.match_reasons || [])[0] || '';
   el.innerHTML = `
     <div class="stamp like">INTERESTED</div><div class="stamp nope">PASS</div>
     <img src="${esc(p.cover_image || '')}" alt="${esc(p.destination||'trip')}" loading="lazy" />
@@ -66,16 +86,16 @@ function renderCard(){
       <b>${esc(p.title||'Trip')}</b><br/>
       <span class="muted">${esc(p.destination||'')} · ${esc(p.duration_days||'?')} days · ₹${price} <span class="muted small">/ person</span></span><br/>
       <span class="muted small">by ${esc((p.operator&&p.operator.company_name)||'operator')}</span>
-      ${p.operator && p.operator.is_verified ? '<span class="badge verified">✓ Verified</span>' : '<span class="badge">Unverified</span>'}
-      <span class="badge">${esc(p.availability_status||'')}</span><br/>
-      <span class="badge">★ ${esc(p.match_score??'—')} match</span>
-      <span class="badge ${liked?'verified':''}">${liked?'♥ Liked':''}</span>
-      <span class="badge ${saved?'verified':''}">${saved?'☆ Saved':''}</span>
-      <p class="muted small">${esc((p.match_reasons || []).join(' · '))}</p>
-      <p class="small why">${esc(p.match_explanation||'')}</p>
+      ${p.operator && p.operator.is_verified ? '<span class="badge verified">✓ Verified</span>' : ''}
+      ${p.availability_status ? `<span class="badge">${esc(p.availability_status)}</span>` : ''}<br/>
+      <span class="badge">★ ${esc(p.match_score??'—')}</span>
+      ${topReason?`<span class="muted small">${esc(topReason)}</span>`:''}
+      ${liked?'<span class="badge verified">♥ Liked</span>':''}
+      ${saved?'<span class="badge verified">☆ Saved</span>':''}
       <p class="small">${tags.map(t=>`<span class="badge">${esc(t)}</span>`).join(' ')}</p>
-      <p class="muted small">${esc((p.short_desc||'').slice(0,140))}</p>
+      <button class="btn small ghost card-detail" type="button">View details</button>
     </div>`;
+  el.querySelector('.card-detail')?.addEventListener('click', (e)=>{ e.stopPropagation(); openDetail(); });
   enableDrag(el);
   stack.appendChild(el);
   if (deck[idx+1] && deck[idx+1].cover_image){ const im = new Image(); im.src = deck[idx+1].cover_image; }
@@ -247,6 +267,10 @@ document.getElementById('detail-modal')?.addEventListener('click', e=>{ if(e.tar
 document.getElementById('btn-share')?.addEventListener('click', doShare);
 document.getElementById('f-apply')?.addEventListener('click', loadDeck);
 document.getElementById('f-clear')?.addEventListener('click', ()=>{
+  ['f-destination','f-min-price','f-max-price','f-min-dur','f-max-dur','f-style','f-accom','f-operator','f-min-score'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  loadDeck();
+});
+document.getElementById('empty-clear')?.addEventListener('click', ()=>{
   ['f-destination','f-min-price','f-max-price','f-min-dur','f-max-dur','f-style','f-accom','f-operator','f-min-score'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   loadDeck();
 });

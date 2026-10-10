@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="hero">
+<section class="hero home-hero">
   <div class="hero-text">
     <div class="hero-logo" aria-label="VYBE logo">
       <svg width="34" height="34" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C55 35 65 45 100 50 C65 55 55 65 50 100 C45 65 35 55 0 50 C35 45 45 35 50 0 Z" fill="currentColor"/></svg>
@@ -15,34 +15,23 @@
         <a class="btn ghost" href="/onboarding">Update preferences</a>
       {% else %}
         <a class="btn primary" href="/register">Find your VYBE</a>
-        <a class="btn ghost" href="/packages">Browse trips</a>
       {% endif %}
     </div>
     <div class="loop">
       <span>Discover</span>→<span>Swipe</span>→<span>Match</span>→<span>Connect</span>
     </div>
   </div>
-  <div class="hero-card">
-    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=80" alt="Munnar hills" />
-    <div class="hero-card-body">
-      <b>Munnar Tea Trails Escape</b>
-      <span class="muted">Munnar · 3 days · ₹9,999 · ★ 92 match</span>
-    </div>
+  <div class="hero-visual" role="img" aria-label="Kerala hills, beaches and misty mountains">
+    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=80" alt="Misty mountain landscape" loading="lazy"
+         onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=900&q=80';" />
+    <div class="hero-overlay"></div>
+    <div class="hero-tags"><span>Nature</span><span>Beaches</span><span>Culture</span></div>
   </div>
 </section>
 
 <section class="how">
-  <div><b>1. Tell us your mood</b><span class="muted">Budget, days, mountains vs beaches, adventure vs chill.</span></div>
-  <div><b>2. Swipe trips</b><span class="muted">Right = interested, Left = pass. VYBE learns gently.</span></div>
-  <div><b>3. Connect</b><span class="muted">Chat with the travel company. No fake bookings.</span></div>
-</section>
-
-<section>
-  <h2>Demo accounts</h2>
-  <div class="demo-grid">
-    <code>traveler@vybe.demo / traveler123</code>
-    <code>operator@vybe.demo / operator123</code>
-    <code>admin@vybe.demo / admin123</code>
-  </div>
+  <div><b>Personalized discovery</b><span class="muted">Matches for your budget, mood and travel style.</span></div>
+  <div><b>Swipe-based matching</b><span class="muted">Right = interested, Left = pass. Simple and fast.</span></div>
+  <div><b>Direct operators</b><span class="muted">Chat with travel companies. No fake bookings.</span></div>
 </section>
 {% endblock %}

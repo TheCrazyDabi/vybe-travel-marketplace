@@ -62,10 +62,17 @@ if errorlevel 1 (
 )
 
 echo.
-echo Starting VYBE at http://127.0.0.1:5000 ...
+echo Starting VYBE on 0.0.0.0:5000 ...
+echo   Laptop: http://127.0.0.1:5000
+for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4 Address"') do (
+  for /f "tokens=* delims= " %%b in ("%%a") do echo   Phone - same Wi-Fi: http://%%b:5000
+)
+echo Find your exact Wi-Fi IPv4 with: ipconfig ^(look under "Wireless LAN adapter Wi-Fi"^)
+echo If phone cannot connect: same Wi-Fi, Windows Firewall allow Python on Private networks, no guest-isolation.
 echo Demo logins: traveler@vybe.demo / traveler123 ^| operator@vybe.demo / operator123 ^| admin@vybe.demo / admin123
 echo Press Ctrl+C to stop.
 echo.
+if not defined FLASK_DEBUG set FLASK_DEBUG=0
 %PY% app.py
 if errorlevel 1 (
   echo.

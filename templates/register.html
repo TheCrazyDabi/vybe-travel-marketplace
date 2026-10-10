@@ -1,19 +1,79 @@
 {% extends "base.html" %}
 {% block title %}Join — VYBE{% endblock %}
 {% block content %}
-<h1>Find trips that match your vibe</h1>
-<form method="post" class="form">
-  {{ form.hidden_tag() }}
-  <label>Name {{ form.name(class="input") }}</label>
-  <label>Email {{ form.email(class="input") }}</label>
-  <label>Password (6+ chars) {{ form.password(class="input") }}</label>
-  <label>I am a
-    <select name="role" class="input">
-      <option value="traveler">Traveler — discover trips</option>
-      <option value="operator">Travel operator — publish packages</option>
-    </select>
-  </label>
-  {{ form.submit(class="btn primary") }}
-  <p class="muted">Have an account? <a href="/login">Log in</a></p>
-</form>
+<div class="auth-wrap reg-wrap">
+  <div class="auth-visual" role="img" aria-label="Tropical beach with palm trees and tour boat">
+    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1000&q=80&auto=format&fit=crop" alt="Tropical beach" loading="lazy" fetchpriority="high"
+         onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1000&q=80&auto=format&fit=crop';" />
+    <div class="auth-overlay"></div>
+    <svg class="route-deco" viewBox="0 0 300 120" aria-hidden="true"><path d="M10 100 C 70 90, 90 40, 150 55 S 240 90, 290 25" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-dasharray="6 6"/><circle cx="10" cy="100" r="5" fill="#fff"/><circle cx="150" cy="55" r="4" fill="none" stroke="#fff" stroke-width="2"/><path d="M290 15 c-6 0 -10 4 -10 10 c0 7 10 16 10 16 s10 -9 10 -16 c0 -6 -4 -10 -10 -10z" fill="#0D8584" stroke="#fff" stroke-width="2"/><circle cx="290" cy="25" r="3" fill="#fff"/></svg>
+    <div class="auth-caption">
+      <h2>Travel, your way.</h2>
+      <p>Discover experiences that match your mood. Connect with local travel experts and find your next adventure.</p>
+      <div class="badge-row feature-labels"><span class="badge feature">✦ Personalized trips</span><span class="badge feature">📍 Local travel experts</span></div>
+    </div>
+  </div>
+  <div class="auth-form">
+    <div class="hero-logo" aria-label="VYBE logo">
+      <svg width="28" height="28" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C55 35 65 45 100 50 C65 55 55 65 50 100 C45 65 35 55 0 50 C35 45 45 35 50 0 Z" fill="currentColor"/></svg>
+      <span>VYBE</span>
+    </div>
+    <h1>Create your VYBE account</h1>
+    <p class="muted">Discover personalized trips or publish travel packages as an operator.</p>
+    <form method="post" class="form auth" novalidate>
+      {{ form.hidden_tag() }}
+      <label>Name {{ form.name(class="input", autocomplete="name", placeholder="Your name") }}</label>
+      {% if form.name.errors %}<p class="error" role="alert">{{ form.name.errors|join(', ') }}</p>{% endif %}
+      <label>Email {{ form.email(class="input", autocomplete="email", placeholder="you@example.com") }}</label>
+      {% if form.email.errors %}<p class="error" role="alert">{{ form.email.errors|join(', ') }}</p>{% endif %}
+      <label>Password (6+ chars)
+        <span class="pw-wrap">{{ form.password(class="input", autocomplete="new-password", placeholder="••••••••", id="reg-password") }}
+        <button type="button" class="btn small ghost pw-toggle" data-for="reg-password" aria-label="Show password">Show</button></span>
+      </label>
+      {% if form.password.errors %}<p class="error" role="alert">{{ form.password.errors|join(', ') }}</p>{% endif %}
+      <fieldset class="role-cards" role="radiogroup" aria-label="Account role">
+        <legend>I am a</legend>
+        <label class="role-card">
+          <input type="radio" name="role" value="traveler" checked />
+          <span class="role-icon" aria-hidden="true">🧭</span>
+          <span class="role-text"><b>Traveller</b><small>Discover trips that match your interests and budget.</small></span>
+        </label>
+        <label class="role-card">
+          <input type="radio" name="role" value="operator" />
+          <span class="role-icon" aria-hidden="true">📍</span>
+          <span class="role-text"><b>Travel operator</b><small>Publish packages and connect with interested travellers.</small></span>
+        </label>
+      </fieldset>
+      <p class="muted small" id="role-hint" aria-live="polite">Create your profile to discover personalized travel packages.</p>
+      {{ form.submit(class="btn primary big auth-submit") }}
+      <div class="divider"><span>or</span></div>
+      <p class="muted">Already have an account? <a href="/login">Log in</a></p>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+  document.querySelectorAll('.pw-toggle').forEach(b=>b.addEventListener('click',()=>{
+    const el=document.getElementById(b.dataset.for);
+    const show = el.type==='password';
+    el.type = show?'text':'password';
+    b.textContent = show?'Hide':'Show';
+    b.setAttribute('aria-label', show?'Hide password':'Show password');
+  }));
+  const hint = document.getElementById('role-hint');
+  const sync = () => {
+    const v = (document.querySelector('input[name="role"]:checked')||{}).value || 'traveler';
+    document.querySelectorAll('.role-card').forEach(c=>{
+      c.classList.toggle('selected', c.querySelector('input').checked);
+    });
+    if(hint) hint.textContent = v === 'operator'
+      ? 'Your operator account may require verification before packages are publicly listed.'
+      : 'Create your profile to discover personalized travel packages.';
+  };
+  document.querySelectorAll('input[name="role"]').forEach(r=>r.addEventListener('change', sync));
+  sync();
+})();
+</script>
 {% endblock %}

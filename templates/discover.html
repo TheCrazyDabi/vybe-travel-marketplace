@@ -6,14 +6,10 @@
     <h1 style="margin:0">Swipe your VYBE</h1>
     <p class="muted" style="margin:4px 0">Right = interested (creates enquiry, no charge) · Left = pass · ♥ = favourite only · ☆ = save</p>
   </div>
-  <div class="cta-row" style="margin:0">
-    <a class="btn small ghost" href="/onboarding">Start Swiping / Preferences</a>
-    <a class="btn small ghost" href="/dashboard">My trips</a>
-  </div>
 </div>
 
 <details class="filters" id="filters-panel">
-  <summary>Filters (optional — onboarding prefs are the default)</summary>
+  <summary>Refine your trip options</summary>
   <div class="form-grid">
     <label>Destination<input id="f-destination" class="input" placeholder="Munnar, Goa…" /></label>
     <label>Min ₹<input id="f-min-price" type="number" min="0" class="input" /></label>
@@ -35,7 +31,15 @@
   <button id="btn-prev" class="nav-arrow" aria-label="Previous package" title="Previous (←)">‹</button>
   <div class="swipe-wrap">
     <div id="card-stack" aria-live="polite"></div>
-    <div id="empty-state" class="empty hidden">All caught up! <a href="/saved">See saved & liked</a> or <a href="/onboarding">tweak preferences</a>.</div>
+    <div id="empty-state" class="empty hidden">
+      <b id="empty-title">All caught up!</b>
+      <p class="muted" id="empty-text">No more packages right now.</p>
+      <div class="cta-row" style="justify-content:center">
+        <button class="btn small primary" id="empty-clear" type="button">Clear filters</button>
+        <a class="btn small ghost" href="/onboarding">Try different preferences</a>
+        <a class="btn small ghost" href="/saved">See saved & liked</a>
+      </div>
+    </div>
     <div class="swipe-actions">
       <button id="btn-pass" class="btn ghost circle" aria-label="Pass">✕</button>
       <button id="btn-like" class="btn ghost circle" aria-label="Like favourite">♥</button>

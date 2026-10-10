@@ -162,4 +162,11 @@ def _migrate_schema():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    # LAN-friendly dev server: 0.0.0.0 keeps 127.0.0.1 working AND allows
+    # phone access via laptop Wi-Fi IPv4 (e.g. http://LAPTOP_IPV4:5000).
+    # Never hard-code the laptop IP in code; find it with `ipconfig`.
+    # Debug OFF by default when reachable from LAN (avoid exposing debugger).
+    host = os.environ.get("FLASK_HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", os.environ.get("FLASK_PORT", "5000")))
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(debug=debug, host=host, port=port)

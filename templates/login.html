@@ -1,12 +1,48 @@
 {% extends "base.html" %}
 {% block title %}Log in — VYBE{% endblock %}
 {% block content %}
-<h1>Welcome back</h1>
-<form method="post" class="form">
-  {{ form.hidden_tag() }}
-  <label>Email {{ form.email(class="input") }}</label>
-  <label>Password {{ form.password(class="input") }}</label>
-  {{ form.submit(class="btn primary") }}
-  <p class="muted">No account? <a href="/register">Create one</a></p>
-</form>
+<div class="auth-wrap">
+  <div class="auth-visual" role="img" aria-label="Kerala mountain viewpoint">
+    <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=900&q=80" alt="Scenic Kerala landscape" loading="lazy"
+         onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=80';" />
+    <div class="auth-overlay"></div>
+    <div class="auth-caption">
+      <h2>Your next adventure starts here.</h2>
+      <p>Discover experiences that match your mood, interests and travel style.</p>
+      <div class="badge-row"><span class="badge">Nature</span><span class="badge">Adventure</span><span class="badge">Culture</span></div>
+    </div>
+  </div>
+  <div class="auth-form">
+    <div class="hero-logo" aria-label="VYBE logo">
+      <svg width="28" height="28" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C55 35 65 45 100 50 C65 55 55 65 50 100 C45 65 35 55 0 50 C35 45 45 35 50 0 Z" fill="currentColor"/></svg>
+      <span>VYBE</span>
+    </div>
+    <h1>Welcome back</h1>
+    <p class="muted">Sign in to discover trips that feel like you.</p>
+    <form method="post" class="form auth" novalidate>
+      {{ form.hidden_tag() }}
+      <label>Email {{ form.email(class="input", autocomplete="email", placeholder="you@example.com") }}</label>
+      {% if form.email.errors %}<p class="error" role="alert">{{ form.email.errors|join(', ') }}</p>{% endif %}
+      <label>Password
+        <span class="pw-wrap">{{ form.password(class="input", autocomplete="current-password", placeholder="••••••••", id="login-password") }}
+        <button type="button" class="btn small ghost pw-toggle" data-for="login-password" aria-label="Show password">Show</button></span>
+      </label>
+      {% if form.password.errors %}<p class="error" role="alert">{{ form.password.errors|join(', ') }}</p>{% endif %}
+      {{ form.submit(class="btn primary big auth-submit") }}
+      <div class="divider"><span>or</span></div>
+      <p class="muted">Don't have an account? <a href="/register">Create account</a></p>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.pw-toggle').forEach(b=>b.addEventListener('click',()=>{
+  const el=document.getElementById(b.dataset.for);
+  const show = el.type==='password';
+  el.type = show?'text':'password';
+  b.textContent = show?'Hide':'Show';
+  b.setAttribute('aria-label', show?'Hide password':'Show password');
+}));
+</script>
 {% endblock %}
