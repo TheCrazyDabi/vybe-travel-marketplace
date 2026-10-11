@@ -181,7 +181,7 @@ function renderCard(){
   const saved = savedSet.has(p.id);
   const topReason = (p.match_reasons || [])[0] || '';
   el.innerHTML = `
-    <div class="stamp like">INTERESTED</div><div class="stamp nope">PASS</div>
+    <div class="stamp like">INTERESTED</div><div class="stamp nope">NOT INTERESTED</div>
     <img src="${esc(p.cover_image || '')}" alt="${esc(p.destination||'trip')}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80&auto=format&fit=crop'" />
     <div class="info">
       <b>${esc(p.title||'Trip')}</b><br/>
