@@ -124,6 +124,27 @@
   <button id="fab-edit" class="fab" type="button" aria-label="Edit preferences">⚙<span>Edit preferences</span></button>
 </section>
 
+<div id="pass-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Why did you pass?">
+  <div class="modal-card">
+    <div class="cta-row" style="justify-content:space-between"><b>Why did you pass? (optional)</b><button id="pm-close" class="btn small ghost">Skip ✕</button></div>
+    <p class="muted small">Your feedback helps operators improve. You can skip.</p>
+    <div id="pm-reasons">
+      <label class="chip"><input type="radio" name="pass-reason" value="too_expensive" /> Too expensive</label>
+      <label class="chip"><input type="radio" name="pass-reason" value="destination" /> Destination does not interest me</label>
+      <label class="chip"><input type="radio" name="pass-reason" value="dates_duration" /> Dates or duration do not suit me</label>
+      <label class="chip"><input type="radio" name="pass-reason" value="activities" /> Activities do not interest me</label>
+      <label class="chip"><input type="radio" name="pass-reason" value="insufficient_details" /> Insufficient package details</label>
+      <label class="chip"><input type="radio" name="pass-reason" value="transport_stay" /> Transport or accommodation concerns</label>
+      <label class="chip"><input type="radio" name="pass-reason" value="other" /> Other</label>
+    </div>
+    <label>Comment (optional, max 500)<textarea id="pm-comment" class="input" rows="2" maxlength="500" placeholder="Anything else?"></textarea></label>
+    <div class="cta-row">
+      <button id="pm-skip" class="btn small ghost" type="button">Skip</button>
+      <button id="pm-submit" class="btn small primary" type="button">Send feedback</button>
+    </div>
+    <p id="pm-status" class="muted small" role="status"></p>
+  </div>
+</div>
 <div id="detail-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Package details">
   <div class="modal-card">
     <div class="cta-row" style="justify-content:space-between"><b id="dm-title">Trip</b><button id="dm-close" class="btn small ghost">Close ✕</button></div>

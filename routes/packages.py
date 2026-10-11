@@ -22,7 +22,9 @@ PACKAGE_FIELDS = (
 
 @packages_bp.get("/packages")
 def list_page():
-    pkgs = TravelPackage.query.filter_by(is_active=True).order_by(TravelPackage.price).all()
+    pkgs = TravelPackage.query.filter_by(is_active=True).all()
+    pkgs = [p for p in pkgs if not getattr(p, "is_deleted", False)]
+    pkgs.sort(key=lambda p: p.price or 0)
     return render_template("packages.html", packages=pkgs)
 
 
@@ -60,6 +62,7 @@ def detail_page(pkg_id: int):
 @packages_bp.get("/api/packages")
 def api_list():
     pkgs = TravelPackage.query.filter_by(is_active=True).all()
+    pkgs = [p for p in pkgs if not getattr(p, "is_deleted", False)]
     return jsonify({"packages": [p.to_dict() for p in pkgs]})
 
 
@@ -227,6 +230,31 @@ def api_update(pkg_id: int):
     return jsonify({"package": pkg.to_dict()})
 
 
+@packages_bp.post("/api/packages/<int:pkg_id>/delete")
+@login_required
+def api_delete(pkg_id: int):
+    """Operator soft-delete (archive). Never hard-deletes rows.
+
+    Sets is_deleted=True + is_active=False; all dependent records
+    (interests, enquiries, bookings, offers, messages, reviews) stay.
+    Deleted packages are excluded from discovery and new enquiries.
+    Idempotent: repeat calls return ok + already_deleted.
+    """
+    from datetime import datetime as _dt_del
+
+    pkg = TravelPackage.query.get_or_404(pkg_id)
+    company = _require_operator_company()
+    if company and pkg.operator_id != company.id and current_user.role != "admin":
+        abort(403)
+    if getattr(pkg, "is_deleted", False):
+        return jsonify({"ok": True, "package_id": pkg.id, "already_deleted": True})
+    pkg.is_deleted = True
+    pkg.is_active = False
+    pkg.deleted_at = _dt_del.utcnow()
+    db.session.commit()
+    return jsonify({"ok": True, "package_id": pkg.id, "deleted": True})
+
+
 @packages_bp.post("/api/packages/<int:pkg_id>/swipe")
 @login_required
 def api_swipe(pkg_id: int):
@@ -234,22 +262,50 @@ def api_swipe(pkg_id: int):
 
     - like = heart favourite, persisted, does NOT create an enquiry/booking.
     - pass = hide, persisted, does NOT delete favourites or enquiries.
+    - pass accepts optional rejection feedback: reason (allow-list key) +
+      comment (free text, <=500 chars). Feedback is optional; omit to skip.
     Use POST /api/enquiries for genuine interest (creates enquiry).
     """
+    from datetime import datetime as _dt
+
+    from models.interaction import REJECTION_REASON_KEYS
+
     pkg = TravelPackage.query.get_or_404(pkg_id)
+    if getattr(pkg, "is_deleted", False):
+        return jsonify({"error": "package unavailable"}), 404
     data = request.get_json(force=True, silent=True) or {}
     action = (data.get("action") or "").lower()
     if action not in ("like", "pass"):
         return jsonify({"error": "action must be like|pass"}), 400
     reason = data.get("reason")
-    if reason is not None and len(str(reason)) > 50:
-        return jsonify({"error": "reason too long (max 50)"}), 400
+    if reason in (None, ""):
+        reason = None
+    if reason is not None:
+        reason = str(reason).strip()
+        if not reason:
+            reason = None
+        elif len(reason) > 50:
+            return jsonify({"error": "reason too long (max 50)"}), 400
+        elif reason not in REJECTION_REASON_KEYS and reason != "hidden":
+            return jsonify({"error": "unknown reason", "valid_reasons": sorted(REJECTION_REASON_KEYS)}), 400
+    comment = data.get("comment")
+    if comment in (None, ""):
+        comment = None
+    if comment is not None:
+        comment = str(comment).strip()[:2000]
+        if not comment:
+            comment = None
+        elif len(str(data.get("comment") or "")) > 500:
+            return jsonify({"error": "comment too long (max 500)"}), 400
+    if action == "like" and (reason or comment):
+        return jsonify({"error": "feedback is for pass only"}), 400
     existing = Interest.query.filter_by(
         traveler_id=current_user.id, package_id=pkg.id, action=action
     ).first()
     if not existing:
         # independent: never delete the other action (pass must not remove favourites)
-        db.session.add(Interest(traveler_id=current_user.id, package_id=pkg.id, action=action, reason=reason))
+        db.session.add(Interest(traveler_id=current_user.id, package_id=pkg.id, action=action, reason=reason,
+                                comment=comment, feedback_at=_dt.utcnow() if (reason or comment) else None))
         # gentle adaptive note (no overreaction to single swipe)
         if current_user.preference and action == "pass" and reason:
             pref = current_user.preference
@@ -257,6 +313,16 @@ def api_swipe(pkg_id: int):
             lt[f"avoid:{reason}"] = lt.get(f"avoid:{reason}", 0) + 1
             pref.long_term = lt
         db.session.commit()
+    else:
+        # Idempotent retry / attach feedback to an existing pass.
+        if action == "pass" and (reason or comment) and not (existing.reason or existing.comment):
+            existing.reason = reason or existing.reason
+            existing.comment = comment or existing.comment
+            existing.feedback_at = _dt.utcnow()
+            db.session.commit()
+        elif action == "pass" and (reason or comment):
+            # Feedback already recorded — treat retry as success (no duplicate).
+            pass
     return jsonify({"ok": True, "package_id": pkg.id, "action": action})
 
 

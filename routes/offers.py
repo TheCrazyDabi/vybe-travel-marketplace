@@ -20,7 +20,7 @@ def _company_for(user):
 def api_create_offer():
     data = request.get_json(force=True, silent=True) or {}
     pkg = TravelPackage.query.get(data.get("package_id"))
-    if not pkg or not pkg.is_active:
+    if not pkg or not pkg.is_active or getattr(pkg, "is_deleted", False):
         return jsonify({"error": "package unavailable"}), 404
     try:
         num = int(data.get("num_travellers") or 2)

@@ -395,6 +395,7 @@ def api_preferences():
 @login_required
 def api_recommended():
     pkgs = TravelPackage.query.filter_by(is_active=True).all()
+    pkgs = [p for p in pkgs if not getattr(p, "is_deleted", False)]
     # optional query filters (search + discovery filters, never breaking default)
     # Reuses matching service for ranking; filters only narrow the list.
     q = (request.args.get("q") or request.args.get("destination") or "").strip().lower()
@@ -449,7 +450,8 @@ def api_recommended():
         pkgs = [p for p in pkgs if p.operator and operator in (p.operator.company_name or "").lower()]
     prefs = _prefs_dict()
     weights = current_user.preference.weights if current_user.preference else None
-    total_active = TravelPackage.query.filter_by(is_active=True).count()
+    total_active = sum(1 for _ in TravelPackage.query.filter_by(is_active=True).all()
+                       if not getattr(_, "is_deleted", False))
     if total_active == 0:
         return jsonify({"packages": [], "prefs": prefs,
                         "setup_notice": "No packages in the database yet (demo). Run: py seed.py --demo"})
@@ -523,7 +525,8 @@ def api_recommended():
               "max_duration": request.args.get("max_duration")}
 
     def _relax():
-        all_pkgs = TravelPackage.query.filter_by(is_active=True).all()
+        all_pkgs = [p for p in TravelPackage.query.filter_by(is_active=True).all()
+                    if not getattr(p, "is_deleted", False)]
         return closest_matches(all_pkgs, prefs, strict, weights)
 
     def _explain_empty():

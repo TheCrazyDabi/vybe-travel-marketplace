@@ -34,6 +34,10 @@ class TravelPackage(db.Model):
 
     cancellation_terms = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, default=True, index=True)
+    # Soft-delete / archival (Feature B): never hard-delete packages with
+    # history. Deleted packages are hidden from discovery but rows stay.
+    is_deleted = db.Column(db.Boolean, default=False, index=True)
+    deleted_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Phase 2: package management extras (additive, all nullable)
@@ -82,6 +86,8 @@ class TravelPackage(db.Model):
             "mood_tags": self.mood_tags or [],
             "cancellation_terms": self.cancellation_terms,
             "is_active": self.is_active,
+            "is_deleted": bool(getattr(self, "is_deleted", False)),
+            "deleted_at": self.deleted_at.isoformat() if getattr(self, "deleted_at", None) else None,
             # Phase 2 extras
             "nights": self.nights,
             "min_group_size": self.min_group_size,

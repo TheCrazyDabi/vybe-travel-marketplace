@@ -32,6 +32,7 @@ def dashboard():
         abort(403)
     company = _own_company()
     packages, interests, conversations, enquiries, bookings, offers = [], [], [], [], [], []
+    feedback, feedback_counts = [], []
     latest_review = None
     if company:
         latest_review = (
@@ -47,6 +48,23 @@ def dashboard():
                 Interest.query.filter(Interest.package_id.in_(pkg_ids), Interest.action == "like")
                 .order_by(Interest.created_at.desc())
                 .limit(50)
+                .all()
+            )
+            # Feature A: traveller rejection feedback for owned packages.
+            feedback = (
+                Interest.query.filter(Interest.package_id.in_(pkg_ids), Interest.action == "pass")
+                .filter(Interest.reason.isnot(None))
+                .order_by(Interest.created_at.desc())
+                .limit(100)
+                .all()
+            )
+            from sqlalchemy import func as _func
+
+            feedback_counts = (
+                db.session.query(Interest.package_id, Interest.reason, _func.count(Interest.id))
+                .filter(Interest.package_id.in_(pkg_ids), Interest.action == "pass")
+                .filter(Interest.reason.isnot(None))
+                .group_by(Interest.package_id, Interest.reason)
                 .all()
             )
         conversations = (
@@ -73,6 +91,7 @@ def dashboard():
             .limit(100)
             .all()
         )
+    pkg_map = {p.id: p for p in packages}
     return render_template(
         "operator_dashboard.html",
         company=company,
@@ -83,6 +102,9 @@ def dashboard():
         bookings=bookings,
         offers=offers,
         latest_review=latest_review,
+        feedback=feedback,
+        feedback_counts=feedback_counts,
+        pkg_map=pkg_map,
     )
 
 
@@ -224,6 +246,62 @@ def package_form(pkg_id: int | None = None):
         db.session.commit()
         return redirect(url_for("operator.dashboard"))
     return render_template("package_form.html", pkg=pkg, company=company)
+
+
+@operator_bp.post("/operator/packages/<int:pkg_id>/delete")
+@login_required
+def package_delete(pkg_id: int):
+    """HTML soft-delete: archive package, keep history. Ownership enforced."""
+    from datetime import datetime as _dt_del
+
+    if current_user.role not in ("operator", "admin"):
+        abort(403)
+    company = _own_company()
+    pkg = TravelPackage.query.get_or_404(pkg_id)
+    if company and pkg.operator_id != company.id and current_user.role != "admin":
+        abort(403)
+    if not getattr(pkg, "is_deleted", False):
+        pkg.is_deleted = True
+        pkg.is_active = False
+        pkg.deleted_at = _dt_del.utcnow()
+        db.session.commit()
+        flash(f"Package '{pkg.title}' deleted (archived). Existing bookings and history are preserved.", "success")
+    else:
+        flash("Package was already deleted.", "error")
+    return redirect(url_for("operator.dashboard"))
+
+
+@operator_bp.get("/api/operator/feedback")
+@login_required
+def api_feedback():
+    """Ownership-scoped traveller rejection feedback for owned packages."""
+    if current_user.role not in ("operator", "admin"):
+        return jsonify({"error": "operators only"}), 403
+    company = _own_company()
+    if not company and current_user.role != "admin":
+        return jsonify({"feedback": [], "counts": []})
+    if current_user.role == "admin" and not company:
+        q = Interest.query.filter_by(action="pass").filter(Interest.reason.isnot(None))
+    else:
+        pkg_ids = [p.id for p in TravelPackage.query.filter_by(operator_id=company.id).all()]
+        if not pkg_ids:
+            return jsonify({"feedback": [], "counts": []})
+        q = Interest.query.filter(Interest.package_id.in_(pkg_ids), Interest.action == "pass").filter(
+            Interest.reason.isnot(None)
+        )
+    rows = q.order_by(Interest.created_at.desc()).limit(200).all()
+    from sqlalchemy import func as _func
+
+    counts = (
+        db.session.query(Interest.package_id, Interest.reason, _func.count(Interest.id))
+        .filter(Interest.id.in_([r.id for r in rows]) if rows else False)
+        .group_by(Interest.package_id, Interest.reason)
+        .all()
+    )
+    return jsonify({
+        "feedback": [r.to_dict() for r in rows],
+        "counts": [{"package_id": pid, "reason": rsn, "count": int(n)} for pid, rsn, n in counts],
+    })
 
 
 # ---- JSON ----

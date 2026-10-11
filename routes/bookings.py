@@ -50,7 +50,7 @@ def api_create_enquiry():
     if not package_id:
         return jsonify({"error": "package_id required"}), 400
     pkg = TravelPackage.query.get(package_id)
-    if not pkg or not pkg.is_active:
+    if not pkg or not pkg.is_active or getattr(pkg, "is_deleted", False):
         return jsonify({"error": "package unavailable"}), 404
     try:
         num = int(data.get("num_travellers") or 1)

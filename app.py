@@ -164,6 +164,12 @@ def _migrate_schema():
         "price_confirmed_at": "DATETIME",
         "is_demo": "BOOLEAN DEFAULT 0",
         "updated_at": "DATETIME",
+        "is_deleted": "BOOLEAN DEFAULT 0",
+        "deleted_at": "DATETIME",
+    })
+    ensure("interests", {
+        "comment": "TEXT",
+        "feedback_at": "DATETIME",
     })
     db.session.commit()
 

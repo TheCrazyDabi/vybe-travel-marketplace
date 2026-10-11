@@ -118,6 +118,9 @@ def filter_packages(packages, prefs: dict):
         if not getattr(pkg, "is_active", True):
             excluded.append((pkg, "hidden package"))
             continue
+        if getattr(pkg, "is_deleted", False):
+            excluded.append((pkg, "deleted package"))
+            continue
         price = getattr(pkg, "price", 0) or 0
         if budget and price > budget * (1 + flex / 100.0):
             excluded.append((pkg, f"over budget (+{flex}% flex)"))

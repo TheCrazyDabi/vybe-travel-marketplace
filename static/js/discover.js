@@ -237,11 +237,37 @@ async function doPass(){
     const r = await fetch(`/api/packages/${p.id}/swipe`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'pass'})});
     if(!r.ok) throw new Error('pass failed');
     status(`Passed ${p.destination}.`);
+    lastPassedId = p.id;
     deck.splice(idx, 1);
     if(idx >= deck.length) idx = Math.max(0, deck.length - 1);
     await refreshState(); renderCard();
+    openPassModal();
   } catch(e){ status('Could not record pass. Check connection.'); }
   busy = false;
+}
+let lastPassedId = null;
+function openPassModal(){
+  const m = document.getElementById('pass-modal');
+  if(!m) return;
+  const c = document.getElementById('pm-comment'); if(c) c.value = '';
+  document.querySelectorAll('input[name="pass-reason"]').forEach(i=>{ i.checked = false; });
+  const s = document.getElementById('pm-status'); if(s) s.textContent = '';
+  m.classList.remove('hidden');
+}
+function closePassModal(){ document.getElementById('pass-modal')?.classList.add('hidden'); lastPassedId = null; }
+async function submitPassFeedback(){
+  if(!lastPassedId){ closePassModal(); return; }
+  const reason = (document.querySelector('input[name="pass-reason"]:checked')||{}).value || null;
+  const comment = (document.getElementById('pm-comment')||{}).value || '';
+  if(!reason && !comment.trim()){ closePassModal(); return; }
+  const btn = document.getElementById('pm-submit'); if(btn) btn.disabled = true;
+  try {
+    const r = await fetch(`/api/packages/${lastPassedId}/swipe`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'pass', reason, comment: comment.trim() || null})});
+    const st = document.getElementById('pm-status');
+    if(!r.ok){ const j = await r.json().catch(()=>({})); if(st) st.textContent = 'Could not save: ' + (j.error || r.status); }
+    else { status('Thanks for the feedback.'); closePassModal(); return; }
+  } catch(e){ const st = document.getElementById('pm-status'); if(st) st.textContent = 'Check connection and retry.'; }
+  if(btn) btn.disabled = false;
 }
 async function doInterested(){
   const p = current(); if(!p || busy) return; busy = true;
@@ -385,6 +411,10 @@ document.getElementById('btn-detail')?.addEventListener('click', openDetail);
 document.getElementById('dm-close')?.addEventListener('click', closeDetail);
 document.getElementById('detail-modal')?.addEventListener('click', e=>{ if(e.target.id==='detail-modal') closeDetail(); });
 document.getElementById('btn-share')?.addEventListener('click', doShare);
+document.getElementById('pm-skip')?.addEventListener('click', closePassModal);
+document.getElementById('pm-close')?.addEventListener('click', closePassModal);
+document.getElementById('pm-submit')?.addEventListener('click', submitPassFeedback);
+document.getElementById('pass-modal')?.addEventListener('click', e=>{ if(e.target.id==='pass-modal') closePassModal(); });
 const moreBtn = document.getElementById('btn-more'), moreMenu = document.getElementById('more-menu');
 moreBtn?.addEventListener('click', ()=>moreMenu.classList.toggle('hidden'));
 document.getElementById('m-hide')?.addEventListener('click', async ()=>{

@@ -28,12 +28,40 @@
       <img src="{{ p.cover_image }}" alt="" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80&auto=format&fit=crop'" />
       <div class="card-body">
         <b>{{ p.title }}</b>
-        <span class="muted">{{ p.destination }} · ₹{{ "{:,}".format(p.price) }} / person · {% if p.is_active %}Active{% else %}Hidden{% endif %}{% if p.seats_remaining is not none %} · {{ p.seats_remaining }} seats{% endif %}</span>
-        <span class="badge-row"><a class="btn small ghost" href="/packages/{{ p.id }}">View</a><a class="btn small ghost" href="/operator/packages/{{ p.id }}/edit">Edit</a></span>
+        <span class="muted">{{ p.destination }} · ₹{{ "{:,}".format(p.price) }} / person · {% if p.is_deleted %}Deleted{% elif p.is_active %}Active{% else %}Hidden{% endif %}{% if p.seats_remaining is not none %} · {{ p.seats_remaining }} seats{% endif %}</span>
+        <span class="badge-row"><a class="btn small ghost" href="/packages/{{ p.id }}">View</a><a class="btn small ghost" href="/operator/packages/{{ p.id }}/edit">Edit</a>{% if not p.is_deleted %}<button class="btn small ghost" type="button" onclick="confirmDelete({{ p.id }}, {{ p.title|tojson }})">Delete</button>{% endif %}</span>
       </div>
     </div>
     {% else %}<p class="muted">No packages yet.</p>{% endfor %}
   </div>
+  <div id="delete-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Confirm package deletion">
+    <div class="modal-card">
+      <h3>Delete package?</h3>
+      <p id="delete-modal-text">Are you sure?</p>
+      <p class="muted small">Deletion archives the package: it will no longer appear in traveller discovery or public listings. Existing bookings, enquiries, messages and history are preserved.</p>
+      <form id="delete-modal-form" method="post" action="">
+        <div class="cta-row">
+          <button class="btn small ghost" type="button" onclick="closeDelete()">Cancel</button>
+          <button id="delete-confirm-btn" class="btn small primary" type="submit" onclick="this.disabled=true;this.form.submit()">Confirm Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <h2>Traveller Feedback</h2>
+  {% if feedback_counts %}
+  <table class="table"><tr><th>Package</th><th>Reason</th><th>Count</th></tr>
+    {% for pid, rsn, n in feedback_counts %}
+    <tr><td>{{ pkg_map[pid].title if pkg_map and pid in pkg_map else pid }}</td><td>{{ rsn }}</td><td>{{ n }}</td></tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+  {% if feedback %}
+  <table class="table"><tr><th>When</th><th>Package</th><th>Reason</th><th>Comment</th></tr>
+    {% for f in feedback %}
+    <tr><td class="muted small">{{ f.created_at }}</td><td>{{ pkg_map[f.package_id].title if pkg_map and f.package_id in pkg_map else f.package_id }}</td><td><span class="badge">{{ f.reason }}</span></td><td>{{ f.comment or '—' }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="muted">No traveller pass feedback yet.</p>{% endif %}
   <h2>Enquiries (booking workflow)</h2>
   {% if enquiries %}
   <table class="table"><tr><th>ID</th><th>When</th><th>Package</th><th>Traveler</th><th>Status</th><th>Quote</th></tr>
@@ -95,6 +123,15 @@
 {% endblock %}
 {% block scripts %}
 <script>
+function confirmDelete(id, title){
+  const m = document.getElementById('delete-modal');
+  document.getElementById('delete-modal-text').textContent = `Delete "${title}" (#${id})?`;
+  document.getElementById('delete-modal-form').action = `/operator/packages/${id}/delete`;
+  const btn = document.getElementById('delete-confirm-btn');
+  if(btn) btn.disabled = false;
+  m.classList.remove('hidden');
+}
+function closeDelete(){ document.getElementById('delete-modal').classList.add('hidden'); }
 async function sendQuote(id){
   const ppp = parseInt((document.getElementById('q-ppp-'+id)||{}).value||'0',10);
   const msg = (document.getElementById('q-msg-'+id)||{}).value||'';
