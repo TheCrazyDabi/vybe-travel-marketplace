@@ -7,7 +7,7 @@ class TravelPackage(db.Model):
     __tablename__ = "travel_packages"
 
     id = db.Column(db.Integer, primary_key=True)
-    operator_id = db.Column(db.Integer, db.ForeignKey("travel_companies.id"), nullable=False)
+    operator_id = db.Column(db.Integer, db.ForeignKey("travel_companies.id"), nullable=False, index=True)
     title = db.Column(db.String(200), nullable=False)
     destination = db.Column(db.String(120), nullable=False, index=True)
     lat = db.Column(db.Float, nullable=True)

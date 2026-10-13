@@ -34,6 +34,7 @@ class Config:
         )
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    TEMPLATES_AUTO_RELOAD = True
 
     # Uploads (verification docs / logos). Kept small for hackathon.
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "instance", "uploads")

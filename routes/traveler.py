@@ -394,8 +394,7 @@ def api_preferences():
 @traveler_bp.get("/api/packages/recommended")
 @login_required
 def api_recommended():
-    pkgs = TravelPackage.query.filter_by(is_active=True).all()
-    pkgs = [p for p in pkgs if not getattr(p, "is_deleted", False)]
+    pkgs = TravelPackage.query.filter_by(is_active=True, is_deleted=False).all()
     # optional query filters (search + discovery filters, never breaking default)
     # Reuses matching service for ranking; filters only narrow the list.
     q = (request.args.get("q") or request.args.get("destination") or "").strip().lower()
@@ -450,48 +449,41 @@ def api_recommended():
         pkgs = [p for p in pkgs if p.operator and operator in (p.operator.company_name or "").lower()]
     prefs = _prefs_dict()
     weights = current_user.preference.weights if current_user.preference else None
-    total_active = sum(1 for _ in TravelPackage.query.filter_by(is_active=True).all()
-                       if not getattr(_, "is_deleted", False))
+    total_active = TravelPackage.query.filter_by(is_active=True, is_deleted=False).count()
     if total_active == 0:
         return jsonify({"packages": [], "prefs": prefs,
                         "setup_notice": "No packages in the database yet (demo). Run: py seed.py --demo"})
     ranked = rank_packages(pkgs, prefs, weights)
     if min_score is not None:
         ranked = [r for r in ranked if r["score"] >= min_score]
+
+    # Pre-fetch user's interests in a single query
+    user_interests = Interest.query.filter_by(traveler_id=current_user.id).all()
+    liked_ids = {i.package_id for i in user_interests if i.action == "like"}
+    saved_ids = {i.package_id for i in user_interests if i.action == "save"}
+    passed_ids = {i.package_id for i in user_interests if i.action == "pass"}
+    swiped_ids = liked_ids | passed_ids
+
     # VYBE Match Intelligence v1: likes + saves + enquiries up, passes damped down.
     # Onboarding prefs stay primary; history only re-ranks (never excludes).
     try:
         from models import TravelPackage as TP
         from models.booking import Enquiry as EnqM
 
-        def _pkgs(ids):
-            ids = list({i for i in ids if i})
-            return TP.query.filter(TP.id.in_(ids)).all() if ids else []
-
-        liked = _pkgs([i.package_id for i in Interest.query.filter_by(
-            traveler_id=current_user.id, action="like").all()])
-        saved = _pkgs([i.package_id for i in Interest.query.filter_by(
-            traveler_id=current_user.id, action="save").all()])
-        passed = _pkgs([i.package_id for i in Interest.query.filter_by(
-            traveler_id=current_user.id, action="pass").all()])
         enq_ids = [e.package_id for e in EnqM.query.filter_by(traveler_id=current_user.id).all()]
-        enquired = _pkgs(enq_ids)
+        all_pkg_ids = list((liked_ids | saved_ids | passed_ids | set(enq_ids)) - {None})
+        pkgs_by_id = {p.id: p for p in TP.query.filter(TP.id.in_(all_pkg_ids)).all()} if all_pkg_ids else {}
+
+        liked = [pkgs_by_id[i] for i in liked_ids if i in pkgs_by_id]
+        saved = [pkgs_by_id[i] for i in saved_ids if i in pkgs_by_id]
+        passed = [pkgs_by_id[i] for i in passed_ids if i in pkgs_by_id]
+        enquired = [pkgs_by_id[i] for i in enq_ids if i in pkgs_by_id]
         ranked = apply_match_intelligence(
             ranked, {"liked": liked, "saved": saved, "passed": passed, "enquired": enquired})
     except Exception:
         pass
     # exclude passed (hide) from deck; keep favourites/saves visible in panels
     # but exclude liked from deck to avoid repeats (revisit via header panel/prev)
-    swiped_ids = {
-        i.package_id for i in Interest.query.filter_by(traveler_id=current_user.id)
-        .filter(Interest.action.in_(["like", "pass"])).all()
-    }
-    liked_ids = {
-        i.package_id for i in Interest.query.filter_by(traveler_id=current_user.id, action="like").all()
-    }
-    saved_ids = {
-        i.package_id for i in Interest.query.filter_by(traveler_id=current_user.id, action="save").all()
-    }
     out = []
     for r in ranked:
         if r["package"].id in swiped_ids:

@@ -22,9 +22,11 @@ PACKAGE_FIELDS = (
 
 @packages_bp.get("/packages")
 def list_page():
-    pkgs = TravelPackage.query.filter_by(is_active=True).all()
-    pkgs = [p for p in pkgs if not getattr(p, "is_deleted", False)]
-    pkgs.sort(key=lambda p: p.price or 0)
+    pkgs = (
+        TravelPackage.query.filter_by(is_active=True, is_deleted=False)
+        .order_by(TravelPackage.price.asc())
+        .all()
+    )
     return render_template("packages.html", packages=pkgs)
 
 
@@ -61,8 +63,7 @@ def detail_page(pkg_id: int):
 # ---- JSON API ----
 @packages_bp.get("/api/packages")
 def api_list():
-    pkgs = TravelPackage.query.filter_by(is_active=True).all()
-    pkgs = [p for p in pkgs if not getattr(p, "is_deleted", False)]
+    pkgs = TravelPackage.query.filter_by(is_active=True, is_deleted=False).all()
     return jsonify({"packages": [p.to_dict() for p in pkgs]})
 
 

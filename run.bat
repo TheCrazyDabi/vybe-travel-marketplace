@@ -61,9 +61,26 @@ if errorlevel 1 (
   exit /b 1
 )
 
+REM --- Configure ADB reverse for USB-connected Android phone ---
+set ADBCMD=
+where adb >nul 2>nul
+if not errorlevel 1 (
+  set ADBCMD=adb
+) else if exist "%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" (
+  set "ADBCMD=%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"
+) else if defined ANDROID_HOME (
+  if exist "%ANDROID_HOME%\platform-tools\adb.exe" set "ADBCMD=%ANDROID_HOME%\platform-tools\adb.exe"
+)
+
 echo.
 echo Starting VYBE on 0.0.0.0:5000 ...
 echo   Laptop: http://127.0.0.1:5000
+if defined ADBCMD (
+  "%ADBCMD%" reverse tcp:5000 tcp:5000 >nul 2>nul
+  if not errorlevel 1 (
+    echo   Phone - USB ADB: http://localhost:5000
+  )
+)
 for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4 Address"') do (
   for /f "tokens=* delims= " %%b in ("%%a") do echo   Phone - same Wi-Fi: http://%%b:5000
 )

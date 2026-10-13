@@ -27,8 +27,8 @@ class CustomOffer(db.Model):
     traveler_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     package_id = db.Column(db.Integer, db.ForeignKey("travel_packages.id"), nullable=False, index=True)
     company_id = db.Column(db.Integer, db.ForeignKey("travel_companies.id"), nullable=False, index=True)
-    enquiry_id = db.Column(db.Integer, db.ForeignKey("enquiries.id"), nullable=True)
-    parent_id = db.Column(db.Integer, db.ForeignKey("custom_offers.id"), nullable=True)
+    enquiry_id = db.Column(db.Integer, db.ForeignKey("enquiries.id"), nullable=True, index=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey("custom_offers.id"), nullable=True, index=True)
     version = db.Column(db.Integer, nullable=False, default=1)
     status = db.Column(db.String(30), nullable=False, default="pending", index=True)
     # traveller requirements

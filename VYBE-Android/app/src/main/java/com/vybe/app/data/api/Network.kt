@@ -30,8 +30,8 @@ class SettingsStore(private val context: Context) {
     private val cachedName = stringPreferencesKey("cached_name")
     private val cachedRole = stringPreferencesKey("cached_role")
 
-    /** Emulator -> host loopback. Physical phone -> laptop LAN IP. ngrok URL also works. */
-    val defaultBaseUrl = "http://10.0.2.2:5000/"
+    /** ADB reverse loopback (physical phone over USB) or laptop LAN IP. */
+    val defaultBaseUrl = "http://localhost:5000/"
 
     fun baseUrlFlow(): Flow<String> =
         context.settingsStore.data.map { it[baseUrl] ?: defaultBaseUrl }

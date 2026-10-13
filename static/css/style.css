@@ -19,7 +19,9 @@ body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: va
 a { color: var(--color-ocean); }
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--color-ocean); outline-offset: 2px; }
 .nav { display: flex; justify-content: space-between; align-items: center; padding: 14px 28px; background: #fff; border-bottom: 1px solid var(--color-border); position: sticky; top: 0; z-index: 10; }
-.brand { font-weight: 900; font-size: 24px; letter-spacing: 2px; text-decoration: none; color: var(--color-ocean); }
+.brand { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--color-ocean); }
+.brand-sparkle { font-size: 18px; line-height: 1; display: inline-block; }
+.brand-text { font-family: 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-weight: 700; font-size: 28px; letter-spacing: 1px; line-height: 1; }
 .nav-links { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .nav-links a { text-decoration: none; font-weight: 600; }
 .container { max-width: 1100px; margin: 0 auto; padding: 24px; flex: 1 0 auto; width: 100%; }
@@ -53,7 +55,7 @@ body:has(.bottom-nav) .hero-video .hero-text { padding-bottom: calc(48px + 96px)
 .hero-video .lede { color: rgba(250,250,247,.90); }
 .hero-video .btn.ghost { background: transparent; border-color: #FAFAF7; color: #FAFAF7; }
 .hero-logo { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--color-ocean); margin-bottom: 10px; }
-.hero-logo span { font-weight: 900; font-size: 34px; letter-spacing: 6px; }
+.hero-logo span { font-family: 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-weight: 700; font-size: 44px; letter-spacing: 2px; line-height: 1; }
 .eyebrow { text-transform: uppercase; letter-spacing: 2px; color: var(--color-ocean); font-weight: 700; font-size: 12px; }
 .hero h1 { font-size: 52px; line-height: 1.02; margin: 8px 0; }
 .lede { font-size: 18px; color: var(--color-text-muted); }
@@ -236,7 +238,8 @@ img { max-width: 100%; }
 .nav { flex-wrap: wrap; row-gap: 8px; }
 .table-wrap { overflow-x: auto; }
 .table { min-width: 0; }
-@media (max-width: 800px) { .detail, .chat-layout { grid-template-columns: 1fr; } .hero h1 { font-size: 36px; } .discover-layout { grid-template-columns: 40px minmax(0,1fr) 40px; } .filters .form-grid { grid-template-columns: 1fr 1fr; } .swipe-wrap { max-width: none; } #card-stack { height: 480px; } .swipe-card img { height: 200px; } .nav-arrow { width: 40px; height: 40px; } .auth-wrap { grid-template-columns: 1fr; } .auth-visual { min-height: 180px; } .auth-form { padding: 22px 18px; } .btn.big, .auth-submit { min-height: 48px; } .input { font-size: 16px; } .role-cards { grid-template-columns: 1fr; } .cols, .form-grid { grid-template-columns: 1fr; } .cta-row .btn { min-height: 44px; } .modal { padding: 10px; } .hero-video .hero-text { padding: 36px 18px; } }
+.nav-auth-cta { display: inline-flex; }
+@media (max-width: 800px) { .nav-auth-cta, .hide-mobile { display: none !important; } .detail, .chat-layout { grid-template-columns: 1fr; } .hero h1 { font-size: 36px; } .discover-layout { grid-template-columns: 40px minmax(0,1fr) 40px; } .filters .form-grid { grid-template-columns: 1fr 1fr; } .swipe-wrap { max-width: none; } #card-stack { height: 480px; } .swipe-card img { height: 200px; } .nav-arrow { width: 40px; height: 40px; } .auth-wrap { grid-template-columns: 1fr; } .auth-visual { min-height: 180px; } .auth-form { padding: 22px 18px; } .btn.big, .auth-submit { min-height: 48px; } .input { font-size: 16px; } .role-cards { grid-template-columns: 1fr; } .cols, .form-grid { grid-template-columns: 1fr; } .cta-row .btn { min-height: 44px; } .modal { padding: 10px; } .hero-video .hero-text { padding: 36px 18px; } }
 @media (max-width: 380px) { .filters .form-grid { grid-template-columns: 1fr; } .container { padding: 16px; } }
 
 /* === VYBE mobile-first responsive layer (phones / tablets / laptops) === */
@@ -252,7 +255,8 @@ img, video, svg { max-width: 100%; }
 /* Phones (≤480px): compact nav, 1-col cards, full-width forms, sheet modal. */
 @media (max-width: 480px) {
   .nav { padding: 10px 14px; }
-  .brand { font-size: 20px; }
+  .brand-text { font-size: 24px; }
+  .brand-sparkle { font-size: 16px; }
   .container { padding: 16px 14px 24px; }
   .grid { grid-template-columns: 1fr; gap: 14px; }
   .card img { height: 168px; }

@@ -1,4 +1,4 @@
-"""Roamly companion models: trip itinerary, packing checklist, AI chat history.
+"""VYBE companion models: trip itinerary, packing checklist, AI chat history.
 
 Seeded per-user from data/singapore.json on first visit (lazy provision),
 so each traveler gets their own checkable copy. Demo-labeled sample data.

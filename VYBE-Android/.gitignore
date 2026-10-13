@@ -2,10 +2,16 @@
 local.properties
 .gradle/
 .idea/
+.kotlin/
+captures/
+.cxx/
 *.iml
 build/
 app/build/
 app/release/
+*.apk
+*.aab
+*.log
 
 # OS / editor
 .DS_Store

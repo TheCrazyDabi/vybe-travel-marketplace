@@ -7,7 +7,7 @@ class TravelCompany(db.Model):
     __tablename__ = "travel_companies"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     company_name = db.Column(db.String(160), nullable=False)
     business_email = db.Column(db.String(255), nullable=False)
     contact_details = db.Column(db.String(255), nullable=True)

@@ -49,7 +49,7 @@ def api_create_enquiry():
     package_id = data.get("package_id")
     if not package_id:
         return jsonify({"error": "package_id required"}), 400
-    pkg = TravelPackage.query.get(package_id)
+    pkg = db.session.get(TravelPackage, package_id)
     if not pkg or not pkg.is_active or getattr(pkg, "is_deleted", False):
         return jsonify({"error": "package unavailable"}), 404
     try:
@@ -210,7 +210,7 @@ def api_confirm(enq_id: int):
         total = enq.total_cost
     if enq.booking:
         return jsonify({"error": "booking already exists", "booking": enq.booking.to_dict()}), 400
-    pkg = TravelPackage.query.get(enq.package_id)
+    pkg = db.session.get(TravelPackage, enq.package_id)
     booking = Booking(
         enquiry_id=enq.id,
         traveler_id=enq.traveler_id,

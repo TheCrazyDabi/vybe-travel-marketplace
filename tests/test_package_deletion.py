@@ -47,7 +47,7 @@ def test_delete_without_dependents(client):
     r = client.post(f"/api/packages/{client._ids['p1']}/delete")
     assert r.status_code == 200 and r.get_json()["ok"]
     with client.application.app_context():
-        p = TravelPackage.query.get(client._ids["p1"])
+        p = db.session.get(TravelPackage, client._ids["p1"])
         assert p.is_deleted and not p.is_active
 
 

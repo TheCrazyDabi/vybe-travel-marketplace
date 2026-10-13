@@ -19,7 +19,7 @@ def _company_for(user):
 @login_required
 def api_create_offer():
     data = request.get_json(force=True, silent=True) or {}
-    pkg = TravelPackage.query.get(data.get("package_id"))
+    pkg = db.session.get(TravelPackage, data.get("package_id"))
     if not pkg or not pkg.is_active or getattr(pkg, "is_deleted", False):
         return jsonify({"error": "package unavailable"}), 404
     try:
@@ -138,7 +138,7 @@ def api_traveler_reply(offer_id: int):
 @login_required
 def api_create_review():
     data = request.get_json(force=True, silent=True) or {}
-    booking = Booking.query.get(data.get("booking_id"))
+    booking = db.session.get(Booking, data.get("booking_id"))
     if not booking:
         return jsonify({"error": "booking required"}), 400
     if booking.traveler_id != current_user.id and current_user.role != "admin":

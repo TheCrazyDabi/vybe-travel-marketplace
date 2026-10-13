@@ -4,6 +4,13 @@ from flask_wtf import FlaskForm
 from wtforms import PasswordField, StringField, SubmitField
 from wtforms.validators import DataRequired, Email, Length
 
+try:
+    import email_validator  # noqa: F401
+    _email_validator = Email()
+except ImportError:
+    from wtforms.validators import Regexp
+    _email_validator = Regexp(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", message="Invalid email address.")
+
 from models import TravelerProfile, User, UserPreference, db
 
 auth_bp = Blueprint("auth", __name__)
@@ -11,14 +18,14 @@ auth_bp = Blueprint("auth", __name__)
 
 class RegisterForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired(), Length(max=120)])
-    email = StringField("Email", validators=[DataRequired(), Email(), Length(max=255)])
+    email = StringField("Email", validators=[DataRequired(), _email_validator, Length(max=255)])
     password = PasswordField("Password", validators=[DataRequired(), Length(min=6)])
     role = StringField("Role")  # traveler|operator (default traveler)
     submit = SubmitField("Create account")
 
 
 class LoginForm(FlaskForm):
-    email = StringField("Email", validators=[DataRequired(), Email()])
+    email = StringField("Email", validators=[DataRequired(), _email_validator])
     password = PasswordField("Password", validators=[DataRequired()])
     submit = SubmitField("Log in")
 

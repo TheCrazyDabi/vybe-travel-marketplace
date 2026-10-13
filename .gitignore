@@ -32,6 +32,11 @@ instance/*
 Thumbs.db
 .vscode/
 .idea/
+*.log
+*.tmp
+*.bak
+*.swp
+*~
 
 # Local-only build prompt (not part of the product repo; also covers docs/ copy)
 VYBE_MASTER_BUILD_PROMPT.md

@@ -13,13 +13,16 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}" />
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='11') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='12') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 </head>
 <body>
   <nav class="nav">
-    <a class="brand" href="/">✦ VYBE</a>
+    <a class="brand" href="/"><span class="brand-sparkle" aria-hidden="true">✦</span><span class="brand-text">VYBE</span></a>
     <div class="nav-links nav-top">
       {% if current_user.is_authenticated %}
         <div class="menu-wrap nav-menu">
@@ -38,7 +41,7 @@
           </div>
         </div>
       {% elif request.path == '/login' %}
-        <a class="btn small" href="/register">Create account</a>
+        <a class="btn small nav-auth-cta hide-mobile" href="/register">Create account</a>
       {% elif request.path == '/register' %}
         <a href="/login">Log in</a>
       {% else %}
