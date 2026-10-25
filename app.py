@@ -69,8 +69,18 @@ def create_app(config_class=Config):
     @app.get("/api/index")
     @app.get("/api/index.py")
     def _vercel_root_fallback():
-        from routes.main import index
-        return index()
+        from flask import request, jsonify
+        if "__route" in request.args:
+            route = request.args["__route"]
+            from werkzeug.test import Client
+            # It should have been handled by WSGI middleware, but let's dump for debug if it reached here
+        return jsonify({
+            "request.path": request.path,
+            "request.args": dict(request.args),
+            "PATH_INFO": request.environ.get("PATH_INFO"),
+            "QUERY_STRING": request.environ.get("QUERY_STRING"),
+            "headers": {k: v for k, v in request.headers.items() if "cookie" not in k.lower()}
+        })
 
     @app.after_request
     def _add_security_headers(response):
