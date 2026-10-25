@@ -54,41 +54,36 @@
       <span class="brand-text">VYBE</span>
     </a>
 
-    <!-- Primary Desktop Navigation Links from reference UI -->
+    <!-- Top Bar Navigation (Clean Three-Dot Menu) -->
     <div class="nav-links nav-top">
-      <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
-      <a href="/packages" class="nav-link {% if request.path.startswith('/packages') %}active{% endif %}">Explore</a>
-      <a href="{% if current_user.is_authenticated and current_user.role == 'operator' %}/operator{% else %}/login?role=operator{% endif %}" class="nav-link {% if request.path.startswith('/operator') %}active{% endif %}">For Operators</a>
-      <a href="/companion" class="nav-link {% if request.path.startswith('/companion') %}active{% endif %}">About</a>
-
-      {% if current_user.is_authenticated %}
-        <div class="menu-wrap nav-menu">
-          <button id="nav-more-btn" type="button" class="nav-circle-btn" aria-haspopup="true" aria-expanded="false" aria-label="More options">···</button>
-          <div id="nav-more-menu" class="nav-dropdown hidden" role="menu" aria-label="More navigation">
+      <div class="menu-wrap nav-menu">
+        <button id="nav-more-btn" type="button" class="nav-circle-btn" aria-haspopup="true" aria-expanded="false" aria-label="Menu">···</button>
+        <div id="nav-more-menu" class="nav-dropdown hidden" role="menu" aria-label="Navigation menu">
+          {% if current_user.is_authenticated %}
             <div class="nav-menu-head"><span class="user">Hi, {{ current_user.name.split(' ')[0] }}</span></div>
+            <a href="/" role="menuitem" class="{% if request.path == '/' %}active{% endif %}">Home</a>
+            <a href="/packages" role="menuitem" class="{% if request.path.startswith('/packages') %}active{% endif %}">Explore trips</a>
             <a href="/discover" role="menuitem" class="{% if request.path.startswith('/discover') %}active{% endif %}">Discover</a>
+            <a href="/companion" role="menuitem" class="{% if request.path.startswith('/companion') %}active{% endif %}">AI Guide (About)</a>
             <a href="/saved" role="menuitem" class="{% if request.path.startswith('/saved') %}active{% endif %}">Saved <span id="nav-saved-count" class="count-badge hidden">0</span></a>
             <a href="/saved" id="nav-liked-link" role="menuitem" title="Liked packages">♥ Liked <span id="nav-like-count" class="count-badge hidden">0</span></a>
             {% if current_user.role == 'traveler' %}<a href="/packing" role="menuitem" class="{% if request.path.startswith('/packing') %}active{% endif %}">Packing</a>{% endif %}
-            {% if current_user.role == 'operator' %}<a href="/operator" role="menuitem" class="{% if request.path.startswith('/operator') %}active{% endif %}">Dashboard</a>{% endif %}
+            {% if current_user.role == 'operator' %}<a href="/operator" role="menuitem" class="{% if request.path.startswith('/operator') %}active{% endif %}">Operator Dashboard</a>{% else %}<a href="/login?role=operator" role="menuitem">For Operators</a>{% endif %}
             {% if current_user.role == 'admin' %}<a href="/admin" role="menuitem" class="{% if request.path.startswith('/admin') %}active{% endif %}">Admin</a>{% endif %}
             <a href="/chats" role="menuitem" class="{% if request.path.startswith('/chats') %}active{% endif %}">Chats</a>
             <a href="/profile" role="menuitem" class="{% if request.path.startswith('/profile') %}active{% endif %}">Profile</a>
-            <a href="/logout" role="menuitem" class="btn small">Logout</a>
-          </div>
+            <a href="/logout" role="menuitem" class="btn small" style="margin-top:6px;text-align:center;">Logout</a>
+          {% else %}
+            <a href="/" role="menuitem" class="{% if request.path == '/' %}active{% endif %}">Home</a>
+            <a href="/packages" role="menuitem">Explore trips</a>
+            <a href="/companion" role="menuitem">AI Guide &amp; About</a>
+            <a href="/login?role=operator" role="menuitem">For Operators</a>
+            <div class="divider" style="margin:6px 0;"></div>
+            <a href="/login" role="menuitem" class="btn small primary" style="text-align:center;margin:4px 2px;">Log in</a>
+            <a href="/register" role="menuitem" class="btn small ghost" style="text-align:center;margin:4px 2px;">Create account</a>
+          {% endif %}
         </div>
-      {% else %}
-        <div class="menu-wrap nav-menu">
-          <button id="nav-more-btn" type="button" class="nav-circle-btn" aria-haspopup="true" aria-expanded="false" aria-label="More options">···</button>
-          <div id="nav-more-menu" class="nav-dropdown hidden" role="menu" aria-label="More navigation">
-            <a href="/login" role="menuitem">Log in</a>
-            <a href="/register" role="menuitem">Create account</a>
-            <a href="/packages" role="menuitem">Browse trips</a>
-            <a href="/companion" role="menuitem">AI Guide</a>
-          </div>
-        </div>
-        <a class="btn small nav-auth-cta hide-mobile" href="/login">Login</a>
-      {% endif %}
+      </div>
     </div>
   </nav>
 
