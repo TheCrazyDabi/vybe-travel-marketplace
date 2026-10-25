@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+import json
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
@@ -11,7 +12,10 @@ try:
     from app import app as flask_app
 
     def app(environ, start_response):
-        # Normalize PATH_INFO so Flask router correctly matches requested endpoints
+        # 1. Reset SCRIPT_NAME: Vercel sets SCRIPT_NAME to /api/index which forces Flask into 404
+        environ["SCRIPT_NAME"] = ""
+
+        # 2. Normalize PATH_INFO to clean root paths
         path = environ.get("PATH_INFO", "")
         if path.startswith("/api/index.py"):
             remainder = path[len("/api/index.py"):]
@@ -21,6 +25,19 @@ try:
             environ["PATH_INFO"] = remainder if remainder.startswith("/") else ("/" + remainder)
         elif not path:
             environ["PATH_INFO"] = "/"
+
+        # 3. Diagnostic endpoint: /__diag
+        if environ.get("PATH_INFO") == "/__diag":
+            status = '200 OK'
+            headers = [('Content-Type', 'application/json')]
+            start_response(status, headers)
+            info = {
+                "status": "healthy",
+                "database_configured": bool(os.environ.get("DATABASE_URL")),
+                "serverless": bool(os.environ.get("VERCEL")),
+                "env": os.environ.get("FLASK_ENV", "development"),
+            }
+            return [json.dumps(info, indent=2).encode('utf-8')]
 
         return flask_app(environ, start_response)
 

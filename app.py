@@ -66,6 +66,12 @@ def create_app(config_class=Config):
     def favicon():
         return app.send_static_file("images/favicon.svg")
 
+    @app.get("/api/index")
+    @app.get("/api/index.py")
+    def _vercel_root_fallback():
+        from routes.main import index
+        return index()
+
     @app.after_request
     def _add_security_headers(response):
         response.headers["X-Content-Type-Options"] = "nosniff"
