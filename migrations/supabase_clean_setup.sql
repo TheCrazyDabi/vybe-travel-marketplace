@@ -54,6 +54,7 @@ CREATE TABLE users (
     role VARCHAR(20) NOT NULL DEFAULT 'traveler',
     status VARCHAR(20) NOT NULL DEFAULT 'active',
     status_reason TEXT,
+    age_range VARCHAR(20),
     is_email_verified BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login_at TIMESTAMPTZ

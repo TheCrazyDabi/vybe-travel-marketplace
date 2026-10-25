@@ -177,7 +177,10 @@ def _migrate_schema():
         for col, ddl in col_ddl.items():
             if col not in cols:
                 try:
-                    db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
+                    if is_pg:
+                        db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {ddl}"))
+                    else:
+                        db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
                     db.session.commit()
                 except Exception:
                     db.session.rollback()
@@ -202,6 +205,7 @@ def _migrate_schema():
         db.session.rollback()
 
     ensure("users", {
+        "age_range": "VARCHAR(20)",
         "is_email_verified": f"BOOLEAN DEFAULT {b_false}",
         "last_login_at": "TIMESTAMP",
     })
@@ -309,6 +313,7 @@ def api_bootstrap():
     if secret != app.config.get("SECRET_KEY") and TravelPackage.query.count() > 0:
         return jsonify({"error": "unauthorized", "packages_count": TravelPackage.query.count()}), 403
     try:
+        _migrate_schema()
         from seed import seed_demo, seed_demo_packages
         counts = seed_demo()
         added = seed_demo_packages()
