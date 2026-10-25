@@ -161,21 +161,43 @@ def _migrate_schema():
     except Exception:
         return
 
-    b_false = "FALSE" if is_pg else "0"
-    b_true = "TRUE" if is_pg else "1"
+    # Master schema mapping for all models to guarantee zero UndefinedColumn errors
+    SCHEMA_MAP = {
+        'users': {'name': 'VARCHAR(120)', 'email': 'VARCHAR(255)', 'password_hash': 'VARCHAR(255)', 'role': 'VARCHAR(20)', 'status': "VARCHAR(20) DEFAULT 'active'", 'status_reason': 'VARCHAR(255)', 'age_range': 'VARCHAR(20)', 'is_email_verified': 'BOOLEAN DEFAULT FALSE', 'last_login_at': 'TIMESTAMP', 'created_at': 'TIMESTAMP'},
+        'traveler_profiles': {'user_id': 'INTEGER', 'budget_max': 'INTEGER', 'duration_days': 'INTEGER', 'preferred_regions': 'JSON', 'preferred_climate': 'JSON', 'scenery': 'JSON', 'interests': 'JSON', 'group_type': 'VARCHAR(20)', 'current_mood': 'VARCHAR(40)', 'avoid': 'JSON', 'updated_at': 'TIMESTAMP', 'travel_moods': 'JSON', 'travel_pace': 'VARCHAR(20)', 'trip_desires': 'JSON', 'destination_prefs': 'JSON', 'activity_prefs': 'JSON', 'preferred_destinations': 'JSON', 'avoid_destinations': 'JSON', 'preferred_region_text': 'VARCHAR(200)', 'start_city': 'VARCHAR(120)', 'destination_text': 'VARCHAR(200)', 'budget_per_person': 'INTEGER', 'budget_flex_pct': 'INTEGER DEFAULT 20', 'travel_start_date': 'VARCHAR(20)', 'travel_end_date': 'VARCHAR(20)', 'date_flexible': 'BOOLEAN DEFAULT TRUE', 'num_travellers': 'INTEGER DEFAULT 2', 'accommodation_prefs': 'JSON', 'transport_prefs': 'JSON', 'trip_mode': 'VARCHAR(20)', 'travel_style': 'VARCHAR(20)', 'group_size_pref': 'VARCHAR(30)', 'itinerary_pref': 'VARCHAR(20)', 'priority': 'VARCHAR(20)', 'disliked_activities': 'JSON', 'accessibility_notes': 'TEXT', 'dietary_notes': 'TEXT', 'other_notes': 'TEXT', 'ideal_trip_text': 'TEXT', 'onboarding_completed': 'BOOLEAN DEFAULT FALSE', 'onboarding_step': 'INTEGER DEFAULT 1'},
+        'user_preferences': {'user_id': 'INTEGER', 'long_term': 'JSON', 'mood_weights': 'JSON', 'weights': 'JSON', 'updated_at': 'TIMESTAMP'},
+        'travel_companies': {'user_id': 'INTEGER', 'company_name': 'VARCHAR(160)', 'business_email': 'VARCHAR(255)', 'contact_details': 'VARCHAR(255)', 'description': 'TEXT', 'licence_info': 'VARCHAR(255)', 'document_path': 'VARCHAR(512)', 'service_regions': 'JSON', 'logo': 'VARCHAR(512)', 'status': 'VARCHAR(20)', 'is_verified': 'BOOLEAN', 'created_at': 'TIMESTAMP', 'contact_person': 'VARCHAR(120)', 'business_type': 'VARCHAR(80)', 'phone': 'VARCHAR(50)', 'operating_regions': 'JSON', 'is_demo': 'BOOLEAN DEFAULT FALSE'},
+        'verification_records': {'company_id': 'INTEGER', 'submitted_by': 'INTEGER', 'status': 'VARCHAR(20)', 'reviewer_note': 'TEXT', 'reviewed_by': 'INTEGER', 'created_at': 'TIMESTAMP', 'reviewed_at': 'TIMESTAMP'},
+        'travel_packages': {'operator_id': 'INTEGER', 'title': 'VARCHAR(200)', 'destination': 'VARCHAR(120)', 'lat': 'FLOAT', 'lng': 'FLOAT', 'cover_image': 'VARCHAR(1024)', 'short_desc': 'VARCHAR(500)', 'itinerary': 'TEXT', 'price': 'INTEGER', 'currency': "VARCHAR(10) DEFAULT 'INR'", 'duration_days': 'INTEGER', 'available_dates': 'VARCHAR(255)', 'group_size': 'VARCHAR(64)', 'included': 'JSON', 'excluded': 'JSON', 'accommodation': 'VARCHAR(255)', 'transportation': 'VARCHAR(255)', 'activities': 'JSON', 'region_tags': 'JSON', 'climate_tags': 'JSON', 'scenery_tags': 'JSON', 'interest_tags': 'JSON', 'mood_tags': 'JSON', 'cancellation_terms': 'TEXT', 'is_active': 'BOOLEAN DEFAULT TRUE', 'is_deleted': 'BOOLEAN DEFAULT FALSE', 'deleted_at': 'TIMESTAMP', 'created_at': 'TIMESTAMP', 'nights': 'INTEGER', 'min_group_size': 'INTEGER', 'max_group_size': 'INTEGER', 'suitable_travel_styles': 'JSON', 'suitable_groups': 'JSON', 'capacity': 'INTEGER', 'seats_remaining': 'INTEGER', 'customization_options': 'TEXT', 'images': 'JSON', 'departure_dates_list': 'JSON', 'price_breakdown': 'JSON', 'price_kind': 'VARCHAR(20)', 'price_confirmed_at': 'TIMESTAMP', 'is_demo': 'BOOLEAN DEFAULT FALSE', 'updated_at': 'TIMESTAMP', 'status': "VARCHAR(30) DEFAULT 'active'", 'trip_start_date': 'TIMESTAMP', 'trip_end_date': 'TIMESTAMP', 'booking_deadline': 'TIMESTAMP', 'valid_until': 'TIMESTAMP'},
+        'interests': {'traveler_id': 'INTEGER', 'package_id': 'INTEGER', 'action': 'VARCHAR(10)', 'reason': 'VARCHAR(120)', 'comment': 'TEXT', 'feedback_at': 'TIMESTAMP', 'created_at': 'TIMESTAMP'},
+        'conversations': {'traveler_id': 'INTEGER', 'company_id': 'INTEGER', 'package_id': 'INTEGER', 'status': 'VARCHAR(30)', 'created_at': 'TIMESTAMP', 'updated_at': 'TIMESTAMP'},
+        'messages': {'conversation_id': 'INTEGER', 'sender_id': 'INTEGER', 'body': 'TEXT', 'is_read': 'BOOLEAN', 'created_at': 'TIMESTAMP'},
+        'reports': {'reporter_id': 'INTEGER', 'target_type': 'VARCHAR(20)', 'target_id': 'INTEGER', 'reason': 'VARCHAR(120)', 'details': 'TEXT', 'status': 'VARCHAR(20)', 'action_taken': 'VARCHAR(255)', 'handled_by': 'INTEGER', 'handled_at': 'TIMESTAMP', 'created_at': 'TIMESTAMP'},
+        'enquiries': {'traveler_id': 'INTEGER', 'package_id': 'INTEGER', 'company_id': 'INTEGER', 'status': 'VARCHAR(30)', 'num_travellers': 'INTEGER', 'travel_date': 'VARCHAR(30)', 'message': 'TEXT', 'total_cost': 'INTEGER', 'created_at': 'TIMESTAMP', 'updated_at': 'TIMESTAMP'},
+        'quotations': {'enquiry_id': 'INTEGER', 'operator_id': 'INTEGER', 'price_per_person': 'INTEGER', 'total_price': 'INTEGER', 'availability_note': 'TEXT', 'valid_until': 'VARCHAR(30)', 'message': 'TEXT', 'status': 'VARCHAR(20)', 'created_at': 'TIMESTAMP'},
+        'bookings': {'booking_reference': 'VARCHAR(36)', 'idempotency_key': 'VARCHAR(100)', 'enquiry_id': 'INTEGER', 'traveler_id': 'INTEGER', 'package_id': 'INTEGER', 'company_id': 'INTEGER', 'num_travellers': 'INTEGER DEFAULT 1', 'status': 'VARCHAR(20)', 'agreed_price_snapshot': 'INTEGER', 'price_breakdown_snapshot': 'JSON', 'terms_snapshot': 'TEXT', 'capacity_reserved': 'BOOLEAN DEFAULT FALSE', 'cancellation_reason': 'TEXT', 'cancelled_by': 'INTEGER', 'cancelled_at': 'TIMESTAMP', 'accepted_at': 'TIMESTAMP', 'traveller_details': 'JSON', 'total_cost': 'INTEGER', 'itinerary_snapshot': 'TEXT', 'terms': 'TEXT', 'payment_status': 'VARCHAR(30)', 'created_at': 'TIMESTAMP', 'confirmed_at': 'TIMESTAMP', 'razorpay_order_id': 'VARCHAR(100)', 'razorpay_payment_id': 'VARCHAR(100)', 'razorpay_signature': 'VARCHAR(255)', 'currency': "VARCHAR(10) DEFAULT 'INR'", 'amount_paid': 'INTEGER', 'payment_method': 'VARCHAR(50)'},
+        'trip_plans': {'user_id': 'INTEGER', 'title': 'VARCHAR(160)', 'destination': 'VARCHAR(120)', 'country': 'VARCHAR(120)', 'dates': 'VARCHAR(120)', 'duration_days': 'INTEGER', 'traveler_count': 'INTEGER', 'status': 'VARCHAR(20)', 'summary': 'TEXT', 'meeting_point': 'VARCHAR(255)', 'announcements': 'JSON', 'created_at': 'TIMESTAMP'},
+        'trip_days': {'trip_id': 'INTEGER', 'day_number': 'INTEGER', 'title': 'VARCHAR(160)', 'date': 'VARCHAR(80)'},
+        'trip_stops': {'day_id': 'INTEGER', 'key': 'VARCHAR(60)', 'name': 'VARCHAR(160)', 'category': 'VARCHAR(80)', 'time_slot': 'VARCHAR(40)', 'duration': 'VARCHAR(40)', 'short_desc': 'TEXT', 'full_desc': 'TEXT', 'tips': 'JSON', 'precautions': 'JSON', 'visited': 'BOOLEAN', 'departure_ack': 'BOOLEAN'},
+        'stop_activities': {'stop_id': 'INTEGER', 'key': 'VARCHAR(60)', 'title': 'VARCHAR(255)', 'done': 'BOOLEAN'},
+        'pack_items': {'user_id': 'INTEGER', 'key': 'VARCHAR(60)', 'title': 'VARCHAR(255)', 'category': 'VARCHAR(40)', 'packed': 'BOOLEAN', 'belonging': 'BOOLEAN', 'custom': 'BOOLEAN'},
+        'companion_messages': {'user_id': 'INTEGER', 'sender': 'VARCHAR(10)', 'body': 'TEXT', 'chips': 'JSON', 'created_at': 'TIMESTAMP'},
+        'custom_offers': {'traveler_id': 'INTEGER', 'package_id': 'INTEGER', 'company_id': 'INTEGER', 'enquiry_id': 'INTEGER', 'parent_id': 'INTEGER', 'version': 'INTEGER', 'status': 'VARCHAR(30)', 'travel_dates': 'VARCHAR(120)', 'num_travellers': 'INTEGER', 'desired_budget': 'INTEGER', 'accommodation_pref': 'VARCHAR(255)', 'itinerary_changes': 'TEXT', 'transport_reqs': 'VARCHAR(255)', 'notes': 'TEXT', 'revised_price': 'INTEGER', 'revised_itinerary': 'TEXT', 'inclusions': 'JSON', 'exclusions': 'JSON', 'additional_charges': 'JSON', 'valid_until': 'VARCHAR(30)', 'operator_note': 'TEXT', 'created_at': 'TIMESTAMP', 'updated_at': 'TIMESTAMP'},
+        'reviews': {'booking_id': 'INTEGER', 'traveler_id': 'INTEGER', 'package_id': 'INTEGER', 'company_id': 'INTEGER', 'rating': 'INTEGER', 'text': 'TEXT', 'status': 'VARCHAR(20)', 'created_at': 'TIMESTAMP'},
+        'notifications': {'user_id': 'INTEGER', 'title': 'VARCHAR(200)', 'body': 'TEXT', 'type': 'VARCHAR(50)', 'data': 'JSON', 'is_read': 'BOOLEAN', 'created_at': 'TIMESTAMP'},
+        'device_tokens': {'user_id': 'INTEGER', 'token': 'VARCHAR(500)', 'platform': 'VARCHAR(30)', 'created_at': 'TIMESTAMP', 'updated_at': 'TIMESTAMP'},
+        'audit_events': {'user_id': 'INTEGER', 'action': 'VARCHAR(100)', 'target_type': 'VARCHAR(50)', 'target_id': 'VARCHAR(100)', 'ip_address': 'VARCHAR(45)', 'user_agent': 'VARCHAR(255)', 'details': 'JSON', 'created_at': 'TIMESTAMP'},
+    }
 
-    def get_existing_cols(table: str):
+    for table, col_ddl in SCHEMA_MAP.items():
         if table not in existing_tables:
-            return set()
+            continue
         try:
-            return {c["name"] for c in inspector.get_columns(table)}
+            existing_cols = {c["name"] for c in inspector.get_columns(table)}
         except Exception:
-            return set()
-
-    def ensure(table: str, col_ddl: dict):
-        cols = get_existing_cols(table)
+            existing_cols = set()
         for col, ddl in col_ddl.items():
-            if col not in cols:
+            if col not in existing_cols:
                 try:
                     if is_pg:
                         db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {ddl}"))
@@ -184,122 +206,6 @@ def _migrate_schema():
                     db.session.commit()
                 except Exception:
                     db.session.rollback()
-
-    user_cols = get_existing_cols("users")
-    if "status" not in user_cols and "users" in existing_tables:
-        try:
-            db.session.execute(text("ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'active'"))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-    if "status_reason" not in user_cols and "users" in existing_tables:
-        try:
-            db.session.execute(text("ALTER TABLE users ADD COLUMN status_reason VARCHAR(255)"))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-    try:
-        db.session.execute(text("UPDATE users SET status='active' WHERE status IS NULL"))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    ensure("users", {
-        "age_range": "VARCHAR(20)",
-        "is_email_verified": f"BOOLEAN DEFAULT {b_false}",
-        "last_login_at": "TIMESTAMP",
-    })
-
-    ensure("traveler_profiles", {
-        "travel_moods": "JSON",
-        "travel_pace": "VARCHAR(20)",
-        "trip_desires": "JSON",
-        "destination_prefs": "JSON",
-        "activity_prefs": "JSON",
-        "preferred_destinations": "JSON",
-        "avoid_destinations": "JSON",
-        "preferred_region_text": "VARCHAR(200)",
-        "start_city": "VARCHAR(120)",
-        "destination_text": "VARCHAR(200)",
-        "budget_per_person": "INTEGER",
-        "budget_flex_pct": "INTEGER DEFAULT 20",
-        "travel_start_date": "VARCHAR(20)",
-        "travel_end_date": "VARCHAR(20)",
-        "date_flexible": f"BOOLEAN DEFAULT {b_true}",
-        "num_travellers": "INTEGER DEFAULT 2",
-        "accommodation_prefs": "JSON",
-        "transport_prefs": "JSON",
-        "trip_mode": "VARCHAR(20)",
-        "travel_style": "VARCHAR(20)",
-        "group_size_pref": "VARCHAR(30)",
-        "itinerary_pref": "VARCHAR(20)",
-        "priority": "VARCHAR(20)",
-        "disliked_activities": "JSON",
-        "accessibility_notes": "TEXT",
-        "dietary_notes": "TEXT",
-        "other_notes": "TEXT",
-        "ideal_trip_text": "TEXT",
-        "onboarding_completed": f"BOOLEAN DEFAULT {b_false}",
-        "onboarding_step": "INTEGER DEFAULT 1",
-    })
-    ensure("travel_companies", {
-        "contact_person": "VARCHAR(120)",
-        "business_type": "VARCHAR(80)",
-        "phone": "VARCHAR(50)",
-        "operating_regions": "JSON",
-        "is_demo": f"BOOLEAN DEFAULT {b_false}",
-    })
-    ensure("travel_packages", {
-        "nights": "INTEGER",
-        "min_group_size": "INTEGER",
-        "max_group_size": "INTEGER",
-        "suitable_travel_styles": "JSON",
-        "suitable_groups": "JSON",
-        "capacity": "INTEGER",
-        "seats_remaining": "INTEGER",
-        "customization_options": "TEXT",
-        "images": "JSON",
-        "departure_dates_list": "JSON",
-        "price_breakdown": "JSON",
-        "price_kind": "VARCHAR(20)",
-        "price_confirmed_at": "TIMESTAMP",
-        "is_demo": f"BOOLEAN DEFAULT {b_false}",
-        "updated_at": "TIMESTAMP",
-        "is_deleted": f"BOOLEAN DEFAULT {b_false}",
-        "deleted_at": "TIMESTAMP",
-        "status": "VARCHAR(30) DEFAULT 'active'",
-        "trip_start_date": "TIMESTAMP",
-        "trip_end_date": "TIMESTAMP",
-        "booking_deadline": "TIMESTAMP",
-        "valid_until": "TIMESTAMP",
-    })
-    ensure("interests", {
-        "comment": "TEXT",
-        "feedback_at": "TIMESTAMP",
-    })
-    ensure("bookings", {
-        "booking_reference": "VARCHAR(36)",
-        "idempotency_key": "VARCHAR(100)",
-        "num_travellers": "INTEGER DEFAULT 1",
-        "agreed_price_snapshot": "INTEGER",
-        "price_breakdown_snapshot": "TEXT",
-        "terms_snapshot": "TEXT",
-        "capacity_reserved": f"BOOLEAN DEFAULT {b_false}",
-        "cancellation_reason": "TEXT",
-        "cancelled_by": "INTEGER",
-        "cancelled_at": "TIMESTAMP",
-        "accepted_at": "TIMESTAMP",
-        "razorpay_order_id": "VARCHAR(100)",
-        "razorpay_payment_id": "VARCHAR(100)",
-        "razorpay_signature": "VARCHAR(255)",
-        "currency": "VARCHAR(10) DEFAULT 'INR'",
-        "amount_paid": "INTEGER",
-        "payment_method": "VARCHAR(50)",
-    })
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
 
 
 app = create_app()
