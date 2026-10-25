@@ -12,24 +12,33 @@ try:
     from app import app as flask_app
 
     def app(environ, start_response):
-        # 1. Reset SCRIPT_NAME: Vercel sets SCRIPT_NAME to /api/index which forces Flask into 404
+        # 1. Reset SCRIPT_NAME: Vercel sets SCRIPT_NAME to /api/index which breaks root route matching
         environ["SCRIPT_NAME"] = ""
 
-        # 2. Normalize PATH_INFO to clean root paths
-        path = environ.get("PATH_INFO", "")
-        if path.startswith("/api/index.py"):
-            remainder = path[len("/api/index.py"):]
-            environ["PATH_INFO"] = remainder if remainder.startswith("/") else ("/" + remainder)
-        elif path.startswith("/api/index"):
-            remainder = path[len("/api/index"):]
-            environ["PATH_INFO"] = remainder if remainder.startswith("/") else ("/" + remainder)
-        elif not path:
+        # 2. Check for Vercel original route matching headers
+        matched = (
+            environ.get("HTTP_X_MATCHED_PATH")
+            or environ.get("HTTP_X_VERCEL_PATH")
+            or environ.get("HTTP_X_FORWARDED_URI")
+        )
+        if matched and not matched.startswith("/api/index"):
+            environ["PATH_INFO"] = matched.split("?")[0]
+        else:
+            # 3. Clean fallback normalization
+            path = environ.get("PATH_INFO", "")
+            if path.startswith("/api/index.py"):
+                remainder = path[len("/api/index.py"):]
+                environ["PATH_INFO"] = remainder if remainder.startswith("/") else ("/" + remainder)
+            elif path.startswith("/api/index"):
+                remainder = path[len("/api/index"):]
+                environ["PATH_INFO"] = remainder if remainder.startswith("/") else ("/" + remainder)
+            elif not path:
+                environ["PATH_INFO"] = "/"
+
+        if not environ.get("PATH_INFO"):
             environ["PATH_INFO"] = "/"
 
-        if not environ["PATH_INFO"]:
-            environ["PATH_INFO"] = "/"
-
-        # 3. Diagnostic endpoint: /__diag
+        # 4. Built-in diagnostic endpoint: /__diag
         if environ.get("PATH_INFO") == "/__diag":
             status = '200 OK'
             headers = [('Content-Type', 'application/json')]
@@ -39,6 +48,7 @@ try:
                 "database_configured": bool(os.environ.get("DATABASE_URL")),
                 "serverless": bool(os.environ.get("VERCEL")),
                 "env": os.environ.get("FLASK_ENV", "development"),
+                "resolved_path": environ.get("PATH_INFO"),
             }
             return [json.dumps(info, indent=2).encode('utf-8')]
 
