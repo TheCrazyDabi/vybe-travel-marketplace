@@ -127,17 +127,18 @@ def create_app(config_class=Config):
             return redirect(url_for("auth.login_page"))
 
     with app.app_context():
-        try:
-            db.create_all()
-            _migrate_schema()
-            # Seed demo data in development when AUTO_SEED_DEMO is True (never in production/testing)
-            if app.config.get("AUTO_SEED_DEMO") and not app.config.get("TESTING"):
-                from seed import seed_demo, seed_demo_packages
+        # Only run DDL bootstrap in development or tests (never block Vercel serverless requests)
+        if not os.environ.get("VERCEL"):
+            try:
+                db.create_all()
+                _migrate_schema()
+                if app.config.get("AUTO_SEED_DEMO") and not app.config.get("TESTING"):
+                    from seed import seed_demo, seed_demo_packages
 
-                seed_demo()
-                seed_demo_packages()  # idempotent: only adds missing demo titles
-        except Exception as e:
-            app.logger.warning(f"Database bootstrap warning: {e}")
+                    seed_demo()
+                    seed_demo_packages()  # idempotent: only adds missing demo titles
+            except Exception as e:
+                app.logger.warning(f"Database bootstrap warning: {e}")
 
     return app
 
