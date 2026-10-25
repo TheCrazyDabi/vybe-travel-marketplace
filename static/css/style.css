@@ -87,6 +87,16 @@ h1, h2 { color: #FAF9F7; }
   color: var(--color-text);
 }
 .brand:hover { color: var(--color-primary); }
+.brand-logo-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: inline-block;
+  vertical-align: middle;
+  border: 1px solid rgba(232, 168, 124, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
 .brand-sparkle { font-size: 20px; line-height: 1; display: inline-block; color: var(--color-primary); }
 .brand-sparkle svg { width: 28px; height: 28px; display: block; }
 .brand-text { font-weight: 600; font-size: 27px; letter-spacing: 4px; line-height: 1; }
@@ -841,6 +851,7 @@ img { max-width: 100%; }
 
 @media (max-width: 480px) {
   .nav { padding: 0 12px; }
+  .brand-logo-img { width: 28px; height: 28px; border-radius: 7px; }
   .brand-text { font-size: 22px; letter-spacing: 3px; }
   .brand-sparkle svg { width: 22px; height: 22px; }
   .container { padding: 16px 12px 24px; }
