@@ -7,8 +7,12 @@
   },
   "rewrites": [
     {
+      "source": "/static/(.*)",
+      "destination": "/api/index?__route=/static/$1"
+    },
+    {
       "source": "/(.*)",
-      "destination": "/api/index"
+      "destination": "/api/index?__route=/$1"
     }
   ]
 }

@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 import json
+import urllib.parse
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
@@ -12,19 +13,30 @@ try:
     from app import app as flask_app
 
     def app(environ, start_response):
-        # 1. Reset SCRIPT_NAME: Vercel sets SCRIPT_NAME to /api/index which breaks root route matching
+        # 1. Reset SCRIPT_NAME: Vercel sets SCRIPT_NAME to /api/index which forces Flask into 404
         environ["SCRIPT_NAME"] = ""
 
-        # 2. Check for Vercel original route matching headers
-        matched = (
-            environ.get("HTTP_X_MATCHED_PATH")
-            or environ.get("HTTP_X_VERCEL_PATH")
-            or environ.get("HTTP_X_FORWARDED_URI")
-        )
-        if matched and not matched.startswith("/api/index"):
-            environ["PATH_INFO"] = matched.split("?")[0]
+        # 2. Extract original route path from __route rewrite parameter
+        qs = environ.get("QUERY_STRING", "")
+        if "__route=" in qs:
+            params = urllib.parse.parse_qs(qs, keep_blank_values=True)
+            if "__route" in params and params["__route"]:
+                target_route = params.pop("__route")[0]
+                if not target_route.startswith("/"):
+                    target_route = "/" + target_route
+                environ["PATH_INFO"] = target_route
+
+                # Clean up query string so Flask request.args remains clean
+                clean_pairs = []
+                for k, vs in params.items():
+                    for v in vs:
+                        clean_pairs.append((k, v))
+                environ["QUERY_STRING"] = urllib.parse.urlencode(clean_pairs)
+
+        # 3. Fallback checks for proxy headers or raw entrypoint prefixes
+        elif environ.get("HTTP_X_MATCHED_PATH"):
+            environ["PATH_INFO"] = environ["HTTP_X_MATCHED_PATH"].split("?")[0]
         else:
-            # 3. Clean fallback normalization
             path = environ.get("PATH_INFO", "")
             if path.startswith("/api/index.py"):
                 remainder = path[len("/api/index.py"):]
@@ -32,13 +44,11 @@ try:
             elif path.startswith("/api/index"):
                 remainder = path[len("/api/index"):]
                 environ["PATH_INFO"] = remainder if remainder.startswith("/") else ("/" + remainder)
-            elif not path:
-                environ["PATH_INFO"] = "/"
 
         if not environ.get("PATH_INFO"):
             environ["PATH_INFO"] = "/"
 
-        # 4. Built-in diagnostic endpoint: /__diag
+        # 4. Diagnostic endpoint: /__diag
         if environ.get("PATH_INFO") == "/__diag":
             status = '200 OK'
             headers = [('Content-Type', 'application/json')]
