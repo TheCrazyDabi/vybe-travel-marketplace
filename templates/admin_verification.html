@@ -2,16 +2,35 @@
 {% block title %}Admin verification — VYBE{% endblock %}
 {% block content %}
 <h1>Verification queue <span class="muted small">· demo admin</span></h1>
-<table class="table"><tr><th>ID</th><th>Company</th><th>Status</th><th>Action</th></tr>
+<table class="table"><tr><th>ID</th><th>Company</th><th>Status</th><th>Document</th><th>Action</th></tr>
 {% for r in pending %}
-<tr><td>{{ r.id }}</td><td>{{ r.company.company_name if r.company else r.company_id }}</td><td>{{ r.status }}</td>
-<td><button class="btn small primary" onclick="decide({{ r.id }},'approve')">Approve</button>
-<button class="btn small ghost" onclick="decide({{ r.id }},'reject')">Reject</button></td></tr>
-{% else %}<tr><td colspan="4" class="muted">Queue empty.</td></tr>{% endfor %}
+<tr>
+  <td>{{ r.id }}</td>
+  <td>{{ r.company.company_name if r.company else r.company_id }}</td>
+  <td>{{ r.status }}</td>
+  <td>
+    {% if r.company and r.company.document_path %}
+      <a href="{{ url_for('admin.get_verification_document', rec_id=r.id) }}" target="_blank" class="btn small ghost" style="padding:4px 8px;font-size:12px;">View doc ({{ r.company.document_filename }})</a>
+    {% else %}
+      <span class="muted small">None</span>
+    {% endif %}
+  </td>
+  <td>
+    <button class="btn small primary" onclick="decide({{ r.id }},'approve')">Approve</button>
+    <button class="btn small ghost" onclick="decide({{ r.id }},'reject')">Reject</button>
+  </td>
+</tr>
+{% else %}<tr><td colspan="5" class="muted">Queue empty.</td></tr>{% endfor %}
 </table>
 <h2>All companies</h2>
-<table class="table"><tr><th>Company</th><th>Email</th><th>Status</th><th>Verified</th></tr>
-{% for c in companies %}<tr><td>{{ c.company_name }}</td><td>{{ c.business_email }}</td><td>{{ c.status }}</td><td>{{ '✓' if c.is_verified else '—' }}</td></tr>{% endfor %}
+<table class="table"><tr><th>Company</th><th>Email</th><th>Status</th><th>Verified</th><th>Document</th></tr>
+{% for c in companies %}<tr>
+  <td>{{ c.company_name }}</td>
+  <td>{{ c.business_email }}</td>
+  <td>{{ c.status }}</td>
+  <td>{{ '✓' if c.is_verified else '—' }}</td>
+  <td>{{ c.document_filename or '—' }}</td>
+</tr>{% endfor %}
 </table>
 <h2>Decision history</h2>
 <table class="table"><tr><th>Company</th><th>Decision</th><th>Note</th><th>By</th><th>When</th></tr>

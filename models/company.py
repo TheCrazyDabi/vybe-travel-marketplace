@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 
 from . import db
 
@@ -36,6 +37,16 @@ class TravelCompany(db.Model):
         "VerificationRecord", backref="company", cascade="all, delete-orphan"
     )
 
+    @property
+    def document_filename(self) -> str | None:
+        """Return a clean, sanitized display name without internal UUIDs or filesystem paths."""
+        if not self.document_path:
+            return None
+        name = os.path.basename(self.document_path.replace("\\", "/"))
+        if len(name) > 33 and name[32] == "_":
+            return name[33:]
+        return name
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -52,6 +63,8 @@ class TravelCompany(db.Model):
             "phone": self.phone,
             "operating_regions": self.operating_regions or self.service_regions or [],
             "is_demo": bool(self.is_demo),
+            "has_document": bool(self.document_path),
+            "document_filename": self.document_filename,
         }
 
 

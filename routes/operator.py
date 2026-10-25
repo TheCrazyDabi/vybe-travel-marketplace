@@ -8,6 +8,7 @@ from config import Config
 from models import Conversation, Interest, TravelCompany, TravelPackage, VerificationRecord, db
 from models.booking import Booking, Enquiry
 from models.custom_offer import CustomOffer
+from services.storage import storage_service
 
 operator_bp = Blueprint("operator", __name__)
 
@@ -135,15 +136,15 @@ def company_form():
             company.business_type = data.get("business_type").strip() or None
         if data.get("phone") is not None:
             company.phone = data.get("phone").strip() or None
-        # optional doc upload
+        # optional doc upload (stored securely via R2 or local fallback)
         f = request.files.get("document")
         if f and f.filename:
-            ext = f.filename.rsplit(".", 1)[-1].lower()
-            if ext in Config.ALLOWED_EXTENSIONS:
-                os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
-                path = os.path.join(Config.UPLOAD_FOLDER, secure_filename(f.filename))
-                f.save(path)
-                company.document_path = path
+            try:
+                storage_key = storage_service.upload_file(f, folder="verifications", is_private=True)
+                if storage_key:
+                    company.document_path = storage_key
+            except ValueError as ve:
+                return render_template("verification.html", company=company, error=str(ve)), 400
         # basic validation: company name required for new
         if not (company.company_name or "").strip():
             return render_template("verification.html", company=company, error="Company name is required."), 400

@@ -2,11 +2,15 @@
 
 from datetime import datetime
 
-from flask import Blueprint, abort, jsonify, request
+import logging
+from flask import Blueprint, abort, current_app, jsonify, request
 from flask_login import current_user, login_required
 
 from models import Conversation, Interest, Message, TravelCompany, TravelPackage, db
 from models.booking import Booking, Enquiry, Quotation
+from services.payment import payment_service
+
+logger = logging.getLogger(__name__)
 
 bookings_bp = Blueprint("bookings", __name__)
 
@@ -324,3 +328,138 @@ def api_cancel_booking(booking_id: int):
         pass
     db.session.commit()
     return jsonify({"booking": b.to_dict()})
+
+
+@bookings_bp.post("/api/bookings/<int:booking_id>/pay")
+@login_required
+def api_create_booking_payment(booking_id: int):
+    booking = Booking.query.get_or_404(booking_id)
+    if current_user.role != "admin" and booking.traveler_id != current_user.id:
+        abort(403)
+    if booking.status == "cancelled":
+        return jsonify({"error": "Cannot pay for cancelled booking"}), 400
+    if booking.payment_status == "paid":
+        return jsonify({"error": "Booking is already paid", "booking": booking.to_dict()}), 400
+
+    amount = booking.total_cost or 0
+    if amount <= 0:
+        return jsonify({"error": "Invalid booking total amount"}), 400
+
+    try:
+        order = payment_service.create_order(
+            amount_inr=amount,
+            receipt=f"bkg_{booking.id}",
+            notes={"booking_id": booking.id, "package_id": booking.package_id},
+        )
+        booking.razorpay_order_id = order["id"]
+        booking.payment_status = "order_created"
+        db.session.commit()
+
+        key_id = current_app.config.get("RAZORPAY_KEY_ID") or "rzp_test_simulated"
+        return jsonify({
+            "order_id": order["id"],
+            "amount": order["amount"],
+            "currency": order.get("currency", "INR"),
+            "key_id": key_id,
+            "booking_id": booking.id,
+            "simulated": order.get("simulated", False),
+        })
+    except Exception as e:
+        return jsonify({"error": f"Failed to initialize payment: {e}"}), 500
+
+
+@bookings_bp.post("/api/bookings/<int:booking_id>/verify-payment")
+@login_required
+def api_verify_booking_payment(booking_id: int):
+    booking = Booking.query.get_or_404(booking_id)
+    if current_user.role != "admin" and booking.traveler_id != current_user.id:
+        abort(403)
+    if booking.status == "cancelled":
+        return jsonify({"error": "Cannot verify payment for cancelled booking"}), 400
+
+    data = request.get_json(force=True, silent=True) or {}
+    order_id = data.get("razorpay_order_id") or booking.razorpay_order_id
+    payment_id = data.get("razorpay_payment_id")
+    signature = data.get("razorpay_signature")
+    method = data.get("payment_method") or "razorpay"
+
+    if not order_id or not payment_id or not signature:
+        return jsonify({"error": "razorpay_order_id, razorpay_payment_id, and razorpay_signature are required"}), 400
+
+    if booking.razorpay_order_id and booking.razorpay_order_id != order_id:
+        return jsonify({"error": "Order ID mismatch"}), 400
+
+    is_valid = payment_service.verify_payment_signature(
+        razorpay_order_id=order_id,
+        razorpay_payment_id=payment_id,
+        razorpay_signature=signature,
+    )
+    if not is_valid:
+        return jsonify({"error": "Payment signature verification failed"}), 400
+
+    booking.razorpay_order_id = order_id
+    booking.razorpay_payment_id = payment_id
+    booking.razorpay_signature = signature
+    booking.payment_status = "paid"
+    booking.amount_paid = booking.total_cost
+    booking.payment_method = method
+    booking.status = "confirmed"
+    booking.confirmed_at = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({"ok": True, "booking": booking.to_dict()})
+
+
+@bookings_bp.post("/api/payments/razorpay/webhook")
+def api_razorpay_webhook():
+    signature = request.headers.get("X-Razorpay-Signature", "")
+    body_bytes = request.get_data()
+
+    if not signature:
+        return jsonify({"error": "Missing X-Razorpay-Signature header"}), 400
+
+    if not payment_service.verify_webhook_signature(body_bytes, signature):
+        return jsonify({"error": "Invalid webhook signature"}), 400
+
+    data = request.get_json(force=True, silent=True) or {}
+    event = data.get("event")
+    logger.info("Received Razorpay webhook event: %s", event)
+
+    if event in ("order.paid", "payment.captured"):
+        payload = data.get("payload", {})
+        order_id = None
+        payment_id = None
+        amount_paid = None
+        method = None
+
+        if "payment" in payload and "entity" in payload["payment"]:
+            entity = payload["payment"]["entity"]
+            order_id = entity.get("order_id")
+            payment_id = entity.get("id")
+            amount_paid = entity.get("amount", 0) // 100
+            method = entity.get("method")
+        elif "order" in payload and "entity" in payload["order"]:
+            entity = payload["order"]["entity"]
+            order_id = entity.get("id")
+            amount_paid = entity.get("amount_paid", 0) // 100
+
+        if order_id:
+            booking = Booking.query.filter_by(razorpay_order_id=order_id).first()
+            if booking:
+                # Idempotent: return 200 without duplicate action
+                if booking.payment_status == "paid":
+                    return jsonify({"status": "already_processed"}), 200
+
+                booking.payment_status = "paid"
+                if payment_id:
+                    booking.razorpay_payment_id = payment_id
+                if amount_paid:
+                    booking.amount_paid = amount_paid
+                if method:
+                    booking.payment_method = method
+                booking.status = "confirmed"
+                booking.confirmed_at = datetime.utcnow()
+                db.session.commit()
+                return jsonify({"status": "processed", "booking_id": booking.id}), 200
+
+    return jsonify({"status": "ignored"}), 200

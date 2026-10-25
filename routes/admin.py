@@ -1,9 +1,11 @@
 from datetime import datetime
 
-from flask import Blueprint, abort, jsonify, render_template, request
+import os
+from flask import Blueprint, abort, jsonify, redirect, render_template, request, send_from_directory
 from flask_login import current_user, login_required
 
 from models import Interest, Report, TravelCompany, TravelPackage, User, VerificationRecord, db
+from services.storage import storage_service
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -152,3 +154,27 @@ def api_decide(rec_id: int):
         rec.company.is_verified = decision == "approve"
     db.session.commit()
     return jsonify({"ok": True, "status": rec.status})
+
+
+@admin_bp.get("/admin/verifications/<int:rec_id>/document")
+@login_required
+def get_verification_document(rec_id: int):
+    _require_admin()
+    rec = VerificationRecord.query.get_or_404(rec_id)
+    if not rec.company or not rec.company.document_path:
+        abort(404)
+    storage_key = rec.company.document_path
+
+    # If Cloudflare R2 is configured, redirect to time-limited presigned URL
+    presigned = storage_service.generate_presigned_url(storage_key, expiration_seconds=900)
+    if presigned:
+        return redirect(presigned)
+
+    # In local/testing mode, serve local file safely
+    local_path = storage_service.get_local_path(storage_key)
+    if local_path and os.path.isfile(local_path):
+        directory = os.path.dirname(os.path.abspath(local_path))
+        filename = os.path.basename(local_path)
+        return send_from_directory(directory, filename, as_attachment=False)
+
+    abort(404)

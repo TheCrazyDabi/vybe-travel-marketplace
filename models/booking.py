@@ -134,6 +134,14 @@ class Booking(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     confirmed_at = db.Column(db.DateTime, nullable=True)
 
+    # Razorpay payment fields (Phase 2)
+    razorpay_order_id = db.Column(db.String(100), nullable=True, index=True)
+    razorpay_payment_id = db.Column(db.String(100), nullable=True)
+    razorpay_signature = db.Column(db.String(255), nullable=True)
+    currency = db.Column(db.String(10), default="INR")
+    amount_paid = db.Column(db.Integer, nullable=True)
+    payment_method = db.Column(db.String(50), nullable=True)
+
     package = db.relationship("TravelPackage")
 
     def to_dict(self):
@@ -149,6 +157,11 @@ class Booking(db.Model):
             "itinerary_snapshot": self.itinerary_snapshot,
             "terms": self.terms,
             "payment_status": self.payment_status,
+            "razorpay_order_id": self.razorpay_order_id,
+            "razorpay_payment_id": self.razorpay_payment_id,
+            "currency": self.currency or "INR",
+            "amount_paid": self.amount_paid,
+            "payment_method": self.payment_method,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "confirmed_at": self.confirmed_at.isoformat() if self.confirmed_at else None,
             "package": self.package.to_dict() if self.package else None,

@@ -22,11 +22,14 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    db_path = app.config["SQLALCHEMY_DATABASE_URI"].replace("sqlite:///", "")
-    db_dir = os.path.dirname(db_path)
-    if db_dir:
-        os.makedirs(db_dir, exist_ok=True)
-    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+    # Safely create local sqlite dir only when sqlite URI is used
+    uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
+    if uri.startswith("sqlite:///"):
+        sqlite_path = uri.replace("sqlite:///", "", 1)
+        db_dir = os.path.dirname(sqlite_path)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
+    os.makedirs(app.config.get("UPLOAD_FOLDER", os.path.join(os.path.dirname(__file__), "instance", "uploads")), exist_ok=True)
 
     db.init_app(app)
     login_manager.init_app(app)
@@ -53,6 +56,14 @@ def create_app(config_class=Config):
     @app.get("/favicon.ico")
     def favicon():
         return app.send_static_file("images/favicon.svg")
+
+    @app.after_request
+    def _add_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
 
     @app.before_request
     def _enforce_account_status():
@@ -83,31 +94,55 @@ def create_app(config_class=Config):
 
 
 def _migrate_schema():
-    """Safe additive migration for existing dev DBs (never drops data).
+    """Safe additive migration for existing dev & production DBs (never drops data).
 
-    db.create_all() creates new tables but won't add columns to existing
-    ones, so backfill new columns here with ALTER TABLE when missing.
+    Uses SQLAlchemy engine inspection so it works seamlessly across both
+    SQLite and PostgreSQL (Supabase).
     """
-    from sqlalchemy import text
+    from sqlalchemy import inspect, text
+
+    try:
+        inspector = inspect(db.engine)
+        existing_tables = set(inspector.get_table_names())
+    except Exception:
+        return
+
+    def get_existing_cols(table: str):
+        if table not in existing_tables:
+            return set()
+        try:
+            return {c["name"] for c in inspector.get_columns(table)}
+        except Exception:
+            return set()
 
     def ensure(table: str, col_ddl: dict):
-        try:
-            cols = {r[1] for r in db.session.execute(text(f"PRAGMA table_info({table})"))}
-        except Exception:
-            return
+        cols = get_existing_cols(table)
         for col, ddl in col_ddl.items():
             if col not in cols:
                 try:
                     db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
+                    db.session.commit()
                 except Exception:
-                    pass
+                    db.session.rollback()
 
-    cols = {r[1] for r in db.session.execute(text("PRAGMA table_info(users)"))}
-    if "status" not in cols:
-        db.session.execute(text("ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'active'"))
-    if "status_reason" not in cols:
-        db.session.execute(text("ALTER TABLE users ADD COLUMN status_reason VARCHAR(255)"))
-    db.session.execute(text("UPDATE users SET status='active' WHERE status IS NULL"))
+    user_cols = get_existing_cols("users")
+    if "status" not in user_cols and "users" in existing_tables:
+        try:
+            db.session.execute(text("ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'active'"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+    if "status_reason" not in user_cols and "users" in existing_tables:
+        try:
+            db.session.execute(text("ALTER TABLE users ADD COLUMN status_reason VARCHAR(255)"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+    try:
+        db.session.execute(text("UPDATE users SET status='active' WHERE status IS NULL"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     ensure("traveler_profiles", {
         "travel_moods": "JSON",
@@ -161,26 +196,33 @@ def _migrate_schema():
         "departure_dates_list": "JSON",
         "price_breakdown": "JSON",
         "price_kind": "VARCHAR(20)",
-        "price_confirmed_at": "DATETIME",
+        "price_confirmed_at": "TIMESTAMP",
         "is_demo": "BOOLEAN DEFAULT 0",
-        "updated_at": "DATETIME",
+        "updated_at": "TIMESTAMP",
         "is_deleted": "BOOLEAN DEFAULT 0",
-        "deleted_at": "DATETIME",
+        "deleted_at": "TIMESTAMP",
     })
     ensure("interests", {
         "comment": "TEXT",
-        "feedback_at": "DATETIME",
+        "feedback_at": "TIMESTAMP",
     })
-    db.session.commit()
+    ensure("bookings", {
+        "razorpay_order_id": "VARCHAR(100)",
+        "razorpay_payment_id": "VARCHAR(100)",
+        "razorpay_signature": "VARCHAR(255)",
+        "currency": "VARCHAR(10) DEFAULT 'INR'",
+        "amount_paid": "INTEGER",
+        "payment_method": "VARCHAR(50)",
+    })
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 app = create_app()
 
 if __name__ == "__main__":
-    # LAN-friendly dev server: 0.0.0.0 keeps 127.0.0.1 working AND allows
-    # phone access via laptop Wi-Fi IPv4 (e.g. http://LAPTOP_IPV4:5000).
-    # Never hard-code the laptop IP in code; find it with `ipconfig`.
-    # Debug OFF by default when reachable from LAN (avoid exposing debugger).
     host = os.environ.get("FLASK_HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", os.environ.get("FLASK_PORT", "5000")))
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"
