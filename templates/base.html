@@ -4,29 +4,66 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="description" content="VYBE — AI-powered travel marketplace. Discover trips that match your vibe." />
-  <meta name="theme-color" content="#0B2545" />
+  <meta name="theme-color" content="#2B1C19" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="VYBE" />
   <title>{% block title %}VYBE — Find trips that match your vibe{% endblock %}</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}" />
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}" />
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='12') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='13') }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,500;1,600&display=swap" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 </head>
-<body>
+<body class="{% if request.path == '/' %}is-home{% endif %}">
   <nav class="nav">
-    <a class="brand" href="/"><span class="brand-sparkle" aria-hidden="true">✦</span><span class="brand-text">VYBE</span></a>
+    <a class="brand" href="/" aria-label="VYBE Home">
+      <span class="brand-sparkle" aria-hidden="true">
+        <svg viewBox="0 0 100 100" role="img" aria-label="VYBE spider lily emblem">
+          <g transform="translate(50 56)">
+            <g fill="currentColor">
+              <path d="M0 -4 C -4 -16 -5 -28 -1 -38 C 0 -40 2 -40 3 -38 C 7 -28 5 -16 0 -4 Z"/>
+              <path d="M0 -4 C -2 -14 4 -27 12 -33 C 13 -34 15 -33 15 -31 C 13 -24 8 -14 0 -4 Z" transform="rotate(28)"/>
+              <path d="M0 -4 C 2 -14 -4 -27 -12 -33 C -13 -34 -15 -33 -15 -31 C -13 -24 -8 -14 0 -4 Z" transform="rotate(-28)"/>
+              <path d="M0 -4 C 5 -12 15 -20 26 -23 C 28 -24 28 -22 27 -21 C 21 -15 11 -9 0 -4 Z" transform="rotate(18)"/>
+              <path d="M0 -4 C -5 -12 -15 -20 -26 -23 C -28 -24 -28 -22 -27 -21 C -21 -15 -11 -9 0 -4 Z" transform="rotate(-18)"/>
+              <path d="M0 -4 C 9 -8 23 -12 33 -10 C 35 -9 36 -7 34 -6 C 26 -3 13 -3 0 -4 Z" transform="rotate(8)"/>
+              <path d="M0 -4 C -9 -8 -23 -12 -33 -10 C -35 -9 -36 -7 -34 -6 C -26 -3 -13 -3 0 -4 Z" transform="rotate(-8)"/>
+            </g>
+            <g stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" opacity="0.9">
+              <path d="M0 -5 C 1 -20 -1 -36 0 -45"/>
+              <circle cx="0" cy="-45.5" r="1.1" fill="currentColor"/>
+              <path d="M1 -5 C 8 -22 14 -37 22 -43"/>
+              <circle cx="22" cy="-43.5" r="1" fill="currentColor"/>
+              <path d="M2 -4 C 13 -18 27 -31 41 -35"/>
+              <circle cx="41.5" cy="-35" r="1" fill="currentColor"/>
+              <path d="M-1 -5 C -8 -22 -14 -37 -22 -43"/>
+              <circle cx="-22" cy="-43.5" r="1" fill="currentColor"/>
+              <path d="M-2 -4 C -13 -18 -27 -31 -41 -35"/>
+              <circle cx="-41.5" cy="-35" r="1" fill="currentColor"/>
+            </g>
+            <circle r="2.8" fill="currentColor"/>
+          </g>
+        </svg>
+      </span>
+      <span class="brand-text">VYBE</span>
+    </a>
+
+    <!-- Primary Desktop Navigation Links from reference UI -->
     <div class="nav-links nav-top">
+      <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
+      <a href="/packages" class="nav-link {% if request.path.startswith('/packages') %}active{% endif %}">Explore</a>
+      <a href="{% if current_user.is_authenticated and current_user.role == 'operator' %}/operator{% else %}/login?role=operator{% endif %}" class="nav-link {% if request.path.startswith('/operator') %}active{% endif %}">For Operators</a>
+      <a href="/companion" class="nav-link {% if request.path.startswith('/companion') %}active{% endif %}">About</a>
+
       {% if current_user.is_authenticated %}
         <div class="menu-wrap nav-menu">
-          <button id="nav-more-btn" type="button" class="btn small ghost nav-more" aria-haspopup="true" aria-expanded="false" aria-label="More options">⋮</button>
+          <button id="nav-more-btn" type="button" class="nav-circle-btn" aria-haspopup="true" aria-expanded="false" aria-label="More options">···</button>
           <div id="nav-more-menu" class="nav-dropdown hidden" role="menu" aria-label="More navigation">
             <div class="nav-menu-head"><span class="user">Hi, {{ current_user.name.split(' ')[0] }}</span></div>
             <a href="/discover" role="menuitem" class="{% if request.path.startswith('/discover') %}active{% endif %}">Discover</a>
@@ -40,12 +77,17 @@
             <a href="/logout" role="menuitem" class="btn small">Logout</a>
           </div>
         </div>
-      {% elif request.path == '/login' %}
-        <a class="btn small nav-auth-cta hide-mobile" href="/register">Create account</a>
-      {% elif request.path == '/register' %}
-        <a href="/login">Log in</a>
       {% else %}
-        <a href="/login">Login</a>
+        <div class="menu-wrap nav-menu">
+          <button id="nav-more-btn" type="button" class="nav-circle-btn" aria-haspopup="true" aria-expanded="false" aria-label="More options">···</button>
+          <div id="nav-more-menu" class="nav-dropdown hidden" role="menu" aria-label="More navigation">
+            <a href="/login" role="menuitem">Log in</a>
+            <a href="/register" role="menuitem">Create account</a>
+            <a href="/packages" role="menuitem">Browse trips</a>
+            <a href="/companion" role="menuitem">AI Guide</a>
+          </div>
+        </div>
+        <a class="btn small nav-auth-cta hide-mobile" href="/login">Login</a>
       {% endif %}
     </div>
   </nav>
@@ -60,38 +102,32 @@
     {% endif %}
   {% endwith %}
 
-  <main class="container">
+  <main class="container {% if request.path == '/' %}container-home{% endif %}">
     {% block content %}{% endblock %}
   </main>
 
-  {% if current_user.is_authenticated %}
-  <nav class="bottom-nav" aria-label="Primary">
+  <!-- Mobile Floating Pill Navigation (Reference UI App Bottom Nav) -->
+  {% if request.path != '/' %}
+  <nav class="bottom-nav" aria-label="Mobile Primary Navigation">
     <a href="/packages" class="bnav-item {% if request.path.startswith('/packages') %}active{% endif %}" aria-label="Explore trips">
       <span class="bnav-icon" aria-hidden="true">🔍</span><span class="bnav-label">Explore</span>
     </a>
     <a href="/companion" class="bnav-item bnav-center {% if request.path.startswith('/companion') %}active{% endif %}" aria-label="AI Guide">
       <span class="bnav-icon" aria-hidden="true">✦</span><span class="bnav-label">AI Guide</span>
     </a>
-    {% if current_user.role == 'traveler' %}
-    <a href="/dashboard" class="bnav-item {% if request.path.startswith('/dashboard') or request.path.startswith('/saved') or request.path.startswith('/trips') %}active{% endif %}" aria-label="My trips">
+    <a href="{% if current_user.is_authenticated %}/dashboard{% else %}/login{% endif %}" class="bnav-item {% if request.path.startswith('/dashboard') or request.path.startswith('/saved') or request.path.startswith('/trips') %}active{% endif %}" aria-label="My trips">
       <span class="bnav-icon" aria-hidden="true">🧳</span><span class="bnav-label">My Trips</span>
     </a>
-    {% elif current_user.role == 'operator' %}
-    <a href="/operator" class="bnav-item {% if request.path.startswith('/operator') %}active{% endif %}" aria-label="Dashboard">
-      <span class="bnav-icon" aria-hidden="true">📊</span><span class="bnav-label">Dashboard</span>
-    </a>
-    {% elif current_user.role == 'admin' %}
-    <a href="/admin" class="bnav-item {% if request.path.startswith('/admin') %}active{% endif %}" aria-label="Admin">
-      <span class="bnav-icon" aria-hidden="true">🛡️</span><span class="bnav-label">Admin</span>
-    </a>
-    {% endif %}
   </nav>
   {% endif %}
 
+  {% if request.path != '/' %}
   <footer class="footer">
     <span><b>VYBE</b> · Your mood. Your trip. Your VYBE.</span>
   </footer>
-  <script src="{{ url_for('static', filename='js/main.js', v='5') }}"></script>
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='js/main.js', v='6') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

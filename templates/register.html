@@ -1,25 +1,24 @@
 {% extends "base.html" %}
 {% block title %}Join — VYBE{% endblock %}
 {% block content %}
-<div class="auth-wrap reg-wrap">
-  <div class="auth-visual" role="img" aria-label="Tropical beach with palm trees and tour boat">
-    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1000&q=80&auto=format&fit=crop" alt="Tropical beach" loading="lazy" fetchpriority="high"
-         onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1000&q=80&auto=format&fit=crop';" />
+<div class="auth-wrap reg-wrap auth-wrap-reference">
+  <div class="auth-visual hide-mobile" role="img" aria-label="Scenic travel landscape">
+    <img src="{{ url_for('static', filename='images/vybe_hero_bg.jpg') }}" alt="Scenic Amalfi coastline at twilight" loading="lazy" />
     <div class="auth-overlay"></div>
-    <svg class="route-deco" viewBox="0 0 300 120" aria-hidden="true"><path d="M10 100 C 70 90, 90 40, 150 55 S 240 90, 290 25" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-dasharray="6 6"/><circle cx="10" cy="100" r="5" fill="#fff"/><circle cx="150" cy="55" r="4" fill="none" stroke="#fff" stroke-width="2"/><path d="M290 15 c-6 0 -10 4 -10 10 c0 7 10 16 10 16 s10 -9 10 -16 c0 -6 -4 -10 -10 -10z" fill="#FF6B5E" stroke="#fff" stroke-width="2"/><circle cx="290" cy="25" r="3" fill="#fff"/></svg>
     <div class="auth-caption">
       <h2>Travel, your way.</h2>
       <p>Discover experiences that match your mood. Connect with local travel experts and find your next adventure.</p>
       <div class="badge-row feature-labels"><span class="badge feature">✦ Personalized trips</span><span class="badge feature">📍 Local travel experts</span></div>
     </div>
   </div>
-  <div class="auth-form">
+  <div class="auth-form auth-form-reference">
     <div class="hero-logo" aria-label="VYBE logo">
-      <svg width="28" height="28" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C55 35 65 45 100 50 C65 55 55 65 50 100 C45 65 35 55 0 50 C35 45 45 35 50 0 Z" fill="currentColor"/></svg>
-      <span>VYBE</span>
+      <img src="{{ url_for('static', filename='images/vybe_flower_mark@2x.png') }}" alt="" class="auth-flower-icon" width="48" height="38" />
+      <span class="brand-text">VYBE</span>
     </div>
-    <h1>Create your VYBE account</h1>
-    <p class="muted">Discover personalized trips or publish travel packages as an operator.</p>
+    <p class="auth-tagline">Your mood. Your trip. Your VYBE.</p>
+    <h1 style="font-size:24px;margin:8px 0 4px;">Create your account</h1>
+    <p class="muted small" style="margin-bottom:12px;">Discover personalized trips or publish travel packages as an operator.</p>
     <form method="post" class="form auth" novalidate>
       {{ form.hidden_tag() }}
       <label>Name {{ form.name(class="input", autocomplete="name", placeholder="Your name") }}</label>
@@ -45,7 +44,7 @@
         </label>
       </fieldset>
       <p class="muted small" id="role-hint" aria-live="polite">Create your profile to discover personalized travel packages.</p>
-      {{ form.submit(class="btn primary big auth-submit") }}
+      {{ form.submit(class="btn primary big auth-submit", value="Create account") }}
       <div class="divider"><span>or</span></div>
       <p class="muted">Already have an account? <a href="/login">Log in</a></p>
     </form>

@@ -1,10 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Log in — VYBE{% endblock %}
 {% block content %}
-<div class="auth-wrap">
-  <div class="auth-visual" role="img" aria-label="Kerala mountain viewpoint">
-    <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=900&q=80" alt="Scenic Kerala landscape" loading="lazy"
-         onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=80';" />
+<div class="auth-wrap auth-wrap-reference">
+  <div class="auth-visual hide-mobile" role="img" aria-label="Scenic travel landscape">
+    <img src="{{ url_for('static', filename='images/vybe_hero_bg.jpg') }}" alt="Scenic Amalfi coastline at twilight" loading="lazy" />
     <div class="auth-overlay"></div>
     <div class="auth-caption">
       <h2>Your next adventure starts here.</h2>
@@ -12,25 +11,42 @@
       <div class="badge-row"><span class="badge">Nature</span><span class="badge">Adventure</span><span class="badge">Culture</span></div>
     </div>
   </div>
-  <div class="auth-form">
+  <div class="auth-form auth-form-reference">
     <div class="hero-logo" aria-label="VYBE logo">
-      <svg width="28" height="28" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C55 35 65 45 100 50 C65 55 55 65 50 100 C45 65 35 55 0 50 C35 45 45 35 50 0 Z" fill="currentColor"/></svg>
-      <span>VYBE</span>
+      <img src="{{ url_for('static', filename='images/vybe_flower_mark@2x.png') }}" alt="" class="auth-flower-icon" width="48" height="38" />
+      <span class="brand-text">VYBE</span>
     </div>
-    <h1>Welcome back</h1>
-    <p class="muted">Sign in to discover trips that feel like you.</p>
+    <p class="auth-tagline">Your mood. Your trip. Your VYBE.</p>
+
+    <!-- Role Switcher Pills from Reference UI -->
+    <div class="role-pills" role="tablist" aria-label="Select User Role">
+      <button type="button" class="role-pill active" data-role="traveler" data-email="traveler@vybe.demo" role="tab" aria-selected="true">Traveller</button>
+      <button type="button" class="role-pill" data-role="operator" data-email="operator@vybe.demo" role="tab" aria-selected="false">Operator</button>
+      <button type="button" class="role-pill" data-role="admin" data-email="admin@vybe.demo" role="tab" aria-selected="false">Admin</button>
+    </div>
+
     <form method="post" class="form auth" novalidate>
       {{ form.hidden_tag() }}
-      <label>Email {{ form.email(class="input", autocomplete="email", placeholder="you@example.com") }}</label>
+      <div class="input-icon-wrap">
+        <span class="input-icon" aria-hidden="true">✉</span>
+        {{ form.email(class="input input-with-icon", autocomplete="email", placeholder="Email address", id="login-email") }}
+      </div>
       {% if form.email.errors %}<p class="error" role="alert">{{ form.email.errors|join(', ') }}</p>{% endif %}
-      <label>Password
-        <span class="pw-wrap">{{ form.password(class="input", autocomplete="current-password", placeholder="••••••••", id="login-password") }}
-        <button type="button" class="btn small ghost pw-toggle" data-for="login-password" aria-label="Show password">Show</button></span>
-      </label>
+
+      <div class="input-icon-wrap">
+        <span class="input-icon" aria-hidden="true">🔒</span>
+        {{ form.password(class="input input-with-icon", autocomplete="current-password", placeholder="Password", id="login-password") }}
+        <button type="button" class="pw-toggle-icon" data-for="login-password" aria-label="Toggle password visibility">👁</button>
+      </div>
       {% if form.password.errors %}<p class="error" role="alert">{{ form.password.errors|join(', ') }}</p>{% endif %}
-      {{ form.submit(class="btn primary big auth-submit") }}
-      <div class="divider"><span>or</span></div>
-      <p class="muted">Don't have an account? <a href="/register">Create account</a></p>
+
+      <div class="auth-aux-row">
+        <a href="#forgot" class="forgot-link" onclick="alert('Demo accounts:\ntraveler@vybe.demo / traveler123\noperator@vybe.demo / operator123\nadmin@vybe.demo / admin123'); return false;">Forgot password?</a>
+      </div>
+
+      {{ form.submit(class="btn primary big auth-submit", value="Login") }}
+
+      <p class="auth-footer-text">Don't have an account? <a href="/register">Sign up</a></p>
     </form>
   </div>
 </div>
@@ -38,19 +54,37 @@
 {% block scripts %}
 <script>
 (function(){
-  document.querySelectorAll('.pw-toggle').forEach(b=>b.addEventListener('click',(e)=>{
+  // Password toggle
+  document.querySelectorAll('.pw-toggle-icon').forEach(b => b.addEventListener('click', (e) => {
     if(e) e.preventDefault();
-    const el=document.getElementById(b.dataset.for);
+    const el = document.getElementById(b.dataset.for);
     if(!el) return;
-    const show = el.type==='password';
-    const v = el.value;
-    el.type = show?'text':'password';
-    el.value = v;
-    b.textContent = show?'Hide':'Show';
-    b.setAttribute('aria-label', show?'Hide password':'Show password');
-    b.setAttribute('aria-pressed', show?'true':'false');
-    try{ el.focus({preventScroll:true}); el.setSelectionRange(el.value.length, el.value.length); }catch(_){}
+    const show = el.type === 'password';
+    el.type = show ? 'text' : 'password';
+    b.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
   }));
+
+  // Role pill switcher: click updates active styling and fills demo credentials
+  const emailInput = document.getElementById('login-email');
+  const passInput = document.getElementById('login-password');
+  document.querySelectorAll('.role-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.role-pill').forEach(p => {
+        p.classList.remove('active');
+        p.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      const email = btn.dataset.email;
+      if (email && emailInput && (!emailInput.value || emailInput.value.includes('@vybe.demo'))) {
+        emailInput.value = email;
+        if (passInput) {
+          const role = btn.dataset.role;
+          passInput.value = role === 'admin' ? 'admin123' : (role === 'operator' ? 'operator123' : 'traveler123');
+        }
+      }
+    });
+  });
 })();
 </script>
 {% endblock %}

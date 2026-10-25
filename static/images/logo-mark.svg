@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="VYBE spider lily emblem">
+  <!-- VYBE spider lily mark: 6 recurved petals, arching stamens with anthers, sparkles -->
+  <g transform="translate(50 56)">
+    <!-- Petals -->
+    <g fill="currentColor">
+      <path d="M0 -4 C -4 -16 -5 -28 -1 -38 C 0 -40 2 -40 3 -38 C 7 -28 5 -16 0 -4 Z"/>
+      <path d="M0 -4 C -2 -14 4 -27 12 -33 C 13 -34 15 -33 15 -31 C 13 -24 8 -14 0 -4 Z" transform="rotate(28)"/>
+      <path d="M0 -4 C 2 -14 -4 -27 -12 -33 C -13 -34 -15 -33 -15 -31 C -13 -24 -8 -14 0 -4 Z" transform="rotate(-28)"/>
+      <path d="M0 -4 C 5 -12 15 -20 26 -23 C 28 -24 28 -22 27 -21 C 21 -15 11 -9 0 -4 Z" transform="rotate(18)"/>
+      <path d="M0 -4 C -5 -12 -15 -20 -26 -23 C -28 -24 -28 -22 -27 -21 C -21 -15 -11 -9 0 -4 Z" transform="rotate(-18)"/>
+      <path d="M0 -4 C 9 -8 23 -12 33 -10 C 35 -9 36 -7 34 -6 C 26 -3 13 -3 0 -4 Z" transform="rotate(8)"/>
+      <path d="M0 -4 C -9 -8 -23 -12 -33 -10 C -35 -9 -36 -7 -34 -6 C -26 -3 -13 -3 0 -4 Z" transform="rotate(-8)"/>
+    </g>
+
+    <!-- Stamens / filaments -->
+    <g stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" opacity="0.9">
+      <path d="M0 -5 C 1 -20 -1 -36 0 -45"/>
+      <circle cx="0" cy="-45.5" r="1.1" fill="currentColor"/>
+      <path d="M1 -5 C 8 -22 14 -37 22 -43"/>
+      <circle cx="22" cy="-43.5" r="1" fill="currentColor"/>
+      <path d="M2 -4 C 13 -18 27 -31 41 -35"/>
+      <circle cx="41.5" cy="-35" r="1" fill="currentColor"/>
+      <path d="M-1 -5 C -8 -22 -14 -37 -22 -43"/>
+      <circle cx="-22" cy="-43.5" r="1" fill="currentColor"/>
+      <path d="M-2 -4 C -13 -18 -27 -31 -41 -35"/>
+      <circle cx="-41.5" cy="-35" r="1" fill="currentColor"/>
+    </g>
+
+    <circle r="2.8" fill="currentColor"/>
+  </g>
+</svg>
