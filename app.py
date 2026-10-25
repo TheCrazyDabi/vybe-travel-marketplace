@@ -130,16 +130,12 @@ def create_app(config_class=Config):
         try:
             db.create_all()
             _migrate_schema()
-            # Seed initial packages if the database is completely empty or AUTO_SEED_DEMO is True
-            if not app.config.get("TESTING"):
-                from models.package import TravelPackage
+            # Seed demo data in development when AUTO_SEED_DEMO is True (never in production/testing)
+            if app.config.get("AUTO_SEED_DEMO") and not app.config.get("TESTING"):
+                from seed import seed_demo, seed_demo_packages
 
-                is_empty = TravelPackage.query.first() is None
-                if app.config.get("AUTO_SEED_DEMO") or is_empty:
-                    from seed import seed_demo, seed_demo_packages
-
-                    seed_demo()
-                    seed_demo_packages()  # idempotent: only adds missing demo titles
+                seed_demo()
+                seed_demo_packages()  # idempotent: only adds missing demo titles
         except Exception as e:
             app.logger.warning(f"Database bootstrap warning: {e}")
 
@@ -196,16 +192,22 @@ def _migrate_schema():
             existing_cols = {c["name"] for c in inspector.get_columns(table)}
         except Exception:
             existing_cols = set()
-        for col, ddl in col_ddl.items():
-            if col not in existing_cols:
-                try:
-                    if is_pg:
-                        db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {ddl}"))
-                    else:
-                        db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
-                    db.session.commit()
-                except Exception:
-                    db.session.rollback()
+        
+        missing_cols = [(col, ddl) for col, ddl in col_ddl.items() if col not in existing_cols]
+        if not missing_cols:
+            continue
+            
+        try:
+            if is_pg:
+                clauses = [f"ADD COLUMN IF NOT EXISTS {col} {ddl}" for col, ddl in missing_cols]
+                db.session.execute(text(f"ALTER TABLE {table} " + ", ".join(clauses)))
+                db.session.commit()
+            else:
+                for col, ddl in missing_cols:
+                    db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
 
 
 app = create_app()
