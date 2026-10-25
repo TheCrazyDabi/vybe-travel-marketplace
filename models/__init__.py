@@ -17,6 +17,8 @@ from .companion import (  # noqa: E402,F401
 )
 from .custom_offer import CustomOffer  # noqa: E402,F401
 from .review import Review  # noqa: E402,F401
+from .notification import DeviceToken, Notification  # noqa: E402,F401
+from .audit import AuditEvent  # noqa: E402,F401
 
 __all__ = [
     "db",
@@ -41,4 +43,7 @@ __all__ = [
     "CompanionMessage",
     "CustomOffer",
     "Review",
+    "Notification",
+    "DeviceToken",
+    "AuditEvent",
 ]

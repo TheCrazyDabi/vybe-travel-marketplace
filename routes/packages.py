@@ -60,10 +60,75 @@ def detail_page(pkg_id: int):
     )
 
 
+def _check_and_expire_packages():
+    """Auto-expire packages whose deadlines or trip dates have passed."""
+    from datetime import datetime as _dt
+    now = _dt.utcnow()
+    query = TravelPackage.query.filter(
+        TravelPackage.is_active == True,
+        TravelPackage.is_deleted == False,
+        (
+            ((TravelPackage.valid_until != None) & (TravelPackage.valid_until < now)) |
+            ((TravelPackage.booking_deadline != None) & (TravelPackage.booking_deadline < now)) |
+            ((TravelPackage.trip_start_date != None) & (TravelPackage.trip_start_date < now))
+        )
+    )
+    count = 0
+    for p in query.all():
+        p.status = "expired"
+        p.is_active = False
+        count += 1
+    if count > 0:
+        db.session.commit()
+    return count
+
+
 # ---- JSON API ----
 @packages_bp.get("/api/packages")
 def api_list():
-    pkgs = TravelPackage.query.filter_by(is_active=True, is_deleted=False).all()
+    _check_and_expire_packages()
+    
+    q = TravelPackage.query.filter_by(is_deleted=False)
+    
+    # Status filter: default to active public packages
+    status = request.args.get("status", "active").lower()
+    if status == "all" and current_user.is_authenticated and current_user.role in ("operator", "admin"):
+        pass
+    elif status:
+        q = q.filter(TravelPackage.status == status, TravelPackage.is_active == True)
+    else:
+        q = q.filter_by(is_active=True)
+
+    dest = (request.args.get("destination") or "").strip()
+    if dest:
+        q = q.filter(TravelPackage.destination.ilike(f"%{dest}%"))
+
+    # Sorting (only when explicitly requested, preserving default ordering)
+    sort_by = (request.args.get("sort") or "").lower()
+    if sort_by == "price_asc":
+        q = q.order_by(TravelPackage.price.asc())
+    elif sort_by == "price_desc":
+        q = q.order_by(TravelPackage.price.desc())
+    elif sort_by == "duration":
+        q = q.order_by(TravelPackage.duration_days.asc())
+    elif sort_by == "newest":
+        q = q.order_by(TravelPackage.created_at.desc())
+
+    # Pagination
+    if "page" in request.args or "per_page" in request.args:
+        page = max(1, int(request.args.get("page", 1)))
+        per_page = min(100, max(1, int(request.args.get("per_page", 20))))
+        total = q.count()
+        pkgs = q.offset((page - 1) * per_page).limit(per_page).all()
+        return jsonify({
+            "packages": [p.to_dict() for p in pkgs],
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": (total + per_page - 1) // per_page,
+        })
+
+    pkgs = q.all()
     return jsonify({"packages": [p.to_dict() for p in pkgs]})
 
 
@@ -428,3 +493,40 @@ def api_interest_counts():
         if action in counts:
             counts[action] = int(n)
     return jsonify(counts)
+
+@packages_bp.post("/api/packages/<int:pkg_id>/status")
+@login_required
+def api_update_status(pkg_id: int):
+    """Explicit lifecycle transition: draft, active, inactive, archived."""
+    from datetime import datetime as _dt
+    pkg = TravelPackage.query.get_or_404(pkg_id)
+    company = _require_operator_company()
+    if company and pkg.operator_id != company.id and current_user.role != "admin":
+        abort(403)
+
+    data = request.get_json(force=True, silent=True) or {}
+    new_status = (data.get("status") or "").lower()
+    valid_statuses = {"draft", "active", "inactive", "archived"}
+    if new_status not in valid_statuses:
+        return jsonify({"error": f"status must be one of {valid_statuses}"}), 400
+
+    if new_status == "active":
+        if not pkg.title or not pkg.destination or pkg.price < 0:
+            return jsonify({"error": "Package must have valid title, destination and price to be active"}), 400
+        now = _dt.utcnow()
+        if (pkg.valid_until and pkg.valid_until < now) or (pkg.booking_deadline and pkg.booking_deadline < now):
+            return jsonify({"error": "Cannot activate an expired package"}), 400
+        pkg.status = "active"
+        pkg.is_active = True
+        pkg.is_deleted = False
+    elif new_status == "archived":
+        pkg.status = "archived"
+        pkg.is_active = False
+        pkg.is_deleted = True
+        pkg.deleted_at = _dt.utcnow()
+    else:  # draft or inactive
+        pkg.status = new_status
+        pkg.is_active = False
+
+    db.session.commit()
+    return jsonify({"ok": True, "package": pkg.to_dict()})

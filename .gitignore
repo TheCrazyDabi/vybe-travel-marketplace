@@ -1,33 +1,47 @@
-# VYBE — minimal, hackathon-focused ignore rules
+# VYBE — Production-hardened Git Ignore Rules
 
-# Local secrets / env
+# Local secrets & environment files
 .env
-.env.local
+.env.*
+!.env.example
+*.env
 
-# Virtual envs
+# Certificates, keys and credentials
+*.pem
+*.key
+*.crt
+*.cert
+*.pfx
+*service_account*.json
+*firebase*.json
+google-services.json
+
+# Local Uploads & Static User Media
+uploads/
+instance/uploads/
+instance/*.db
+instance/*.sqlite
+*.db
+*.sqlite
+*.sqlite3
+
+# Virtual environments
 .venv/
 venv/
 env/
+ENV/
 
-# Python caches
+# Python caches and bytecode
 __pycache__/
 *.py[codz]
+*$py.class
 *.egg-info/
 .pytest_cache/
 .ruff_cache/
 .coverage
 htmlcov/
 
-# Flask / local runtime (regenerates on `python app.py` / run.bat)
-instance/*
-!instance/.gitkeep
-*.db
-*.sqlite
-*.sqlite3
-
-# Uploads (demo docs/logos stay local)
-
-# OS / editor
+# Editor & OS files
 .DS_Store
 Thumbs.db
 .vscode/
@@ -38,5 +52,7 @@ Thumbs.db
 *.swp
 *~
 
-# Local-only build prompt (not part of the product repo; also covers docs/ copy)
+# Local development files
+instance/*
+!instance/.gitkeep
 VYBE_MASTER_BUILD_PROMPT.md

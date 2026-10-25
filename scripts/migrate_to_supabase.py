@@ -38,6 +38,9 @@ from models import (
     PackItem,
     Quotation,
     Report,
+    AuditEvent,
+    DeviceToken,
+    Notification,
     Review,
     Stop,
     StopActivity,
@@ -78,6 +81,9 @@ MIGRATION_MODELS = [
     CompanionMessage,
     CustomOffer,
     Review,
+    Notification,
+    DeviceToken,
+    AuditEvent,
 ]
 
 

@@ -154,6 +154,22 @@ def test_security_headers_middleware(client):
     assert resp.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
 
 
+def test_health_check_endpoints(client):
+    """Verify /health and /api/health endpoints reveal no secrets and report status."""
+    for path in ("/health", "/api/health"):
+        resp = client.get(path)
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["status"] == "ok"
+        assert data["app"] == "VYBE"
+        assert data["database"] == "connected"
+        # Ensure no secrets or internal paths leaked
+        data_str = json.dumps(data)
+        assert "password" not in data_str
+        assert "sqlite:" not in data_str
+        assert "postgres:" not in data_str
+
+
 # ==============================================================================
 # 2. Storage Service & Document Verification Tests
 # ==============================================================================
@@ -363,3 +379,155 @@ def test_razorpay_webhook_processing_and_idempotency(client, seed_data, test_app
     )
     assert resp_dup.status_code == 200
     assert resp_dup.get_json()["status"] == "already_processed"
+
+
+# ==============================================================================
+# 4. Authentication, Tokens & Privilege Escalation Tests (Prompt 3)
+# ==============================================================================
+
+def test_auth_privilege_escalation_blocked(client, test_app):
+    """Verify users cannot self-assign admin privileges during registration."""
+    resp = client.post("/api/auth/register", json={
+        "name": "Attacker",
+        "email": "attacker@vybe.test",
+        "password": "password123",
+        "role": "admin",  # Malicious privilege escalation attempt
+    })
+    assert resp.status_code == 201
+    user_data = resp.get_json()["user"]
+    # Role must be coerced to traveler
+    assert user_data["role"] == "traveler"
+    assert user_data["role"] != "admin"
+
+
+def test_auth_password_reset_and_email_verification(client, seed_data, test_app):
+    """Verify tokenized password reset, email verification, and no email enumeration."""
+    # 1. Forgot password request (generic message regardless of email existence)
+    resp = client.post("/api/auth/forgot-password", json={"email": "nonexistent@nowhere.com"})
+    assert resp.status_code == 200
+    assert "instructions have been sent" in resp.get_json()["message"]
+
+    # 2. Real user forgot password request
+    resp_real = client.post("/api/auth/forgot-password", json={"email": "traveler@vybe.test"})
+    assert resp_real.status_code == 200
+    token = resp_real.get_json().get("_debug_token")
+    assert token is not None
+
+    # 3. Bad token rejected
+    bad_resp = client.post("/api/auth/reset-password", json={"token": "bad_token_123", "password": "newpassword123"})
+    assert bad_resp.status_code == 400
+
+    # 4. Valid token updates password
+    good_resp = client.post("/api/auth/reset-password", json={"token": token, "password": "newpassword123"})
+    assert good_resp.status_code == 200
+
+    # 5. Login with new password succeeds
+    login_resp = client.post("/api/auth/login", json={"email": "traveler@vybe.test", "password": "newpassword123"})
+    assert login_resp.status_code == 200
+
+
+def test_auth_account_deletion(client, seed_data):
+    """Verify account deletion soft-anonymizes user data and logs audit event."""
+    client.post("/api/auth/login", json={"email": "traveler@vybe.test", "password": "pass123"})
+    
+    # Incorrect password rejected
+    bad = client.post("/api/auth/delete-account", json={"password": "wrong"})
+    assert bad.status_code == 401
+
+    # Correct password deletes/anonymizes
+    ok = client.post("/api/auth/delete-account", json={"password": "pass123"})
+    assert ok.status_code == 200
+    assert "successfully deleted" in ok.get_json()["message"]
+
+
+# ==============================================================================
+# 5. Travel Package Lifecycle & Expiry Tests (Prompt 4)
+# ==============================================================================
+
+def test_package_lifecycle_transitions(client, seed_data):
+    """Verify operator lifecycle state transitions (draft, active, inactive, archived)."""
+    pkg_id = seed_data["package_id"]
+
+    # 1. Traveler cannot change package lifecycle state (403)
+    client.post("/api/auth/login", json={"email": "traveler@vybe.test", "password": "pass123"})
+    r_trav = client.post(f"/api/packages/{pkg_id}/status", json={"status": "inactive"})
+    assert r_trav.status_code == 403
+    client.post("/api/auth/logout")
+
+    # 2. Operator can deactivate and activate
+    client.post("/api/auth/login", json={"email": "operator@vybe.test", "password": "pass123"})
+    r_deact = client.post(f"/api/packages/{pkg_id}/status", json={"status": "inactive"})
+    assert r_deact.status_code == 200
+    assert r_deact.get_json()["package"]["status"] == "inactive"
+    assert r_deact.get_json()["package"]["is_active"] is False
+
+    r_act = client.post(f"/api/packages/{pkg_id}/status", json={"status": "active"})
+    assert r_act.status_code == 200
+    assert r_act.get_json()["package"]["status"] == "active"
+    assert r_act.get_json()["package"]["is_active"] is True
+
+
+def test_package_expiry_and_booking_blocking(client, seed_data, test_app):
+    """Verify expired packages are blocked from discovery and cannot be booked."""
+    from datetime import datetime, timedelta
+
+    pkg_id = seed_data["package_id"]
+    with test_app.app_context():
+        p = db.session.get(TravelPackage, pkg_id)
+        # Set expiry date in the past
+        p.valid_until = datetime.utcnow() - timedelta(days=2)
+        p.status = "active"
+        p.is_active = True
+        db.session.commit()
+
+    # Attempting to enquiry/book an expired package must be rejected
+    client.post("/api/auth/login", json={"email": "traveler@vybe.test", "password": "pass123"})
+    resp = client.post("/api/enquiries", json={"package_id": pkg_id, "num_travellers": 1})
+    assert resp.status_code in (400, 404)
+
+
+# ==============================================================================
+# 6. Notifications & Realtime Polling Tests (Prompt 5)
+# ==============================================================================
+
+def test_notifications_and_device_tokens(client, seed_data, test_app):
+    """Verify persistent notifications, unread tracking, and device token registration."""
+    traveler_id = seed_data["traveler_id"]
+    client.post("/api/auth/login", json={"email": "traveler@vybe.test", "password": "pass123"})
+
+    # 1. Register device token
+    r_tok = client.post("/api/notifications/device-token", json={"token": "fcm_test_token_abc123", "platform": "android"})
+    assert r_tok.status_code == 200
+
+    # 2. Dispatch notification via push service
+    from services.push import push_service
+    with test_app.app_context():
+        notif = push_service.send_notification(
+            user_id=traveler_id,
+            title="Flight Update",
+            body="Your flight time has changed.",
+            notif_type="flight_alert",
+            data={"flight_id": "VY101"},
+        )
+        notif_id = notif.id
+
+    # 3. Retrieve notifications
+    r_list = client.get("/api/notifications")
+    assert r_list.status_code == 200
+    data = r_list.get_json()
+    assert data["unread_count"] >= 1
+    assert any(n["id"] == notif_id for n in data["notifications"])
+
+    # 4. Polling endpoint
+    r_poll = client.get("/api/notifications/poll")
+    assert r_poll.status_code == 200
+    assert "polled_at" in r_poll.get_json()
+
+    # 5. Mark as read
+    r_read = client.post(f"/api/notifications/{notif_id}/read")
+    assert r_read.status_code == 200
+    assert r_read.get_json()["notification"]["is_read"] is True
+
+    # 6. Unregister device token
+    r_untok = client.delete("/api/notifications/device-token", json={"token": "fcm_test_token_abc123"})
+    assert r_untok.status_code == 200

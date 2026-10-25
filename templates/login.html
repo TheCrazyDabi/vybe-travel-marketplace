@@ -41,7 +41,7 @@
       {% if form.password.errors %}<p class="error" role="alert">{{ form.password.errors|join(', ') }}</p>{% endif %}
 
       <div class="auth-aux-row">
-        <a href="#forgot" class="forgot-link" onclick="alert('Demo accounts:\ntraveler@vybe.demo / traveler123\noperator@vybe.demo / operator123\nadmin@vybe.demo / admin123'); return false;">Forgot password?</a>
+        <a href="{{ url_for('auth.forgot_password_page') }}" class="forgot-link">Forgot password?</a>
       </div>
 
       {{ form.submit(class="btn primary big auth-submit", value="Login") }}

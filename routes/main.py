@@ -1,5 +1,7 @@
 from flask import Blueprint, jsonify, render_template, send_from_directory
+from sqlalchemy import text
 import os
+from models import db
 
 main_bp = Blueprint("main", __name__)
 
@@ -10,8 +12,14 @@ def index():
 
 
 @main_bp.get("/health")
+@main_bp.get("/api/health")
 def health():
-    return jsonify({"status": "ok", "app": "VYBE"})
+    """Production health-check endpoint: verifies database connectivity without leaking secrets."""
+    try:
+        db.session.execute(text("SELECT 1"))
+        return jsonify({"status": "ok", "app": "VYBE", "database": "connected"}), 200
+    except Exception:
+        return jsonify({"status": "degraded", "app": "VYBE", "database": "disconnected"}), 503
 
 
 @main_bp.get("/sw.js")

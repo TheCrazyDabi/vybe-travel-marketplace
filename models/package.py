@@ -59,6 +59,47 @@ class TravelPackage(db.Model):
     is_demo = db.Column(db.Boolean, default=False, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Lifecycle & Expiry (Phase 2 / Prompt 4)
+    status = db.Column(db.String(30), default="active", index=True)  # draft|active|inactive|expired|archived
+    trip_start_date = db.Column(db.DateTime, nullable=True)
+    trip_end_date = db.Column(db.DateTime, nullable=True)
+    booking_deadline = db.Column(db.DateTime, nullable=True)
+    valid_until = db.Column(db.DateTime, nullable=True)
+
+    @property
+    def is_bookable(self) -> bool:
+        if not self.is_active or bool(self.is_deleted):
+            return False
+        if (self.status or "active") not in ("active",):
+            return False
+        now = datetime.utcnow()
+        if self.booking_deadline and self.booking_deadline < now:
+            return False
+        if self.valid_until and self.valid_until < now:
+            return False
+        if self.trip_start_date and self.trip_start_date < now:
+            return False
+        if isinstance(self.seats_remaining, int) and self.seats_remaining <= 0:
+            return False
+        return True
+
+    def check_and_update_expiry(self) -> bool:
+        """Evaluate if package has expired and update status in-place if needed."""
+        now = datetime.utcnow()
+        expired = False
+        if self.valid_until and self.valid_until < now:
+            expired = True
+        elif self.booking_deadline and self.booking_deadline < now:
+            expired = True
+        elif self.trip_start_date and self.trip_start_date < now:
+            expired = True
+
+        if expired and (self.status or "active") == "active":
+            self.status = "expired"
+            self.is_active = False
+            return True
+        return False
+
     def to_dict(self, include_operator=True):
         data = {
             "id": self.id,
@@ -103,6 +144,12 @@ class TravelPackage(db.Model):
             "price_kind": self.price_kind,
             "price_confirmed_at": self.price_confirmed_at.isoformat() if self.price_confirmed_at else None,
             "is_demo": bool(self.is_demo),
+            "status": self.status or ("active" if self.is_active else "inactive"),
+            "trip_start_date": self.trip_start_date.isoformat() if self.trip_start_date else None,
+            "trip_end_date": self.trip_end_date.isoformat() if self.trip_end_date else None,
+            "booking_deadline": self.booking_deadline.isoformat() if self.booking_deadline else None,
+            "valid_until": self.valid_until.isoformat() if self.valid_until else None,
+            "is_bookable": self.is_bookable,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             # availability derived from real data only (never fabricated)
             "availability_status": (

@@ -21,6 +21,8 @@ def load_user(user_id):
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    if hasattr(config_class, "init_app"):
+        config_class.init_app(app)
 
     # Safely create local sqlite dir only when sqlite URI is used
     uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
@@ -45,8 +47,9 @@ def create_app(config_class=Config):
     from routes.packages import packages_bp
     from routes.reports import reports_bp
     from routes.traveler import traveler_bp
+    from routes.notifications import notifications_bp
 
-    for bp in (main_bp, auth_bp, traveler_bp, packages_bp, operator_bp, messaging_bp, admin_bp, reports_bp, bookings_bp, offers_bp, companion_bp):
+    for bp in (main_bp, auth_bp, traveler_bp, packages_bp, operator_bp, messaging_bp, admin_bp, reports_bp, bookings_bp, offers_bp, companion_bp, notifications_bp):
         app.register_blueprint(bp)
 
     @app.context_processor
@@ -82,9 +85,8 @@ def create_app(config_class=Config):
     with app.app_context():
         db.create_all()
         _migrate_schema()
-        # Lazy seed on first run so `python app.py` just works.
-        # Skip auto-seed under TESTING so tests get an isolated DB.
-        if not app.config.get("TESTING"):
+        # Seed demo data in development when AUTO_SEED_DEMO is True (never in production/testing)
+        if app.config.get("AUTO_SEED_DEMO") and not app.config.get("TESTING"):
             from seed import seed_demo_packages, seed_if_empty
 
             seed_if_empty()
@@ -144,6 +146,11 @@ def _migrate_schema():
     except Exception:
         db.session.rollback()
 
+    ensure("users", {
+        "is_email_verified": "BOOLEAN DEFAULT 0",
+        "last_login_at": "TIMESTAMP",
+    })
+
     ensure("traveler_profiles", {
         "travel_moods": "JSON",
         "travel_pace": "VARCHAR(20)",
@@ -201,6 +208,11 @@ def _migrate_schema():
         "updated_at": "TIMESTAMP",
         "is_deleted": "BOOLEAN DEFAULT 0",
         "deleted_at": "TIMESTAMP",
+        "status": "VARCHAR(30) DEFAULT 'active'",
+        "trip_start_date": "TIMESTAMP",
+        "trip_end_date": "TIMESTAMP",
+        "booking_deadline": "TIMESTAMP",
+        "valid_until": "TIMESTAMP",
     })
     ensure("interests", {
         "comment": "TEXT",

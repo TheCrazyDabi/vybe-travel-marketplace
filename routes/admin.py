@@ -6,6 +6,7 @@ from flask_login import current_user, login_required
 
 from models import Interest, Report, TravelCompany, TravelPackage, User, VerificationRecord, db
 from services.storage import storage_service
+from services.push import push_service
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -153,6 +154,17 @@ def api_decide(rec_id: int):
         rec.company.status = rec.status
         rec.company.is_verified = decision == "approve"
     db.session.commit()
+    try:
+        if rec.company and rec.company.user_id:
+            push_service.send_notification(
+                user_id=rec.company.user_id,
+                title="Verification Status Update",
+                body=f"Your operator profile has been {rec.status}.",
+                notif_type="verification_update",
+                data={"company_id": rec.company_id, "status": rec.status},
+            )
+    except Exception:
+        pass
     return jsonify({"ok": True, "status": rec.status})
 
 

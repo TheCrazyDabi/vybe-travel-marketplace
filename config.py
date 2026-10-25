@@ -10,7 +10,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 def _normalize_db_uri(uri: str) -> str:
     """Normalize SQLite and PostgreSQL/Supabase database URIs.
 
-    - Replaces 'postgres://' with 'postgresql+psycopg://' (or 'postgresql://')
+    - Replaces 'postgres://' or 'postgresql://' with 'postgresql+psycopg://'
       as required by SQLAlchemy 2.x for PostgreSQL providers like Supabase/Render.
     - Resolves relative SQLite paths to <repo>/instance/vybe.db.
     """
@@ -34,23 +34,21 @@ def _normalize_db_uri(uri: str) -> str:
     return uri
 
 
-class Config:
-    FLASK_ENV = os.environ.get("FLASK_ENV", "development")
+class BaseConfig:
+    """Base configuration shared across all environments."""
+
+    ENV = os.environ.get("FLASK_ENV", "development")
+    FLASK_ENV = ENV
+    DEBUG = False
+    TESTING = False
+
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-vybe-change-me")
-
-    # In production, require an explicit secret key
-    if FLASK_ENV == "production" and (not SECRET_KEY or SECRET_KEY == "dev-vybe-change-me"):
-        raise RuntimeError("CRITICAL: SECRET_KEY environment variable must be set in production.")
-
     SQLALCHEMY_DATABASE_URI = _normalize_db_uri(
-        os.environ.get(
-            "DATABASE_URL", "sqlite:///" + os.path.join(BASE_DIR, "instance", "vybe.db")
-        )
+        os.environ.get("DATABASE_URL", "sqlite:///" + os.path.join(BASE_DIR, "instance", "vybe.db"))
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    TEMPLATES_AUTO_RELOAD = FLASK_ENV != "production"
 
-    # Database connection pool settings (resilient for Supabase transaction pooler)
+    # Connection pool defaults
     if "postgresql" in SQLALCHEMY_DATABASE_URI:
         SQLALCHEMY_ENGINE_OPTIONS = {
             "pool_pre_ping": True,
@@ -59,12 +57,12 @@ class Config:
             "max_overflow": int(os.environ.get("DB_MAX_OVERFLOW", "20")),
         }
 
-    # Session security
+    # Cookie & Session Security
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
-    SESSION_COOKIE_SECURE = FLASK_ENV == "production"
+    SESSION_COOKIE_SECURE = False
 
-    # Local upload fallback (used in dev or when R2 is unconfigured)
+    # Storage settings
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "instance", "uploads")
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "pdf"}
@@ -74,14 +72,89 @@ class Config:
     R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID", "")
     R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY", "")
     R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME", "vybe-uploads")
-    R2_PUBLIC_BASE_URL = os.environ.get("R2_PUBLIC_BASE_URL", "")  # Optional custom domain for public images
+    R2_PUBLIC_BASE_URL = os.environ.get("R2_PUBLIC_BASE_URL", "")
+
+    # Supabase Client & Service Settings
+    SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+    SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")  # Client-safe public key
+    SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")  # Server-only key
 
     # Razorpay Payments (INR)
     RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
     RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
     RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
 
-    # Optional AI (graceful fallback when unset)
+    # Firebase Cloud Messaging (Push Notifications)
+    FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "")
+    FIREBASE_CREDENTIALS_JSON = os.environ.get("FIREBASE_CREDENTIALS_JSON", "")
+    FIREBASE_SERVER_KEY = os.environ.get("FIREBASE_SERVER_KEY", "")
+
+    # Optional AI assistant integration
     VYBE_AI_API_URL = os.environ.get("VYBE_AI_API_URL", "")
     VYBE_AI_API_KEY = os.environ.get("VYBE_AI_API_KEY", "")
     VYBE_AI_MODEL = os.environ.get("VYBE_AI_MODEL", "")
+
+    # Auto-seed behavior flag
+    AUTO_SEED_DEMO = False
+
+    @classmethod
+    def init_app(cls, app):
+        """Hook for environment-specific app initialization."""
+        pass
+
+
+class DevelopmentConfig(BaseConfig):
+    """Configuration for local development."""
+
+    DEBUG = True
+    TEMPLATES_AUTO_RELOAD = True
+    AUTO_SEED_DEMO = True
+
+
+class TestingConfig(BaseConfig):
+    """Configuration for automated test runners."""
+
+    TESTING = True
+    DEBUG = False
+    WTF_CSRF_ENABLED = False
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    AUTO_SEED_DEMO = False
+    SECRET_KEY = "test-secret-key-vybe"
+
+
+class ProductionConfig(BaseConfig):
+    """Configuration for hardened production deployment."""
+
+    DEBUG = False
+    TESTING = False
+    TEMPLATES_AUTO_RELOAD = False
+    SESSION_COOKIE_SECURE = True
+    AUTO_SEED_DEMO = False
+
+    @classmethod
+    def init_app(cls, app):
+        super().init_app(app)
+        secret = os.environ.get("SECRET_KEY")
+        if not secret or secret in ("dev-vybe-change-me", "dev-change-me-in-env"):
+            raise RuntimeError(
+                "CRITICAL SECURITY ERROR: SECRET_KEY environment variable must be set to a secure random value in production."
+            )
+
+
+# Configuration dictionary lookup
+config_by_name = {
+    "development": DevelopmentConfig,
+    "testing": TestingConfig,
+    "production": ProductionConfig,
+    "default": DevelopmentConfig,
+}
+
+
+def get_config():
+    """Resolve active configuration class based on FLASK_ENV or ENV."""
+    env = os.environ.get("FLASK_ENV") or os.environ.get("ENV") or "development"
+    return config_by_name.get(env.lower(), DevelopmentConfig)
+
+
+# Backwards compatibility: export Config as the resolved active configuration
+Config = get_config()

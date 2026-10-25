@@ -9,6 +9,7 @@ from flask_login import current_user, login_required
 from models import Conversation, Interest, Message, TravelCompany, TravelPackage, db
 from models.booking import Booking, Enquiry, Quotation
 from services.payment import payment_service
+from services.push import push_service
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,10 @@ def api_create_enquiry():
     pkg = db.session.get(TravelPackage, package_id)
     if not pkg or not pkg.is_active or getattr(pkg, "is_deleted", False):
         return jsonify({"error": "package unavailable"}), 404
+    if hasattr(pkg, "check_and_update_expiry"):
+        pkg.check_and_update_expiry()
+    if hasattr(pkg, "is_bookable") and not pkg.is_bookable:
+        return jsonify({"error": "package is expired or unavailable for booking"}), 400
     try:
         num = int(data.get("num_travellers") or 1)
     except (TypeError, ValueError):
@@ -181,6 +186,16 @@ def api_quote(enq_id: int):
     note = f"Quotation: ₹{ppp:,}/person, total ₹{total:,}. {quote.message or ''}".strip()
     db.session.add(Message(conversation_id=conv.id, sender_id=current_user.id, body=note[:2000]))
     db.session.commit()
+    try:
+        push_service.send_notification(
+            user_id=enq.traveler_id,
+            title="New Quotation Received",
+            body=f"Quotation received: ₹{total:,} for your trip enquiry.",
+            notif_type="quote_received",
+            data={"enquiry_id": enq.id, "package_id": enq.package_id},
+        )
+    except Exception:
+        pass
     return jsonify({"quotation": quote.to_dict(), "enquiry": enq.to_dict(include_related=True)}), 201
 
 
@@ -406,6 +421,24 @@ def api_verify_booking_payment(booking_id: int):
     booking.status = "confirmed"
     booking.confirmed_at = datetime.utcnow()
     db.session.commit()
+    try:
+        push_service.send_notification(
+            user_id=booking.traveler_id,
+            title="Booking Confirmed!",
+            body=f"Your payment of ₹{(booking.amount_paid or 0):,} was successful.",
+            notif_type="booking_confirmed",
+            data={"booking_id": booking.id},
+        )
+        if booking.company and booking.company.user_id:
+            push_service.send_notification(
+                user_id=booking.company.user_id,
+                title="Booking Paid & Confirmed",
+                body=f"Booking #{booking.id} was paid: ₹{(booking.amount_paid or 0):,}.",
+                notif_type="booking_paid",
+                data={"booking_id": booking.id},
+            )
+    except Exception:
+        pass
 
     return jsonify({"ok": True, "booking": booking.to_dict()})
 
