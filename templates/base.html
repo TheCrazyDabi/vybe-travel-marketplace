@@ -67,9 +67,16 @@
             <a href="/companion" role="menuitem" class="{% if request.path.startswith('/companion') %}active{% endif %}">AI Guide (About)</a>
             <a href="/saved" role="menuitem" class="{% if request.path.startswith('/saved') %}active{% endif %}">Saved <span id="nav-saved-count" class="count-badge hidden">0</span></a>
             <a href="/saved" id="nav-liked-link" role="menuitem" title="Liked packages">♥ Liked <span id="nav-like-count" class="count-badge hidden">0</span></a>
-            {% if current_user.role == 'traveler' %}<a href="/packing" role="menuitem" class="{% if request.path.startswith('/packing') %}active{% endif %}">Packing</a>{% endif %}
-            {% if current_user.role == 'operator' %}<a href="/operator" role="menuitem" class="{% if request.path.startswith('/operator') %}active{% endif %}">Operator Dashboard</a>{% else %}<a href="/login?role=operator" role="menuitem">For Operators</a>{% endif %}
-            {% if current_user.role == 'admin' %}<a href="/admin" role="menuitem" class="{% if request.path.startswith('/admin') %}active{% endif %}">Admin</a>{% endif %}
+            {% if current_user.role == 'traveler' %}
+              <a href="/dashboard" role="menuitem" class="{% if request.path.startswith('/dashboard') %}active{% endif %}">My Trips</a>
+              <a href="/packing" role="menuitem" class="{% if request.path.startswith('/packing') %}active{% endif %}">Packing</a>
+            {% endif %}
+            {% if current_user.role == 'operator' %}
+              <a href="/operator" role="menuitem" class="{% if request.path.startswith('/operator') %}active{% endif %}">Operator Dashboard</a>
+            {% endif %}
+            {% if current_user.role == 'admin' %}
+              <a href="/admin" role="menuitem" class="{% if request.path.startswith('/admin') %}active{% endif %}">Admin</a>
+            {% endif %}
             <a href="/chats" role="menuitem" class="{% if request.path.startswith('/chats') %}active{% endif %}">Chats</a>
             <a href="/profile" role="menuitem" class="{% if request.path.startswith('/profile') %}active{% endif %}">Profile</a>
             <a href="/logout" role="menuitem" class="btn small" style="margin-top:6px;text-align:center;">Logout</a>
