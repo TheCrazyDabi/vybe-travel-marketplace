@@ -18,6 +18,7 @@ class User(UserMixin, db.Model):
     # active | suspended (admin moderation)
     status = db.Column(db.String(20), nullable=False, default="active")
     status_reason = db.Column(db.String(255), nullable=True)
+    auth_user_id = db.Column(db.String(64), unique=True, nullable=True, index=True)
     age_range = db.Column(db.String(20), nullable=True)
     is_email_verified = db.Column(db.Boolean, default=False)
     last_login_at = db.Column(db.DateTime, nullable=True)
@@ -46,6 +47,7 @@ class User(UserMixin, db.Model):
             "email": self.email,
             "role": self.role,
             "status": self.status,
+            "auth_user_id": self.auth_user_id,
             "age_range": self.age_range,
             "is_email_verified": bool(self.is_email_verified),
             "last_login_at": self.last_login_at.isoformat() if self.last_login_at else None,

@@ -7,7 +7,7 @@ db = SQLAlchemy()
 # Re-export models so `from models import User, TravelPackage, ...` works.
 from .user import TravelerProfile, User, UserPreference  # noqa: E402,F401
 from .company import TravelCompany, VerificationRecord  # noqa: E402,F401
-from .package import TravelPackage  # noqa: E402,F401
+from .package import PackageImage, TravelPackage  # noqa: E402,F401
 from .interaction import Interest, REJECTION_REASONS, REJECTION_REASON_KEYS, REJECTION_REASON_LABELS  # noqa: E402,F401
 from .messaging import Conversation, Message  # noqa: E402,F401
 from .moderation import Report  # noqa: E402,F401
@@ -28,6 +28,7 @@ __all__ = [
     "TravelCompany",
     "VerificationRecord",
     "TravelPackage",
+    "PackageImage",
     "Interest",
     "Conversation",
     "Message",

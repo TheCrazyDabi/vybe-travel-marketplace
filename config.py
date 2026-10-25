@@ -129,6 +129,11 @@ class BaseConfig:
     SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
     SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")  # Client-safe public key
     SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")  # Server-only key
+    SUPABASE_STORAGE_BUCKET = os.environ.get("SUPABASE_STORAGE_BUCKET", "vybe-packages")
+
+    # Maintenance & Automatic Cleanup
+    CRON_SECRET = os.environ.get("CRON_SECRET", "dev-cron-secret-change-me")
+    CLEANUP_RETENTION_DAYS = int(os.environ.get("CLEANUP_RETENTION_DAYS", "90"))
 
     # Razorpay Payments (INR)
     RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")

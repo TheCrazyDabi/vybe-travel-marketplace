@@ -72,26 +72,38 @@ class TravelPackage(db.Model):
             return False
         if (self.status or "active") not in ("active",):
             return False
-        now = datetime.utcnow()
-        if self.booking_deadline and self.booking_deadline < now:
-            return False
-        if self.valid_until and self.valid_until < now:
-            return False
-        if self.trip_start_date and self.trip_start_date < now:
-            return False
+        from datetime import timezone
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        if self.booking_deadline:
+            bd = self.booking_deadline.replace(tzinfo=None) if getattr(self.booking_deadline, "tzinfo", None) else self.booking_deadline
+            if bd < now:
+                return False
+        if self.valid_until:
+            vu = self.valid_until.replace(tzinfo=None) if getattr(self.valid_until, "tzinfo", None) else self.valid_until
+            if vu < now:
+                return False
+        if self.trip_start_date:
+            ts = self.trip_start_date.replace(tzinfo=None) if getattr(self.trip_start_date, "tzinfo", None) else self.trip_start_date
+            if ts < now:
+                return False
         if isinstance(self.seats_remaining, int) and self.seats_remaining <= 0:
             return False
         return True
 
     def check_and_update_expiry(self) -> bool:
         """Evaluate if package has expired and update status in-place if needed."""
-        now = datetime.utcnow()
+        from datetime import timezone
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         expired = False
-        if self.valid_until and self.valid_until < now:
+        vu = self.valid_until.replace(tzinfo=None) if (self.valid_until and getattr(self.valid_until, "tzinfo", None)) else self.valid_until
+        bd = self.booking_deadline.replace(tzinfo=None) if (self.booking_deadline and getattr(self.booking_deadline, "tzinfo", None)) else self.booking_deadline
+        ts = self.trip_start_date.replace(tzinfo=None) if (self.trip_start_date and getattr(self.trip_start_date, "tzinfo", None)) else self.trip_start_date
+
+        if vu and vu < now:
             expired = True
-        elif self.booking_deadline and self.booking_deadline < now:
+        elif bd and bd < now:
             expired = True
-        elif self.trip_start_date and self.trip_start_date < now:
+        elif ts and ts < now:
             expired = True
 
         if expired and (self.status or "active") == "active":
@@ -166,3 +178,31 @@ class TravelPackage(db.Model):
                 "status": self.operator.status,
             }
         return data
+
+
+class PackageImage(db.Model):
+    __tablename__ = "package_images"
+
+    id = db.Column(db.Integer, primary_key=True)
+    package_id = db.Column(db.Integer, db.ForeignKey("travel_packages.id", ondelete="CASCADE"), nullable=False, index=True)
+    storage_path = db.Column(db.String(1024), nullable=False, index=True)
+    url = db.Column(db.String(1024), nullable=True)
+    is_cover = db.Column(db.Boolean, default=False)
+    file_size = db.Column(db.Integer, nullable=True)
+    mime_type = db.Column(db.String(100), nullable=True)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    package = db.relationship("TravelPackage", backref=db.backref("package_image_records", cascade="all, delete-orphan", lazy="dynamic"))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "package_id": self.package_id,
+            "storage_path": self.storage_path,
+            "url": self.url,
+            "is_cover": bool(self.is_cover),
+            "file_size": self.file_size,
+            "mime_type": self.mime_type,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
