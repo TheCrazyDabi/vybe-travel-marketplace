@@ -18,8 +18,18 @@ def health():
     try:
         db.session.execute(text("SELECT 1"))
         return jsonify({"status": "ok", "app": "VYBE", "database": "connected"}), 200
-    except Exception:
-        return jsonify({"status": "degraded", "app": "VYBE", "database": "disconnected"}), 503
+    except Exception as e:
+        import re
+        err_msg = str(e).splitlines()[0] if str(e) else ""
+        if "@" in err_msg:
+            err_msg = re.sub(r"://[^@]+@", "://***:***@", err_msg)
+        return jsonify({
+            "status": "degraded",
+            "app": "VYBE",
+            "database": "disconnected",
+            "error_type": type(e).__name__,
+            "error_hint": err_msg[:200]
+        }), 503
 
 
 @main_bp.get("/sw.js")
