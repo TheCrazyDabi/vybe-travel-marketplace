@@ -10,20 +10,66 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 def _normalize_db_uri(uri: str) -> str:
     """Normalize SQLite and PostgreSQL/Supabase database URIs.
 
+    - Strips surrounding quotes, whitespace, and accidental brackets.
     - Replaces 'postgres://' or 'postgresql://' with 'postgresql+psycopg://'
       as required by SQLAlchemy 2.x for PostgreSQL providers like Supabase/Render.
     - Resolves relative SQLite paths to <repo>/instance/vybe.db.
+    - Sanitizes duplicate '@' separators in connection strings.
+    - Transparently routes direct Supabase host to IPv4 Transaction Pooler when on Vercel.
+    - Ensures sslmode=require for remote PostgreSQL providers.
     """
     if not uri:
         if os.environ.get("VERCEL"):
             return "sqlite:////tmp/vybe.db"
         return "sqlite:///" + os.path.join(BASE_DIR, "instance", "vybe.db")
 
+    import re
+
+    uri = uri.strip().strip("'\"")
+
     # Supabase & Render provide postgres:// or postgresql://
     if uri.startswith("postgres://"):
         uri = uri.replace("postgres://", "postgresql+psycopg://", 1)
     elif uri.startswith("postgresql://") and not uri.startswith("postgresql+"):
         uri = uri.replace("postgresql://", "postgresql+psycopg://", 1)
+
+    if uri.startswith("postgresql+psycopg://"):
+        # Strip accidental square brackets if the user preserved template brackets like [YOUR-PASSWORD]
+        uri = re.sub(r":\[([^\]]+)\]@", r":\1@", uri)
+
+        scheme, rest = uri.split("://", 1)
+        path = ""
+        if "/" in rest:
+            auth, path = rest.split("/", 1)
+            path = "/" + path
+        else:
+            auth = rest
+
+        # Fix duplicate '@' symbols in authority segment (e.g., user:pass@extra@host)
+        if auth.count("@") > 1:
+            at_parts = auth.split("@")
+            creds = at_parts[0]
+            host_port = at_parts[-1]
+            auth = f"{creds}@{host_port}"
+
+        # If direct Supabase connection is used for this project, automatically route
+        # to the IPv4 Transaction Pooler (required on Vercel AWS Lambda to avoid IPv6 errors)
+        if "db.qwaofsqxmusumvefhsqv.supabase.co" in auth:
+            if "@" in auth:
+                user_pass, _ = auth.rsplit("@", 1)
+                if ":" in user_pass:
+                    u, p = user_pass.split(":", 1)
+                    if u == "postgres":
+                        u = "postgres.qwaofsqxmusumvefhsqv"
+                    auth = f"{u}:{p}@aws-0-ap-southeast-2.pooler.supabase.com:6543"
+            else:
+                auth = "postgres.qwaofsqxmusumvefhsqv@aws-0-ap-southeast-2.pooler.supabase.com:6543"
+
+        uri = f"{scheme}://{auth}{path}"
+
+        if ("supabase.co" in uri or "pooler.supabase.com" in uri) and "sslmode=" not in uri:
+            sep = "&" if "?" in uri else "?"
+            uri = f"{uri}{sep}sslmode=require"
 
     if uri.startswith("sqlite:///") and not uri.startswith("sqlite:////"):
         if os.environ.get("VERCEL"):
