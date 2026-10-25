@@ -130,12 +130,16 @@ def create_app(config_class=Config):
         try:
             db.create_all()
             _migrate_schema()
-            # Seed demo data in development when AUTO_SEED_DEMO is True (never in production/testing)
-            if app.config.get("AUTO_SEED_DEMO") and not app.config.get("TESTING"):
-                from seed import seed_demo_packages, seed_if_empty
+            # Seed initial packages if the database is completely empty or AUTO_SEED_DEMO is True
+            if not app.config.get("TESTING"):
+                from models.package import TravelPackage
 
-                seed_if_empty()
-                seed_demo_packages()  # idempotent: only adds missing demo titles
+                is_empty = TravelPackage.query.first() is None
+                if app.config.get("AUTO_SEED_DEMO") or is_empty:
+                    from seed import seed_demo_packages, seed_if_empty
+
+                    seed_if_empty()
+                    seed_demo_packages()  # idempotent: only adds missing demo titles
         except Exception as e:
             app.logger.warning(f"Database bootstrap warning: {e}")
 
