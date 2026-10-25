@@ -11,6 +11,7 @@ Handles:
 import logging
 import mimetypes
 import os
+import urllib.request
 import uuid
 from typing import Optional
 
@@ -40,6 +41,69 @@ class StorageService:
             and cfg.get("R2_SECRET_ACCESS_KEY")
             and cfg.get("R2_BUCKET_NAME")
         )
+
+    @staticmethod
+    def is_supabase_configured() -> bool:
+        """Check whether Supabase Storage credentials are configured."""
+        try:
+            cfg = current_app.config
+        except RuntimeError:
+            return False
+        return bool(cfg.get("SUPABASE_URL") and cfg.get("SUPABASE_SERVICE_ROLE_KEY"))
+
+    @classmethod
+    def upload_to_supabase(cls, file: FileStorage, storage_key: str, content_type: str) -> Optional[str]:
+        """Upload an object directly to Supabase Storage via REST."""
+        if not cls.is_supabase_configured():
+            return None
+        cfg = current_app.config
+        bucket = cfg.get("SUPABASE_STORAGE_BUCKET", "vybe-packages")
+        url = f"{cfg['SUPABASE_URL'].rstrip('/')}/storage/v1/object/{bucket}/{storage_key}"
+        file.stream.seek(0)
+        data = file.stream.read()
+        file.stream.seek(0)
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={
+                "Authorization": f"Bearer {cfg['SUPABASE_SERVICE_ROLE_KEY']}",
+                "apikey": cfg["SUPABASE_SERVICE_ROLE_KEY"],
+                "Content-Type": content_type,
+                "x-upsert": "true",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                if resp.status in (200, 201):
+                    logger.info("Uploaded %s to Supabase Storage bucket %s", storage_key, bucket)
+                    return storage_key
+        except Exception as e:
+            logger.error("Supabase Storage upload error for %s: %s", storage_key, e)
+        return None
+
+    @classmethod
+    def delete_from_supabase(cls, storage_key: str) -> bool:
+        """Delete an object from Supabase Storage."""
+        if not cls.is_supabase_configured():
+            return False
+        cfg = current_app.config
+        bucket = cfg.get("SUPABASE_STORAGE_BUCKET", "vybe-packages")
+        url = f"{cfg['SUPABASE_URL'].rstrip('/')}/storage/v1/object/{bucket}/{storage_key}"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "Authorization": f"Bearer {cfg['SUPABASE_SERVICE_ROLE_KEY']}",
+                "apikey": cfg["SUPABASE_SERVICE_ROLE_KEY"],
+            },
+            method="DELETE",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return resp.status in (200, 204)
+        except Exception as e:
+            logger.error("Supabase Storage delete error for %s: %s", storage_key, e)
+            return False
 
     @classmethod
     def get_s3_client(cls):
@@ -110,6 +174,10 @@ class StorageService:
                 return storage_key
             except Exception as e:
                 logger.error("R2 upload error for %s: %s. Falling back to local storage.", storage_key, e)
+        elif cls.is_supabase_configured():
+            sb_res = cls.upload_to_supabase(file, storage_key, content_type)
+            if sb_res:
+                return sb_res
 
         # Local fallback
         upload_base = current_app.config.get("UPLOAD_FOLDER", os.path.join(os.getcwd(), "uploads"))
@@ -191,6 +259,9 @@ class StorageService:
                 return True
             except ClientError as e:
                 logger.error("Failed to delete %s from R2: %s", storage_key, e)
+        elif cls.is_supabase_configured():
+            if cls.delete_from_supabase(storage_key):
+                return True
 
         local_path = cls.get_local_path(storage_key)
         if local_path and os.path.isfile(local_path):
