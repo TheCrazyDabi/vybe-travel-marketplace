@@ -18,6 +18,42 @@ def load_user(user_id):
     return db.session.get(User, int(user_id))
 
 
+import urllib.parse
+
+
+class VercelMiddleware:
+    """WSGI Middleware for seamless Vercel Serverless hosting.
+
+    1. Resets SCRIPT_NAME to empty string so Flask mounts cleanly at the root.
+    2. Rewrites PATH_INFO from __route parameter passed by vercel.json rewrites.
+    3. Cleans QUERY_STRING so Flask request.args remains clean.
+    """
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+
+    def __call__(self, environ, start_response):
+        environ["SCRIPT_NAME"] = ""
+        qs = environ.get("QUERY_STRING", "")
+        if "__route=" in qs:
+            params = urllib.parse.parse_qs(qs, keep_blank_values=True)
+            if "__route" in params and params["__route"]:
+                target = params.pop("__route")[0]
+                if not target.startswith("/"):
+                    target = "/" + target
+                environ["PATH_INFO"] = target
+                clean_pairs = []
+                for k, vs in params.items():
+                    for v in vs:
+                        clean_pairs.append((k, v))
+                environ["QUERY_STRING"] = urllib.parse.urlencode(clean_pairs)
+        elif environ.get("PATH_INFO", "").startswith("/api/index"):
+            environ["PATH_INFO"] = "/"
+
+        if not environ.get("PATH_INFO"):
+            environ["PATH_INFO"] = "/"
+
+        return self.wsgi_app(environ, start_response)
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
@@ -66,21 +102,7 @@ def create_app(config_class=Config):
     def favicon():
         return app.send_static_file("images/favicon.svg")
 
-    @app.get("/api/index")
-    @app.get("/api/index.py")
-    def _vercel_root_fallback():
-        from flask import request, jsonify
-        if "__route" in request.args:
-            route = request.args["__route"]
-            from werkzeug.test import Client
-            # It should have been handled by WSGI middleware, but let's dump for debug if it reached here
-        return jsonify({
-            "request.path": request.path,
-            "request.args": dict(request.args),
-            "PATH_INFO": request.environ.get("PATH_INFO"),
-            "QUERY_STRING": request.environ.get("QUERY_STRING"),
-            "headers": {k: v for k, v in request.headers.items() if "cookie" not in k.lower()}
-        })
+    app.wsgi_app = VercelMiddleware(app.wsgi_app)
 
     @app.after_request
     def _add_security_headers(response):
