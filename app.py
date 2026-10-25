@@ -300,6 +300,29 @@ def _migrate_schema():
 
 app = create_app()
 
+
+@app.route("/api/bootstrap", methods=["GET", "POST"])
+def api_bootstrap():
+    from flask import jsonify, request
+    from models.package import TravelPackage
+    secret = request.args.get("secret", "")
+    if secret != app.config.get("SECRET_KEY") and TravelPackage.query.count() > 0:
+        return jsonify({"error": "unauthorized", "packages_count": TravelPackage.query.count()}), 403
+    try:
+        from seed import seed_demo, seed_demo_packages
+        counts = seed_demo()
+        added = seed_demo_packages()
+        return jsonify({
+            "status": "seeded",
+            "counts": counts,
+            "expansion_added": added,
+            "total_packages": TravelPackage.query.count()
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+
 if __name__ == "__main__":
     host = os.environ.get("FLASK_HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", os.environ.get("FLASK_PORT", "5000")))
