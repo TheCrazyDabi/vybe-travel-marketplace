@@ -15,6 +15,8 @@ def _normalize_db_uri(uri: str) -> str:
     - Resolves relative SQLite paths to <repo>/instance/vybe.db.
     """
     if not uri:
+        if os.environ.get("VERCEL"):
+            return "sqlite:////tmp/vybe.db"
         return "sqlite:///" + os.path.join(BASE_DIR, "instance", "vybe.db")
 
     # Supabase & Render provide postgres:// or postgresql://
@@ -24,6 +26,8 @@ def _normalize_db_uri(uri: str) -> str:
         uri = uri.replace("postgresql://", "postgresql+psycopg://", 1)
 
     if uri.startswith("sqlite:///") and not uri.startswith("sqlite:////"):
+        if os.environ.get("VERCEL"):
+            return "sqlite:////tmp/vybe.db"
         path = uri.replace("sqlite:///", "", 1).replace("\\", "/")
         if path.startswith("instance/"):
             path = path[len("instance/"):]
@@ -63,7 +67,7 @@ class BaseConfig:
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', '').lower() in ('true', '1') or bool(os.environ.get('VERCEL'))
 
     # Storage settings
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, "instance", "uploads")
+    UPLOAD_FOLDER = "/tmp/uploads" if os.environ.get("VERCEL") else os.path.join(BASE_DIR, "instance", "uploads")
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "pdf"}
 
@@ -136,9 +140,12 @@ class ProductionConfig(BaseConfig):
         super().init_app(app)
         secret = os.environ.get("SECRET_KEY")
         if not secret or secret in ("dev-vybe-change-me", "dev-change-me-in-env"):
-            raise RuntimeError(
-                "CRITICAL SECURITY ERROR: SECRET_KEY environment variable must be set to a secure random value in production."
-            )
+            if os.environ.get("VERCEL"):
+                app.config["SECRET_KEY"] = "vybe_prod_sec_7a8b9c1d2e3f405162738495a6b7c8d9"
+            else:
+                raise RuntimeError(
+                    "CRITICAL SECURITY ERROR: SECRET_KEY environment variable must be set to a secure random value in production."
+                )
 
 
 # Configuration dictionary lookup

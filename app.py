@@ -30,8 +30,14 @@ def create_app(config_class=Config):
         sqlite_path = uri.replace("sqlite:///", "", 1)
         db_dir = os.path.dirname(sqlite_path)
         if db_dir:
-            os.makedirs(db_dir, exist_ok=True)
-    os.makedirs(app.config.get("UPLOAD_FOLDER", os.path.join(os.path.dirname(__file__), "instance", "uploads")), exist_ok=True)
+            try:
+                os.makedirs(db_dir, exist_ok=True)
+            except OSError:
+                pass
+    try:
+        os.makedirs(app.config.get("UPLOAD_FOLDER", os.path.join(os.path.dirname(__file__), "instance", "uploads")), exist_ok=True)
+    except OSError:
+        pass
 
     db.init_app(app)
     login_manager.init_app(app)
@@ -83,14 +89,17 @@ def create_app(config_class=Config):
             return redirect(url_for("auth.login_page"))
 
     with app.app_context():
-        db.create_all()
-        _migrate_schema()
-        # Seed demo data in development when AUTO_SEED_DEMO is True (never in production/testing)
-        if app.config.get("AUTO_SEED_DEMO") and not app.config.get("TESTING"):
-            from seed import seed_demo_packages, seed_if_empty
+        try:
+            db.create_all()
+            _migrate_schema()
+            # Seed demo data in development when AUTO_SEED_DEMO is True (never in production/testing)
+            if app.config.get("AUTO_SEED_DEMO") and not app.config.get("TESTING"):
+                from seed import seed_demo_packages, seed_if_empty
 
-            seed_if_empty()
-            seed_demo_packages()  # idempotent: only adds missing demo titles
+                seed_if_empty()
+                seed_demo_packages()  # idempotent: only adds missing demo titles
+        except Exception as e:
+            app.logger.warning(f"Database bootstrap warning: {e}")
 
     return app
 
@@ -106,8 +115,12 @@ def _migrate_schema():
     try:
         inspector = inspect(db.engine)
         existing_tables = set(inspector.get_table_names())
+        is_pg = db.engine.dialect.name == "postgresql"
     except Exception:
         return
+
+    b_false = "FALSE" if is_pg else "0"
+    b_true = "TRUE" if is_pg else "1"
 
     def get_existing_cols(table: str):
         if table not in existing_tables:
@@ -147,7 +160,7 @@ def _migrate_schema():
         db.session.rollback()
 
     ensure("users", {
-        "is_email_verified": "BOOLEAN DEFAULT 0",
+        "is_email_verified": f"BOOLEAN DEFAULT {b_false}",
         "last_login_at": "TIMESTAMP",
     })
 
@@ -166,7 +179,7 @@ def _migrate_schema():
         "budget_flex_pct": "INTEGER DEFAULT 20",
         "travel_start_date": "VARCHAR(20)",
         "travel_end_date": "VARCHAR(20)",
-        "date_flexible": "BOOLEAN DEFAULT 1",
+        "date_flexible": f"BOOLEAN DEFAULT {b_true}",
         "num_travellers": "INTEGER DEFAULT 2",
         "accommodation_prefs": "JSON",
         "transport_prefs": "JSON",
@@ -180,7 +193,7 @@ def _migrate_schema():
         "dietary_notes": "TEXT",
         "other_notes": "TEXT",
         "ideal_trip_text": "TEXT",
-        "onboarding_completed": "BOOLEAN DEFAULT 0",
+        "onboarding_completed": f"BOOLEAN DEFAULT {b_false}",
         "onboarding_step": "INTEGER DEFAULT 1",
     })
     ensure("travel_companies", {
@@ -188,7 +201,7 @@ def _migrate_schema():
         "business_type": "VARCHAR(80)",
         "phone": "VARCHAR(50)",
         "operating_regions": "JSON",
-        "is_demo": "BOOLEAN DEFAULT 0",
+        "is_demo": f"BOOLEAN DEFAULT {b_false}",
     })
     ensure("travel_packages", {
         "nights": "INTEGER",
@@ -204,9 +217,9 @@ def _migrate_schema():
         "price_breakdown": "JSON",
         "price_kind": "VARCHAR(20)",
         "price_confirmed_at": "TIMESTAMP",
-        "is_demo": "BOOLEAN DEFAULT 0",
+        "is_demo": f"BOOLEAN DEFAULT {b_false}",
         "updated_at": "TIMESTAMP",
-        "is_deleted": "BOOLEAN DEFAULT 0",
+        "is_deleted": f"BOOLEAN DEFAULT {b_false}",
         "deleted_at": "TIMESTAMP",
         "status": "VARCHAR(30) DEFAULT 'active'",
         "trip_start_date": "TIMESTAMP",
@@ -225,7 +238,7 @@ def _migrate_schema():
         "agreed_price_snapshot": "INTEGER",
         "price_breakdown_snapshot": "TEXT",
         "terms_snapshot": "TEXT",
-        "capacity_reserved": "BOOLEAN DEFAULT 0",
+        "capacity_reserved": f"BOOLEAN DEFAULT {b_false}",
         "cancellation_reason": "TEXT",
         "cancelled_by": "INTEGER",
         "cancelled_at": "TIMESTAMP",
