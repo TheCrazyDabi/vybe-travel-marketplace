@@ -26,6 +26,9 @@ try:
         elif not path:
             environ["PATH_INFO"] = "/"
 
+        if not environ["PATH_INFO"]:
+            environ["PATH_INFO"] = "/"
+
         # 3. Diagnostic endpoint: /__diag
         if environ.get("PATH_INFO") == "/__diag":
             status = '200 OK'
