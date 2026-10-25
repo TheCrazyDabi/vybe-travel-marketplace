@@ -222,7 +222,6 @@ def api_bootstrap():
     if secret != app.config.get("SECRET_KEY") and TravelPackage.query.count() > 0:
         return jsonify({"error": "unauthorized", "packages_count": TravelPackage.query.count()}), 403
     try:
-        _migrate_schema()
         from seed import seed_demo, seed_demo_packages
         counts = seed_demo()
         added = seed_demo_packages()
