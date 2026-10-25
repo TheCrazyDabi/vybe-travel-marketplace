@@ -54,11 +54,12 @@ class BaseConfig:
 
     # Connection pool defaults
     if "postgresql" in SQLALCHEMY_DATABASE_URI:
+        _is_serverless = bool(os.environ.get("VERCEL"))
         SQLALCHEMY_ENGINE_OPTIONS = {
             "pool_pre_ping": True,
-            "pool_recycle": 300,
-            "pool_size": int(os.environ.get("DB_POOL_SIZE", "10")),
-            "max_overflow": int(os.environ.get("DB_MAX_OVERFLOW", "20")),
+            "pool_recycle": 180,
+            "pool_size": 2 if _is_serverless else int(os.environ.get("DB_POOL_SIZE", "10")),
+            "max_overflow": 3 if _is_serverless else int(os.environ.get("DB_MAX_OVERFLOW", "20")),
         }
 
     # Cookie & Session Security
