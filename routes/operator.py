@@ -236,9 +236,25 @@ def package_form(pkg_id: int | None = None):
             target.nights = max(0, target.duration_days - 1)
         if target.seats_remaining is None and target.capacity is not None:
             target.seats_remaining = target.capacity
-        from datetime import datetime as _dt3
+
+        # Validity & Lifecycle dates
+        from routes.packages import _parse_iso_datetime
+        for dt_field in ("trip_start_date", "trip_end_date", "booking_deadline", "valid_until"):
+            if data.get(dt_field):
+                setattr(target, dt_field, _parse_iso_datetime(data.get(dt_field)))
+
+        if data.get("status"):
+            st = (data.get("status") or "").lower()
+            if st in ("draft", "active", "inactive", "archived"):
+                target.status = st
+                if st == "active":
+                    target.is_active = True
+                elif st in ("draft", "inactive", "archived"):
+                    target.is_active = False
+
+        from services.package_lifecycle import get_utc_now
         target.price_kind = target.price_kind or "operator_quote"
-        target.price_confirmed_at = _dt3.utcnow()
+        target.price_confirmed_at = get_utc_now()
         ming, maxg = target.min_group_size, target.max_group_size
         if isinstance(ming, int) and isinstance(maxg, int) and ming is not None and maxg is not None and ming > maxg:
             return render_template("package_form.html", pkg=pkg, company=company, error="Min group cannot exceed max group."), 400

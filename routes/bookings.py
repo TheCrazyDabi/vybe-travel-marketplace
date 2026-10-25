@@ -9,6 +9,7 @@ from flask_login import current_user, login_required
 
 from models import Conversation, Interest, Message, TravelCompany, TravelPackage, User, db
 from models.booking import Booking, Enquiry, Quotation
+from services.package_lifecycle import is_booking_allowed
 from services.payment import payment_service
 from services.push import push_service
 
@@ -60,14 +61,16 @@ def api_create_enquiry():
         return jsonify({"error": "package unavailable"}), 404
     if hasattr(pkg, "check_and_update_expiry"):
         pkg.check_and_update_expiry()
-    if hasattr(pkg, "is_bookable") and not pkg.is_bookable:
-        return jsonify({"error": "package is expired or unavailable for booking"}), 400
     try:
         num = int(data.get("num_travellers") or 1)
     except (TypeError, ValueError):
         return jsonify({"error": "num_travellers must be a positive integer"}), 400
     if num < 1 or num > 100:
         return jsonify({"error": "num_travellers must be 1..100"}), 400
+
+    allowed, reason = is_booking_allowed(pkg, num)
+    if not allowed:
+        return jsonify({"error": reason}), 400
     # capacity hard check (real data only)
     if isinstance(pkg.max_group_size, int) and pkg.max_group_size and num > pkg.max_group_size:
         return jsonify({"error": f"exceeds max group size {pkg.max_group_size}"}), 400
@@ -371,6 +374,11 @@ def api_request_booking():
     # 3. Expiry and bookable validation
     if hasattr(pkg, "check_and_update_expiry"):
         pkg.check_and_update_expiry()
+
+    allowed, reason = is_booking_allowed(pkg, num_travellers)
+    if not allowed:
+        return jsonify({"error": reason}), 400
+
     if not pkg.is_active or (hasattr(pkg, "is_bookable") and not pkg.is_bookable):
         if isinstance(pkg.seats_remaining, int) and pkg.seats_remaining <= 0:
             return jsonify({

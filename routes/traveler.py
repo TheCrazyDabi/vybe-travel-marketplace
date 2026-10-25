@@ -3,6 +3,7 @@ from flask_login import current_user, login_required
 
 from models import Interest, TravelerProfile, TravelPackage, UserPreference, db
 from models.booking import Booking, Enquiry
+from services.package_lifecycle import check_and_expire_packages, get_utc_now
 from services.recommendation import (
     apply_match_intelligence, apply_swipe_boost, closest_matches,
     detect_contradictions, rank_packages,
@@ -394,7 +395,14 @@ def api_preferences():
 @traveler_bp.get("/api/packages/recommended")
 @login_required
 def api_recommended():
-    pkgs = TravelPackage.query.filter_by(is_active=True, is_deleted=False).all()
+    check_and_expire_packages()
+    now = get_utc_now()
+    pkgs = (
+        TravelPackage.query.filter_by(is_active=True, is_deleted=False)
+        .filter(TravelPackage.status == "active")
+        .filter((TravelPackage.valid_until == None) | (TravelPackage.valid_until >= now))
+        .all()
+    )
     # optional query filters (search + discovery filters, never breaking default)
     # Reuses matching service for ranking; filters only narrow the list.
     q = (request.args.get("q") or request.args.get("destination") or "").strip().lower()

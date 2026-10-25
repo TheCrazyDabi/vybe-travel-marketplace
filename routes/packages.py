@@ -1,9 +1,21 @@
+import os
+from datetime import datetime, timezone
 from flask import Blueprint, abort, jsonify, render_template, request
 from flask_login import current_user, login_required
 
 from models import Interest, TravelPackage, db
 from models.booking import Enquiry
+from models.package import PackageImage
+from services.package_lifecycle import (
+    check_and_expire_packages,
+    cleanup_expired_packages,
+    get_utc_now,
+    is_booking_allowed,
+    is_image_referenced_elsewhere,
+    to_naive_utc,
+)
 from services.recommendation import score_package
+from services.storage import storage_service
 
 packages_bp = Blueprint("packages", __name__)
 
@@ -17,13 +29,39 @@ PACKAGE_FIELDS = (
     "nights", "min_group_size", "max_group_size", "suitable_travel_styles",
     "suitable_groups", "capacity", "seats_remaining", "customization_options",
     "images", "departure_dates_list", "price_breakdown", "price_kind",
+    # Lifecycle & Expiry
+    "status", "trip_start_date", "trip_end_date", "booking_deadline", "valid_until",
 )
+
+
+def _parse_iso_datetime(val):
+    if not val:
+        return None
+    if isinstance(val, datetime):
+        return val.replace(tzinfo=None) if val.tzinfo else val
+    val_str = str(val).strip()
+    if not val_str:
+        return None
+    val_clean = val_str.replace("Z", "+00:00")
+    try:
+        dt = datetime.fromisoformat(val_clean)
+        return dt.astimezone(timezone.utc).replace(tzinfo=None) if dt.tzinfo else dt
+    except ValueError:
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(val_str, fmt)
+            except ValueError:
+                pass
+    return None
 
 
 @packages_bp.get("/packages")
 def list_page():
+    check_and_expire_packages()
+    now = get_utc_now()
     pkgs = (
-        TravelPackage.query.filter_by(is_active=True, is_deleted=False)
+        TravelPackage.query.filter_by(is_active=True, is_deleted=False, status="active")
+        .filter((TravelPackage.valid_until == None) | (TravelPackage.valid_until >= now))
         .order_by(TravelPackage.price.asc())
         .all()
     )
@@ -33,6 +71,9 @@ def list_page():
 @packages_bp.get("/packages/<int:pkg_id>")
 def detail_page(pkg_id: int):
     pkg = TravelPackage.query.get_or_404(pkg_id)
+    if hasattr(pkg, "check_and_update_expiry"):
+        pkg.check_and_update_expiry()
+        db.session.commit()
     score, reasons, explanation = None, [], ""
     if current_user.is_authenticated and current_user.profile:
         score, reasons, explanation = score_package(pkg, current_user.profile.to_dict())
@@ -60,44 +101,30 @@ def detail_page(pkg_id: int):
     )
 
 
-def _check_and_expire_packages():
-    """Auto-expire packages whose deadlines or trip dates have passed."""
-    from datetime import datetime as _dt
-    now = _dt.utcnow()
-    query = TravelPackage.query.filter(
-        TravelPackage.is_active == True,
-        TravelPackage.is_deleted == False,
-        (
-            ((TravelPackage.valid_until != None) & (TravelPackage.valid_until < now)) |
-            ((TravelPackage.booking_deadline != None) & (TravelPackage.booking_deadline < now)) |
-            ((TravelPackage.trip_start_date != None) & (TravelPackage.trip_start_date < now))
-        )
-    )
-    count = 0
-    for p in query.all():
-        p.status = "expired"
-        p.is_active = False
-        count += 1
-    if count > 0:
-        db.session.commit()
-    return count
-
-
 # ---- JSON API ----
 @packages_bp.get("/api/packages")
 def api_list():
-    _check_and_expire_packages()
-    
+    check_and_expire_packages()
+    now = get_utc_now()
+
     q = TravelPackage.query.filter_by(is_deleted=False)
-    
+
     # Status filter: default to active public packages
     status = request.args.get("status", "active").lower()
     if status == "all" and current_user.is_authenticated and current_user.role in ("operator", "admin"):
         pass
+    elif status == "active":
+        q = q.filter(
+            TravelPackage.status == "active",
+            TravelPackage.is_active == True,
+            (TravelPackage.valid_until == None) | (TravelPackage.valid_until >= now)
+        )
     elif status:
         q = q.filter(TravelPackage.status == status, TravelPackage.is_active == True)
     else:
-        q = q.filter_by(is_active=True)
+        q = q.filter_by(is_active=True).filter(
+            (TravelPackage.valid_until == None) | (TravelPackage.valid_until >= now)
+        )
 
     dest = (request.args.get("destination") or "").strip()
     if dest:
@@ -135,6 +162,9 @@ def api_list():
 @packages_bp.get("/api/packages/<int:pkg_id>")
 def api_detail(pkg_id: int):
     pkg = TravelPackage.query.get_or_404(pkg_id)
+    if hasattr(pkg, "check_and_update_expiry"):
+        if pkg.check_and_update_expiry():
+            db.session.commit()
     return jsonify({"package": pkg.to_dict()})
 
 
@@ -185,6 +215,37 @@ def _validate_package_payload(data: dict):
             return "min_group_size cannot exceed max_group_size"
     except (TypeError, ValueError):
         pass
+
+    # Date validations
+    now = get_utc_now()
+    trip_start = _parse_iso_datetime(data.get("trip_start_date"))
+    trip_end = _parse_iso_datetime(data.get("trip_end_date"))
+    booking_deadline = _parse_iso_datetime(data.get("booking_deadline"))
+    valid_until = _parse_iso_datetime(data.get("valid_until"))
+
+    if data.get("trip_start_date") and not trip_start:
+        return "invalid trip_start_date format"
+    if data.get("trip_end_date") and not trip_end:
+        return "invalid trip_end_date format"
+    if data.get("booking_deadline") and not booking_deadline:
+        return "invalid booking_deadline format"
+    if data.get("valid_until") and not valid_until:
+        return "invalid valid_until format"
+
+    if trip_start and trip_end and trip_start > trip_end:
+        return "trip_start_date cannot be after trip_end_date"
+    if booking_deadline and trip_start and booking_deadline > trip_start:
+        return "booking_deadline cannot be after trip_start_date"
+    if valid_until and trip_start and valid_until > trip_start:
+        return "valid_until cannot be after trip_start_date"
+
+    status = (data.get("status") or "active").lower()
+    if status == "active":
+        if valid_until and valid_until <= now:
+            return "valid_until cannot be in the past for active packages"
+        if booking_deadline and booking_deadline <= now:
+            return "booking_deadline cannot be in the past for active packages"
+
     return None
 
 
@@ -196,6 +257,11 @@ def api_create():
     err = _validate_package_payload(data)
     if err:
         return jsonify({"error": err}), 400
+
+    status = (data.get("status") or "active").lower()
+    if status not in ("draft", "active", "inactive", "expired", "archived"):
+        status = "active"
+
     pkg = TravelPackage(
         operator_id=company.id if company else None,
         title=data["title"].strip(),
@@ -235,9 +301,14 @@ def api_create():
         price_kind=(data.get("price_kind") if current_user.role == "admin"
                     and data.get("price_kind") in ("demo_estimate", "operator_quote", "confirmed")
                     else "operator_quote"),
+        status=status,
+        is_active=(status == "active"),
+        trip_start_date=_parse_iso_datetime(data.get("trip_start_date")),
+        trip_end_date=_parse_iso_datetime(data.get("trip_end_date")),
+        booking_deadline=_parse_iso_datetime(data.get("booking_deadline")),
+        valid_until=_parse_iso_datetime(data.get("valid_until")),
     )
-    from datetime import datetime as _dt
-    pkg.price_confirmed_at = _dt.utcnow()
+    pkg.price_confirmed_at = get_utc_now()
     # admin without company: attach to first approved company for demo
     if pkg.operator_id is None:
         from models import TravelCompany
@@ -282,14 +353,65 @@ def api_update(pkg_id: int):
                     return jsonify({"error": "min_group_size cannot exceed max_group_size"}), 400
         except (TypeError, ValueError):
             return jsonify({"error": "group sizes must be integers"}), 400
+
+    now = get_utc_now()
+    trip_start = _parse_iso_datetime(data["trip_start_date"]) if "trip_start_date" in data else pkg.trip_start_date
+    trip_end = _parse_iso_datetime(data["trip_end_date"]) if "trip_end_date" in data else pkg.trip_end_date
+    booking_deadline = _parse_iso_datetime(data["booking_deadline"]) if "booking_deadline" in data else pkg.booking_deadline
+    valid_until = _parse_iso_datetime(data["valid_until"]) if "valid_until" in data else pkg.valid_until
+
+    if "trip_start_date" in data and data["trip_start_date"] and not trip_start:
+        return jsonify({"error": "invalid trip_start_date format"}), 400
+    if "trip_end_date" in data and data["trip_end_date"] and not trip_end:
+        return jsonify({"error": "invalid trip_end_date format"}), 400
+    if "booking_deadline" in data and data["booking_deadline"] and not booking_deadline:
+        return jsonify({"error": "invalid booking_deadline format"}), 400
+    if "valid_until" in data and data["valid_until"] and not valid_until:
+        return jsonify({"error": "invalid valid_until format"}), 400
+
+    if trip_start and trip_end and trip_start > trip_end:
+        return jsonify({"error": "trip_start_date cannot be after trip_end_date"}), 400
+    if booking_deadline and trip_start and booking_deadline > trip_start:
+        return jsonify({"error": "booking_deadline cannot be after trip_start_date"}), 400
+    if valid_until and trip_start and valid_until > trip_start:
+        return jsonify({"error": "valid_until cannot be after trip_start_date"}), 400
+
+    if "status" in data:
+        new_status = (data.get("status") or "").lower()
+        if new_status not in ("draft", "active", "inactive", "archived"):
+            return jsonify({"error": f"invalid status: {new_status}"}), 400
+        if new_status == "active":
+            if (valid_until and to_naive_utc(valid_until) <= now) or (booking_deadline and to_naive_utc(booking_deadline) <= now):
+                return jsonify({"error": "Cannot activate an expired package"}), 400
+            pkg.status = "active"
+            pkg.is_active = True
+            pkg.is_deleted = False
+        elif new_status == "archived":
+            pkg.status = "archived"
+            pkg.is_active = False
+            pkg.is_deleted = True
+            pkg.deleted_at = now
+        else:
+            pkg.status = new_status
+            pkg.is_active = False
+
     for field in PACKAGE_FIELDS:
-        if field in data:
+        if field in data and field not in ("trip_start_date", "trip_end_date", "booking_deadline", "valid_until", "status"):
             if field == "price_kind" and current_user.role != "admin" and data[field] == "demo_estimate":
                 continue  # only seed/admin may mark demo estimates
             setattr(pkg, field, data[field])
-    from datetime import datetime as _dt2
+
+    if "trip_start_date" in data:
+        pkg.trip_start_date = trip_start
+    if "trip_end_date" in data:
+        pkg.trip_end_date = trip_end
+    if "booking_deadline" in data:
+        pkg.booking_deadline = booking_deadline
+    if "valid_until" in data:
+        pkg.valid_until = valid_until
+
     if any(k in data for k in ("price", "price_breakdown")):
-        pkg.price_confirmed_at = _dt2.utcnow()
+        pkg.price_confirmed_at = get_utc_now()
         if not pkg.price_kind:
             pkg.price_kind = "operator_quote"
     db.session.commit()
@@ -530,3 +652,170 @@ def api_update_status(pkg_id: int):
 
     db.session.commit()
     return jsonify({"ok": True, "package": pkg.to_dict()})
+
+
+# ---- Package Media / Supabase Storage Integration ----
+@packages_bp.post("/api/packages/<int:pkg_id>/images")
+@login_required
+def api_upload_package_image(pkg_id: int):
+    """Upload and attach a package photo to Supabase / hybrid storage.
+
+    Enforces:
+    - Operator ownership (only owner operator or admin can upload)
+    - File validation: jpg, jpeg, png, webp <= 5MB
+    - Storage path isolation: packages/{operator_id}/{uuid}_{name}
+    """
+    pkg = TravelPackage.query.get_or_404(pkg_id)
+    company = _require_operator_company()
+    if company and pkg.operator_id != company.id and current_user.role != "admin":
+        abort(403)
+
+    if "file" not in request.files:
+        return jsonify({"error": "file field is required"}), 400
+
+    f = request.files["file"]
+    if not f or not f.filename:
+        return jsonify({"error": "No file selected"}), 400
+
+    allowed = {"png", "jpg", "jpeg", "webp"}
+    raw_name = f.filename.lower()
+    ext = raw_name.rsplit(".", 1)[-1] if "." in raw_name else ""
+    if ext not in allowed:
+        return jsonify({"error": f"File type '{ext}' not allowed. Allowed: {', '.join(sorted(allowed))}"}), 400
+
+    # Validate size <= 5MB
+    f.stream.seek(0, 2)
+    file_size = f.stream.tell()
+    f.stream.seek(0)
+    if file_size > 5 * 1024 * 1024:
+        return jsonify({"error": "File size exceeds 5MB limit"}), 400
+
+    try:
+        storage_path = storage_service.upload_file(
+            f,
+            folder=f"packages/{pkg.operator_id}",
+            is_private=False,
+        )
+    except Exception as e:
+        return jsonify({"error": f"Upload failed: {str(e)}"}), 500
+
+    if not storage_path:
+        return jsonify({"error": "Failed to store image"}), 500
+
+    is_cover = request.form.get("is_cover", "").lower() in ("true", "1") or not pkg.cover_image
+
+    img_rec = PackageImage(
+        package_id=pkg.id,
+        storage_path=storage_path,
+        url=storage_path,
+        is_cover=is_cover,
+        file_size=file_size,
+        mime_type=f.content_type,
+        uploaded_by=current_user.id,
+    )
+    db.session.add(img_rec)
+
+    current_images = list(pkg.images or [])
+    if storage_path not in current_images:
+        current_images.append(storage_path)
+    pkg.images = current_images
+
+    if is_cover or not pkg.cover_image:
+        pkg.cover_image = storage_path
+
+    db.session.commit()
+    return jsonify({
+        "ok": True,
+        "image": img_rec.to_dict(),
+        "cover_image": pkg.cover_image,
+        "images": pkg.images,
+    }), 201
+
+
+@packages_bp.delete("/api/packages/<int:pkg_id>/images")
+@login_required
+def api_delete_package_image(pkg_id: int):
+    """Safely detach and prune an image from a package.
+
+    Enforces orphan safety: does NOT delete the physical file if another
+    package still references it.
+    """
+    pkg = TravelPackage.query.get_or_404(pkg_id)
+    company = _require_operator_company()
+    if company and pkg.operator_id != company.id and current_user.role != "admin":
+        abort(403)
+
+    data = request.get_json(force=True, silent=True) or {}
+    image_path = (data.get("image_path") or "").strip()
+    if not image_path:
+        return jsonify({"error": "image_path is required"}), 400
+
+    # Remove from JSON list
+    current_images = [img for img in (pkg.images or []) if img != image_path]
+    pkg.images = current_images
+
+    # Update cover_image if this was the cover
+    if pkg.cover_image == image_path:
+        pkg.cover_image = current_images[0] if current_images else None
+
+    # Delete PackageImage records for this package
+    PackageImage.query.filter_by(package_id=pkg.id, storage_path=image_path).delete()
+
+    # Only delete physical file if no other package references it
+    deleted_physical = False
+    if not is_image_referenced_elsewhere(image_path, exclude_package_id=pkg.id):
+        deleted_physical = storage_service.delete_file(image_path)
+
+    db.session.commit()
+    return jsonify({
+        "ok": True,
+        "image_path": image_path,
+        "deleted_physical": deleted_physical,
+        "cover_image": pkg.cover_image,
+        "images": pkg.images,
+    })
+
+
+# ---- Scheduled Background Cleanup Endpoint ----
+@packages_bp.route("/api/cron/cleanup", methods=["GET", "POST"])
+def api_cron_cleanup():
+    """Trigger automated package expiry and safe unreferenced cleanup.
+
+    Can be called by:
+    - Supabase pg_cron (via pg_net extension HTTP POST)
+    - Vercel Cron (via Authorization: Bearer <CRON_SECRET>)
+    - Authenticated platform administrator
+    """
+    from flask import current_app
+    expected_secret = current_app.config.get("CRON_SECRET") or os.environ.get("CRON_SECRET", "dev-cron-secret-change-me")
+
+    auth_header = request.headers.get("Authorization", "")
+    token_param = request.args.get("token", "")
+    secret_header = request.headers.get("X-Cron-Secret", "")
+
+    bearer_token = ""
+    if auth_header.startswith("Bearer "):
+        bearer_token = auth_header[7:].strip()
+
+    is_authorized = (
+        (bearer_token and bearer_token == expected_secret)
+        or (secret_header and secret_header == expected_secret)
+        or (token_param and token_param == expected_secret)
+        or (current_user.is_authenticated and current_user.role == "admin")
+    )
+
+    if not is_authorized:
+        return jsonify({"error": "Unauthorized: valid cron secret required"}), 401
+
+    retention_days = request.args.get("retention_days", type=int)
+    if retention_days is None:
+        retention_days = current_app.config.get("CLEANUP_RETENTION_DAYS", 90)
+    dry_run = request.args.get("dry_run", "").lower() in ("true", "1")
+
+    res = cleanup_expired_packages(
+        retention_days=retention_days,
+        dry_run=dry_run,
+        current_user_id=current_user.id if current_user.is_authenticated else None,
+        request=request,
+    )
+    return jsonify(res), 200
