@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Account Deletion Request | VYBE</title>
+  <style>
+    :root {
+      --bg: #180E0E;
+      --card-bg: rgba(43, 28, 25, 0.85);
+      --border: rgba(232, 168, 124, 0.2);
+      --accent: #E8A87C;
+      --danger: #FF6B6B;
+      --text: #F5EFEB;
+      --muted: #D3C4BC;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px 28px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #FFF;
+      margin-bottom: 8px;
+    }
+    p {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .alert-error {
+      background: rgba(255, 107, 107, 0.15);
+      border: 1px solid rgba(255, 107, 107, 0.4);
+      color: var(--danger);
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+    .alert-success {
+      background: rgba(46, 204, 113, 0.15);
+      border: 1px solid rgba(46, 204, 113, 0.4);
+      color: #2ECC71;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      text-align: center;
+    }
+    .form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    input[type="email"], input[type="password"] {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #FFF;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+    input:focus {
+      border-color: var(--accent);
+    }
+    .warning-box {
+      background: rgba(0, 0, 0, 0.25);
+      border-left: 3px solid var(--accent);
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+    .btn-danger {
+      width: 100%;
+      background: #C0392B;
+      color: #FFF;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    .btn-danger:hover {
+      background: #A93226;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    {% if success %}
+      <div class="alert-success">
+        <h2 style="font-size: 18px; margin-bottom: 8px;">Account Deletion Completed</h2>
+        <p style="color: #E0E0E0; margin-bottom: 12px;">Your personal identifiers have been permanently anonymized, profile details deleted, and active sessions terminated.</p>
+        <p style="font-size: 12px; color: #BBB; margin-bottom: 0;">Completed in accordance with Google Play User Data policies.</p>
+      </div>
+      <a href="/" class="back-link">&larr; Return to Homepage</a>
+    {% else %}
+      <h1>Request Account Deletion</h1>
+      <p>Submit your verified account credentials to initiate immediate deletion of your VYBE account and associated personal data.</p>
+
+      {% if error %}
+        <div class="alert-error">{{ error }}</div>
+      {% endif %}
+
+      <div class="warning-box">
+        <strong>What happens when you delete your account:</strong><br>
+        &bull; Your name, email, and password will be permanently anonymized.<br>
+        &bull; Your traveller profile and preferences will be permanently deleted.<br>
+        &bull; Historical booking transactions are preserved in anonymized form for accounting and regulatory compliance.
+      </div>
+
+      <form method="POST" action="/account/delete-request">
+        <div class="form-group">
+          <label for="email">Account Email</label>
+          <input type="email" id="email" name="email" required placeholder="your.name@example.com">
+        </div>
+        <div class="form-group">
+          <label for="password">Account Password</label>
+          <input type="password" id="password" name="password" required placeholder="Enter password to verify ownership">
+        </div>
+        <button type="submit" class="btn-danger" onclick="return confirm('Are you sure you want to permanently delete your VYBE account? This action cannot be undone.');">Permanently Delete My Account</button>
+      </form>
+
+      <a href="/" class="back-link">&larr; Cancel and return</a>
+    {% endif %}
+  </div>
+</body>
+</html>

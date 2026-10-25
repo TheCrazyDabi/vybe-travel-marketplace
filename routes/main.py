@@ -30,3 +30,10 @@ def service_worker():
     resp.headers["Service-Worker-Allowed"] = "/"
     resp.headers["Cache-Control"] = "no-cache"
     return resp
+
+
+@main_bp.get("/privacy")
+def privacy_policy():
+    """Public privacy policy fulfilling Google Play developer requirements."""
+    return render_template("privacy_policy.html")
+

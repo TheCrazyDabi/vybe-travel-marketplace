@@ -1,12 +1,13 @@
 """Enquiry / Quotation / Booking workflow (persistent, role-checked)."""
 
 from datetime import datetime
+import uuid
 
 import logging
 from flask import Blueprint, abort, current_app, jsonify, request
 from flask_login import current_user, login_required
 
-from models import Conversation, Interest, Message, TravelCompany, TravelPackage, db
+from models import Conversation, Interest, Message, TravelCompany, TravelPackage, User, db
 from models.booking import Booking, Enquiry, Quotation
 from services.payment import payment_service
 from services.push import push_service
@@ -327,21 +328,347 @@ def api_get_booking(booking_id: int):
     return jsonify({"booking": b.to_dict()})
 
 
+
+@bookings_bp.post("/api/bookings/request")
+@login_required
+def api_request_booking():
+    """Traveller submits a booking request for an active, valid package."""
+    data = request.get_json(force=True, silent=True) or {}
+
+    # 1. Idempotency Check
+    idempotency_key = (
+        request.headers.get("X-Idempotency-Key")
+        or data.get("idempotency_key")
+    )
+    if idempotency_key:
+        existing = Booking.query.filter_by(idempotency_key=str(idempotency_key).strip()).first()
+        if existing:
+            if existing.traveler_id == current_user.id or current_user.role == "admin":
+                return jsonify({"booking": existing.to_dict(), "idempotent_replay": True}), 200
+            abort(403)
+
+    package_id = data.get("package_id")
+    if not package_id:
+        return jsonify({"error": "package_id is required"}), 400
+
+    try:
+        num_travellers = int(data.get("num_travellers") or 1)
+    except (TypeError, ValueError):
+        return jsonify({"error": "num_travellers must be a positive integer"}), 400
+
+    if num_travellers < 1 or num_travellers > 100:
+        return jsonify({"error": "num_travellers must be between 1 and 100"}), 400
+
+    # 2. Concurrency-safe atomic package lookup & locking
+    try:
+        pkg = TravelPackage.query.with_for_update().filter_by(id=package_id).first()
+    except Exception:
+        pkg = db.session.get(TravelPackage, package_id)
+
+    if not pkg or getattr(pkg, "is_deleted", False):
+        return jsonify({"error": "Package not found or no longer available"}), 404
+
+    # 3. Expiry and bookable validation
+    if hasattr(pkg, "check_and_update_expiry"):
+        pkg.check_and_update_expiry()
+    if not pkg.is_active or (hasattr(pkg, "is_bookable") and not pkg.is_bookable):
+        if isinstance(pkg.seats_remaining, int) and pkg.seats_remaining <= 0:
+            return jsonify({
+                "error": "Not enough seats remaining. Only 0 available.",
+                "seats_remaining": 0
+            }), 400
+        return jsonify({"error": "Package has expired or is unavailable for booking"}), 400
+
+    # 4. Operator status check (block if suspended or inactive)
+    operator_company = TravelCompany.query.get(pkg.operator_id)
+    if not operator_company:
+        return jsonify({"error": "Operator profile not found"}), 400
+    operator_user = User.query.get(operator_company.user_id)
+    if not operator_user or operator_user.status != "active":
+        return jsonify({"error": "Operator account is suspended or inactive"}), 400
+
+    # 5. Capacity Check
+    if isinstance(pkg.seats_remaining, int) and pkg.seats_remaining is not None:
+        if num_travellers > pkg.seats_remaining:
+            return jsonify({
+                "error": f"Not enough seats remaining. Only {pkg.seats_remaining} available.",
+                "seats_remaining": pkg.seats_remaining
+            }), 400
+    if isinstance(pkg.max_group_size, int) and pkg.max_group_size and num_travellers > pkg.max_group_size:
+        return jsonify({"error": f"Exceeds max group size of {pkg.max_group_size}"}), 400
+
+    # 6. Immutable Snapshots
+    price_per_person = int(pkg.price or 0)
+    total_cost = price_per_person * num_travellers
+    price_breakdown = {
+        "price_per_person": price_per_person,
+        "num_travellers": num_travellers,
+        "subtotal": total_cost,
+        "currency": "INR",
+        "captured_at": datetime.utcnow().isoformat(),
+    }
+    terms_snapshot = getattr(pkg, "cancellation_terms", None) or getattr(pkg, "terms", None) or f"Standard terms for {pkg.title}. Non-refundable within 48h of trip."
+    itinerary_snapshot = str(getattr(pkg, "itinerary", "") or "")
+
+    booking_ref = f"VY-{uuid.uuid4().hex[:8].upper()}"
+    traveller_details = data.get("traveller_details") or {}
+    if not isinstance(traveller_details, dict):
+        traveller_details = {"raw": traveller_details}
+    if "lead_name" not in traveller_details and hasattr(current_user, "name"):
+        traveller_details["lead_name"] = current_user.name
+    if "lead_email" not in traveller_details and hasattr(current_user, "email"):
+        traveller_details["lead_email"] = current_user.email
+
+    booking = Booking(
+        booking_reference=booking_ref,
+        idempotency_key=str(idempotency_key).strip() if idempotency_key else f"auto_{uuid.uuid4().hex}",
+        traveler_id=current_user.id,
+        package_id=pkg.id,
+        company_id=operator_company.id,
+        num_travellers=num_travellers,
+        status="requested",
+        agreed_price_snapshot=total_cost,
+        price_breakdown_snapshot=price_breakdown,
+        terms_snapshot=terms_snapshot,
+        terms=terms_snapshot,
+        itinerary_snapshot=itinerary_snapshot,
+        capacity_reserved=False,
+        traveller_details=traveller_details,
+        total_cost=total_cost,
+        payment_status="unpaid",
+        created_at=datetime.utcnow(),
+    )
+    db.session.add(booking)
+    db.session.commit()
+
+    # 7. Audit log & Notification
+    try:
+        from models.audit import AuditEvent
+        AuditEvent.log(
+            event_type="booking_requested",
+            user_id=current_user.id,
+            details={"booking_id": booking.id, "booking_ref": booking_ref, "package_id": pkg.id, "total_cost": total_cost},
+        )
+    except Exception:
+        pass
+
+    try:
+        push_service.send_notification(
+            user_id=operator_user.id,
+            title="New Booking Request",
+            body=f"Traveller {getattr(current_user, 'name', 'Guest')} requested {num_travellers} seat(s) for '{pkg.title}'.",
+            notif_type="booking_requested",
+            data={"booking_id": booking.id, "booking_reference": booking_ref},
+        )
+    except Exception:
+        pass
+
+    return jsonify({"booking": booking.to_dict()}), 201
+
+
+@bookings_bp.post("/api/bookings/<int:booking_id>/accept")
+@login_required
+def api_accept_booking(booking_id: int):
+    """Operator accepts a requested booking and atomically reserves capacity."""
+    booking = Booking.query.get_or_404(booking_id)
+    comp = _company_for(current_user)
+    if current_user.role != "admin" and not (comp and booking.company_id == comp.id):
+        abort(403)
+
+    if booking.status != "requested":
+        return jsonify({"error": f"Cannot accept booking in '{booking.status}' status (must be 'requested')"}), 400
+
+    # Atomic lock on package to verify & reserve capacity
+    try:
+        pkg = TravelPackage.query.with_for_update().filter_by(id=booking.package_id).first()
+    except Exception:
+        pkg = db.session.get(TravelPackage, booking.package_id)
+
+    num = booking.num_travellers or 1
+    if pkg and isinstance(pkg.seats_remaining, int) and pkg.seats_remaining is not None:
+        if pkg.seats_remaining < num:
+            return jsonify({
+                "error": "Insufficient capacity to accept this booking request",
+                "seats_remaining": pkg.seats_remaining
+            }), 400
+        pkg.seats_remaining = max(0, pkg.seats_remaining - num)
+
+    booking.capacity_reserved = True
+    booking.status = "accepted"
+    booking.accepted_at = datetime.utcnow()
+    db.session.commit()
+
+    try:
+        from models.audit import AuditEvent
+        AuditEvent.log(
+            event_type="booking_accepted",
+            user_id=current_user.id,
+            details={"booking_id": booking.id, "package_id": booking.package_id},
+        )
+    except Exception:
+        pass
+
+    try:
+        push_service.send_notification(
+            user_id=booking.traveler_id,
+            title="Booking Request Accepted!",
+            body=f"Your booking request #{booking.booking_reference or booking.id} has been accepted by the operator.",
+            notif_type="booking_accepted",
+            data={"booking_id": booking.id},
+        )
+    except Exception:
+        pass
+
+    return jsonify({"booking": booking.to_dict()}), 200
+
+
+@bookings_bp.post("/api/bookings/<int:booking_id>/reject")
+@login_required
+def api_reject_booking(booking_id: int):
+    """Operator rejects a booking request and releases any reserved capacity."""
+    booking = Booking.query.get_or_404(booking_id)
+    comp = _company_for(current_user)
+    if current_user.role != "admin" and not (comp and booking.company_id == comp.id):
+        abort(403)
+
+    if booking.status in ("rejected", "cancelled", "completed"):
+        return jsonify({"error": f"Cannot reject booking in '{booking.status}' status"}), 400
+
+    data = request.get_json(force=True, silent=True) or {}
+    reason = (data.get("reason") or "Declined by operator").strip()
+
+    # Release capacity if it had been reserved
+    if booking.capacity_reserved and booking.package_id:
+        try:
+            pkg = TravelPackage.query.with_for_update().filter_by(id=booking.package_id).first()
+        except Exception:
+            pkg = db.session.get(TravelPackage, booking.package_id)
+        if pkg and isinstance(pkg.seats_remaining, int) and pkg.seats_remaining is not None:
+            pkg.seats_remaining += (booking.num_travellers or 1)
+        booking.capacity_reserved = False
+
+    booking.status = "rejected"
+    booking.cancellation_reason = reason
+    db.session.commit()
+
+    try:
+        push_service.send_notification(
+            user_id=booking.traveler_id,
+            title="Booking Request Declined",
+            body=f"Your booking request #{booking.booking_reference or booking.id} could not be accepted. Reason: {reason}",
+            notif_type="booking_rejected",
+            data={"booking_id": booking.id},
+        )
+    except Exception:
+        pass
+
+    return jsonify({"booking": booking.to_dict()}), 200
+
+
+@bookings_bp.post("/api/bookings/<int:booking_id>/confirm")
+@login_required
+def api_confirm_booking(booking_id: int):
+    """Traveller or Admin confirms an accepted booking request."""
+    booking = Booking.query.get_or_404(booking_id)
+    if current_user.role != "admin" and booking.traveler_id != current_user.id:
+        abort(403)
+
+    if booking.status not in ("accepted", "requested"):
+        return jsonify({"error": f"Cannot confirm booking in '{booking.status}' status"}), 400
+
+    if not booking.capacity_reserved and booking.package_id:
+        try:
+            pkg = TravelPackage.query.with_for_update().filter_by(id=booking.package_id).first()
+        except Exception:
+            pkg = db.session.get(TravelPackage, booking.package_id)
+        num = booking.num_travellers or 1
+        if pkg and isinstance(pkg.seats_remaining, int) and pkg.seats_remaining is not None:
+            if pkg.seats_remaining < num:
+                return jsonify({"error": "Insufficient capacity"}), 400
+            pkg.seats_remaining = max(0, pkg.seats_remaining - num)
+        booking.capacity_reserved = True
+
+    booking.status = "confirmed"
+    booking.confirmed_at = datetime.utcnow()
+    db.session.commit()
+
+    try:
+        push_service.send_notification(
+            user_id=booking.traveler_id,
+            title="Booking Confirmed!",
+            body=f"Booking #{booking.booking_reference or booking.id} is confirmed.",
+            notif_type="booking_confirmed",
+            data={"booking_id": booking.id},
+        )
+        if booking.company and booking.company.user_id:
+            push_service.send_notification(
+                user_id=booking.company.user_id,
+                title="Booking Confirmed",
+                body=f"Booking #{booking.booking_reference or booking.id} was confirmed by traveller.",
+                notif_type="booking_confirmed",
+                data={"booking_id": booking.id},
+            )
+    except Exception:
+        pass
+
+    return jsonify({"booking": booking.to_dict()}), 200
+
+
 @bookings_bp.post("/api/bookings/<int:booking_id>/cancel")
 @login_required
 def api_cancel_booking(booking_id: int):
+    """Cancel booking with capacity release and notification."""
     b = Booking.query.get_or_404(booking_id)
-    if current_user.role != "admin" and b.traveler_id != current_user.id:
-        comp = _company_for(current_user)
-        if not (comp and b.company_id == comp.id):
-            abort(403)
-    if b.status == "cancelled":
+    comp = _company_for(current_user)
+    is_owner = (b.traveler_id == current_user.id)
+    is_operator = bool(comp and b.company_id == comp.id)
+    is_admin = (current_user.role == "admin")
+
+    if not (is_owner or is_operator or is_admin):
+        abort(403)
+
+    if b.status in ("cancelled", "completed"):
         return jsonify({"error": "already cancelled"}), 400
+
+    data = request.get_json(force=True, silent=True) or {}
+    reason = (data.get("reason") or "Cancelled by user").strip()
+
+    # Capacity restoration if capacity was reserved
+    if b.capacity_reserved and b.package_id:
+        try:
+            pkg = TravelPackage.query.with_for_update().filter_by(id=b.package_id).first()
+        except Exception:
+            pkg = db.session.get(TravelPackage, b.package_id)
+        if pkg and isinstance(pkg.seats_remaining, int) and pkg.seats_remaining is not None:
+            pkg.seats_remaining += (b.num_travellers or 1)
+        b.capacity_reserved = False
+
     b.status = "cancelled"
-    if b.enquiry and b.enquiry.status == "confirmed":
-        # keep enquiry confirmed history; booking cancelled separately
-        pass
+    b.cancelled_by = current_user.id
+    b.cancelled_at = datetime.utcnow()
+    b.cancellation_reason = reason
     db.session.commit()
+
+    try:
+        if is_owner and b.company and b.company.user_id:
+            push_service.send_notification(
+                user_id=b.company.user_id,
+                title="Booking Cancelled",
+                body=f"Booking #{b.booking_reference or b.id} was cancelled by traveller.",
+                notif_type="booking_cancelled",
+                data={"booking_id": b.id},
+            )
+        elif (is_operator or is_admin) and b.traveler_id:
+            push_service.send_notification(
+                user_id=b.traveler_id,
+                title="Booking Cancelled",
+                body=f"Booking #{b.booking_reference or b.id} was cancelled. Reason: {reason}",
+                notif_type="booking_cancelled",
+                data={"booking_id": b.id},
+            )
+    except Exception:
+        pass
+
     return jsonify({"booking": b.to_dict()})
 
 

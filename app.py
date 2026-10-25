@@ -219,6 +219,17 @@ def _migrate_schema():
         "feedback_at": "TIMESTAMP",
     })
     ensure("bookings", {
+        "booking_reference": "VARCHAR(36)",
+        "idempotency_key": "VARCHAR(100)",
+        "num_travellers": "INTEGER DEFAULT 1",
+        "agreed_price_snapshot": "INTEGER",
+        "price_breakdown_snapshot": "TEXT",
+        "terms_snapshot": "TEXT",
+        "capacity_reserved": "BOOLEAN DEFAULT 0",
+        "cancellation_reason": "TEXT",
+        "cancelled_by": "INTEGER",
+        "cancelled_at": "TIMESTAMP",
+        "accepted_at": "TIMESTAMP",
         "razorpay_order_id": "VARCHAR(100)",
         "razorpay_payment_id": "VARCHAR(100)",
         "razorpay_signature": "VARCHAR(255)",

@@ -359,3 +359,50 @@ def api_delete_account():
     db.session.commit()
     AuditEvent.log("auth.account_deleted", user_id=user_id, request=request)
     return jsonify({"ok": True, "message": "Account has been successfully deleted."})
+
+
+@auth_bp.get("/account/delete-request")
+def account_delete_request_page():
+    """Public web page for account deletion requests (Google Play policy requirement)."""
+    return render_template("account_delete_request.html")
+
+
+@auth_bp.post("/account/delete-request")
+def account_delete_request_submit():
+    """Process public web account deletion request with credentials verification."""
+    is_json = request.is_json
+    data = request.get_json(force=True, silent=True) if is_json else request.form
+    data = data or {}
+
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    if not email:
+        if is_json:
+            return jsonify({"error": "Email is required."}), 400
+        return render_template("account_delete_request.html", error="Email is required.")
+
+    user = User.query.filter_by(email=email).first()
+    if not user or not user.check_password(password):
+        if is_json:
+            return jsonify({"error": "Invalid credentials. Please verify your email and password."}), 401
+        return render_template("account_delete_request.html", error="Invalid credentials. Please verify your email and password.")
+
+    user_id = user.id
+    user.name = "Deleted User"
+    user.email = f"deleted_{user_id}_{int(datetime.utcnow().timestamp())}@anonymized.vybe"
+    user.status = "deleted"
+    user.set_password(f"deleted_inaccessible_{user_id}")
+
+    if user.profile:
+        db.session.delete(user.profile)
+    if user.preference:
+        db.session.delete(user.preference)
+
+    db.session.commit()
+    AuditEvent.log("auth.public_account_deleted", user_id=user_id, request=request)
+
+    if is_json:
+        return jsonify({"ok": True, "message": "Account has been successfully deleted."}), 200
+    return render_template("account_delete_request.html", success=True)
+

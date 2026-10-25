@@ -1,0 +1,10 @@
+<resources>
+    <color name="vybe_bg">#180E0E</color>
+    <color name="vybe_card">#2B1C19</color>
+    <color name="vybe_accent">#E8A87C</color>
+    <color name="vybe_primary">#E8A87C</color>
+    <color name="vybe_text">#F5EFEB</color>
+    <color name="vybe_muted">#D3C4BC</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

@@ -41,6 +41,25 @@ ALLOWED_TRANSITIONS = {
 
 TERMINAL_STATUSES = {"confirmed", "rejected", "cancelled"}
 
+BOOKING_STATUSES = {
+    "requested",
+    "accepted",
+    "confirmed",
+    "rejected",
+    "cancelled",
+    "completed",
+}
+
+BOOKING_TRANSITIONS = {
+    "requested": {"accepted", "rejected", "cancelled"},
+    "accepted": {"confirmed", "rejected", "cancelled"},
+    "confirmed": {"cancelled", "completed"},
+    "rejected": set(),
+    "cancelled": set(),
+    "completed": set(),
+}
+
+
 
 class Enquiry(db.Model):
     __tablename__ = "enquiries"
@@ -63,6 +82,7 @@ class Enquiry(db.Model):
     )
     booking = db.relationship("Booking", backref="enquiry", uselist=False, cascade="all, delete-orphan")
     package = db.relationship("TravelPackage")
+    company = db.relationship("TravelCompany")
 
     def can_transition(self, new_status: str) -> bool:
         return new_status in ALLOWED_TRANSITIONS.get(self.status or "interested", set())
@@ -121,11 +141,22 @@ class Booking(db.Model):
     __tablename__ = "bookings"
 
     id = db.Column(db.Integer, primary_key=True)
-    enquiry_id = db.Column(db.Integer, db.ForeignKey("enquiries.id"), unique=True, nullable=False)
+    booking_reference = db.Column(db.String(36), unique=True, nullable=True, index=True)
+    idempotency_key = db.Column(db.String(100), unique=True, nullable=True, index=True)
+    enquiry_id = db.Column(db.Integer, db.ForeignKey("enquiries.id"), unique=True, nullable=True)
     traveler_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     package_id = db.Column(db.Integer, db.ForeignKey("travel_packages.id"), nullable=False, index=True)
     company_id = db.Column(db.Integer, db.ForeignKey("travel_companies.id"), nullable=False, index=True)
-    status = db.Column(db.String(20), nullable=False, default="confirmed")  # pending|confirmed|cancelled
+    num_travellers = db.Column(db.Integer, default=1)
+    status = db.Column(db.String(20), nullable=False, default="confirmed", index=True)  # requested|accepted|confirmed|rejected|cancelled|completed
+    agreed_price_snapshot = db.Column(db.Integer, nullable=True)
+    price_breakdown_snapshot = db.Column(db.JSON, default=dict)
+    terms_snapshot = db.Column(db.Text, nullable=True)
+    capacity_reserved = db.Column(db.Boolean, default=False)
+    cancellation_reason = db.Column(db.Text, nullable=True)
+    cancelled_by = db.Column(db.Integer, nullable=True)
+    cancelled_at = db.Column(db.DateTime, nullable=True)
+    accepted_at = db.Column(db.DateTime, nullable=True)
     traveller_details = db.Column(db.JSON, default=dict)
     total_cost = db.Column(db.Integer, nullable=True)
     itinerary_snapshot = db.Column(db.Text, nullable=True)
@@ -143,6 +174,10 @@ class Booking(db.Model):
     payment_method = db.Column(db.String(50), nullable=True)
 
     package = db.relationship("TravelPackage")
+    company = db.relationship("TravelCompany")
+
+    def can_transition_to(self, new_status: str) -> bool:
+        return new_status in BOOKING_TRANSITIONS.get(self.status or "requested", set())
 
     def to_dict(self):
         return {
@@ -154,8 +189,18 @@ class Booking(db.Model):
             "status": self.status,
             "traveller_details": self.traveller_details or {},
             "total_cost": self.total_cost,
+            "booking_reference": self.booking_reference,
+            "num_travellers": self.num_travellers or 1,
+            "agreed_price_snapshot": self.agreed_price_snapshot,
+            "price_breakdown_snapshot": self.price_breakdown_snapshot or {},
             "itinerary_snapshot": self.itinerary_snapshot,
-            "terms": self.terms,
+            "terms": self.terms or self.terms_snapshot,
+            "terms_snapshot": self.terms_snapshot or self.terms,
+            "capacity_reserved": bool(self.capacity_reserved),
+            "cancellation_reason": self.cancellation_reason,
+            "cancelled_by": self.cancelled_by,
+            "cancelled_at": self.cancelled_at.isoformat() if self.cancelled_at else None,
+            "accepted_at": self.accepted_at.isoformat() if self.accepted_at else None,
             "payment_status": self.payment_status,
             "razorpay_order_id": self.razorpay_order_id,
             "razorpay_payment_id": self.razorpay_payment_id,

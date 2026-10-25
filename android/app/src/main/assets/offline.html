@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Offline | VYBE</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #180E0E;
+      color: #F5EFEB;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .offline-card {
+      background: rgba(43, 28, 25, 0.7);
+      border: 1px solid rgba(232, 168, 124, 0.2);
+      border-radius: 20px;
+      padding: 36px 24px;
+      max-width: 380px;
+      width: 100%;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    }
+    .icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px;
+      background: rgba(232, 168, 124, 0.1);
+      border: 1px solid rgba(232, 168, 124, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #E8A87C;
+      font-size: 28px;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 12px;
+      color: #FFF;
+    }
+    p {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #D3C4BC;
+      margin-bottom: 28px;
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      background: linear-gradient(135deg, #E8A87C, #C77D58);
+      color: #180E0E;
+      font-weight: 700;
+      font-size: 15px;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .btn:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-card">
+    <div class="icon">✈️</div>
+    <h1>You're Offline</h1>
+    <p>VYBE needs an active internet connection to browse curated travel packages, chat with operators, and manage bookings.</p>
+    <button class="btn" onclick="retryConnection()">Retry Connection</button>
+  </div>
+
+  <script>
+    function retryConnection() {
+      window.location.href = "https://vybe-travel-marketplace.onrender.com";
+    }
+    window.addEventListener('online', function() {
+      retryConnection();
+    });
+  </script>
+</body>
+</html>
