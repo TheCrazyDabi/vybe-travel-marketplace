@@ -1,5 +1,6 @@
 @echo off
 title VYBE Mobile Dev Server
+cd /d "%~dp0.."
 echo ========================================================
 echo    VYBE Mobile Development Launcher
 echo ========================================================

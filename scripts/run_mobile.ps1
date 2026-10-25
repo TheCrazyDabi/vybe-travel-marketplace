@@ -1,3 +1,6 @@
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+Set-Location $repoRoot
+
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "    VYBE Mobile Development Launcher" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan

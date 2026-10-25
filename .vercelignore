@@ -1,17 +1,46 @@
+# Version Control & IDEs
 .git
 .github
+.idea
+.vscode
+
+# Python Virtual Environments & Bytecode
 .venv
+venv
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.ruff_cache
+.coverage
+htmlcov
+
+# Mobile Clients & Build Artifacts (not needed by Vercel serverless)
 android
+VYBE-Android
+*.apk
+*.aab
+
+# Developer Scripts, Tests, Migrations & Documentation
+scripts
+migrations
 tests
 docs
+
+# Local Data, Logs & Environment Configs
 uploads
+instance
 *.db
 *.sqlite
-*.apk
+*.sqlite3
 *.log
+*.tmp
 *.bat
 *.ps1
 .env
-.env.local
-.pytest_cache
-__pycache__
+.env.*
+!.env.example
+
+# Alternative Hosting Configurations (Render / Container specific)
+gunicorn.conf.py
+render.yaml
