@@ -31,7 +31,12 @@ public class MainActivity extends AppCompatActivity {
 
     // Production backend deployment URL (Render / Custom Domain)
     public static final String PRODUCTION_URL = "https://vybe-travel-marketplace.onrender.com";
+    public static final String DEV_LOCAL_URL = "http://localhost:5000";
     public static final String OFFLINE_URL = "file:///android_asset/offline.html";
+
+    public static String getInitialUrl() {
+        return BuildConfig.DEBUG ? DEV_LOCAL_URL : PRODUCTION_URL;
+    }
 
     private WebView webView;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -57,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (savedInstanceState == null) {
             if (isNetworkAvailable()) {
-                webView.loadUrl(PRODUCTION_URL);
+                webView.loadUrl(getInitialUrl());
             } else {
                 webView.loadUrl(OFFLINE_URL);
             }
@@ -116,8 +121,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-                // Keep requests within VYBE production domain inside WebView
-                if (host != null && (host.contains("onrender.com") || host.contains("vybe.travel") || host.contains("razorpay.com"))) {
+                // Keep requests within VYBE production domain or local loopback dev domain inside WebView
+                if (host != null && (host.contains("localhost") || host.contains("127.0.0.1") || host.contains("10.0.2.2") || host.contains("onrender.com") || host.contains("vybe.travel") || host.contains("razorpay.com"))) {
                     return false;
                 }
 
@@ -191,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
         swipeRefreshLayout.setOnRefreshListener(() -> {
             if (isNetworkAvailable()) {
                 if (OFFLINE_URL.equals(webView.getUrl())) {
-                    webView.loadUrl(PRODUCTION_URL);
+                    webView.loadUrl(getInitialUrl());
                 } else {
                     webView.reload();
                 }

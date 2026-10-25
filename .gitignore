@@ -56,3 +56,11 @@ Thumbs.db
 instance/*
 !instance/.gitkeep
 VYBE_MASTER_BUILD_PROMPT.md
+
+# Android build outputs & local sdk properties
+.gradle/
+**/build/
+local.properties
+*.apk
+*.aab
+

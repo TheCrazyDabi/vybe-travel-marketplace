@@ -19,6 +19,11 @@ android {
         }
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
+
     buildTypes {
         release {
             minifyEnabled = true
