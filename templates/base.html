@@ -13,26 +13,26 @@
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}" />
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}" />
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='13') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='14') }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,500;1,600&display=swap" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 </head>
-<body class="{% if request.path == '/' %}is-home{% endif %}">
+<body class="{% if request.path == '/' %}is-home{% elif request.path.startswith('/discover') %}is-discover{% endif %}">
   <nav class="nav">
     <a class="brand" href="/" aria-label="VYBE Home">
       <img src="{{ url_for('static', filename='images/vybe_brand_badge.png') }}" alt="" class="brand-logo-img" width="32" height="32" />
       <span class="brand-text">VYBE</span>
     </a>
 
-    <!-- Top Bar Navigation (Clean Three-Dot Menu) -->
+    <!-- Top Bar Navigation -->
     <div class="nav-links nav-top">
-      <div class="menu-wrap nav-menu">
-        <button id="nav-more-btn" type="button" class="nav-circle-btn" aria-haspopup="true" aria-expanded="false" aria-label="Menu">···</button>
-        <div id="nav-more-menu" class="nav-dropdown hidden" role="menu" aria-label="Navigation menu">
-          {% if current_user.is_authenticated %}
+      {% if current_user.is_authenticated %}
+        <div class="menu-wrap nav-menu">
+          <button id="nav-more-btn" type="button" class="nav-circle-btn" aria-haspopup="true" aria-expanded="false" aria-label="Menu">···</button>
+          <div id="nav-more-menu" class="nav-dropdown hidden" role="menu" aria-label="Navigation menu">
             <div class="nav-menu-head"><span class="user">Hi, {{ current_user.name.split(' ')[0] }}</span></div>
             <a href="/" role="menuitem" class="{% if request.path == '/' %}active{% endif %}">Home</a>
             <a href="/packages" role="menuitem" class="{% if request.path.startswith('/packages') %}active{% endif %}">Explore trips</a>
@@ -53,17 +53,15 @@
             <a href="/chats" role="menuitem" class="{% if request.path.startswith('/chats') %}active{% endif %}">Chats</a>
             <a href="/profile" role="menuitem" class="{% if request.path.startswith('/profile') %}active{% endif %}">Profile</a>
             <a href="/logout" role="menuitem" class="btn small" style="margin-top:6px;text-align:center;">Logout</a>
-          {% else %}
-            <a href="/" role="menuitem" class="{% if request.path == '/' %}active{% endif %}">Home</a>
-            <a href="/packages" role="menuitem">Explore trips</a>
-            <a href="/companion" role="menuitem">AI Guide &amp; About</a>
-            <a href="/login?role=operator" role="menuitem">For Operators</a>
-            <div class="divider" style="margin:6px 0;"></div>
-            <a href="/login" role="menuitem" class="btn small primary" style="text-align:center;margin:4px 2px;">Log in</a>
-            <a href="/register" role="menuitem" class="btn small ghost" style="text-align:center;margin:4px 2px;">Create account</a>
-          {% endif %}
+          </div>
         </div>
-      </div>
+      {% elif request.path == '/login' %}
+        <a class="btn small ghost" href="/register">Create account</a>
+      {% elif request.path == '/register' %}
+        <a class="btn small ghost" href="/login">Log in</a>
+      {% else %}
+        <a class="btn small primary" href="/login">Log in</a>
+      {% endif %}
     </div>
   </nav>
 
@@ -77,7 +75,7 @@
     {% endif %}
   {% endwith %}
 
-  <main class="container {% if request.path == '/' %}container-home{% endif %}">
+  <main class="container {% if request.path == '/' %}container-home{% elif request.path.startswith('/discover') %}container-discover{% endif %}">
     {% block content %}{% endblock %}
   </main>
 
@@ -96,7 +94,7 @@
   </nav>
   {% endif %}
 
-  {% if request.path != '/' %}
+  {% if request.path != '/' and not request.path.startswith('/discover') %}
   <footer class="footer">
     <span><b>VYBE</b> · Your mood. Your trip. Your VYBE.</span>
   </footer>
