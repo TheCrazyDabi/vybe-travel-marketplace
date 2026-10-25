@@ -16,14 +16,7 @@
       <img src="{{ url_for('static', filename='images/vybe_brand_badge.png') }}" alt="VYBE" class="auth-flower-icon" width="48" height="48" style="border-radius:12px; object-fit:cover;" />
       <span class="brand-text">VYBE</span>
     </div>
-    <p class="auth-tagline">Your mood. Your trip. Your VYBE.</p>
-
-    <!-- Role Switcher Pills from Reference UI -->
-    <div class="role-pills" role="tablist" aria-label="Select User Role">
-      <button type="button" class="role-pill active" data-role="traveler" data-email="traveler@vybe.demo" role="tab" aria-selected="true">Traveller</button>
-      <button type="button" class="role-pill" data-role="operator" data-email="operator@vybe.demo" role="tab" aria-selected="false">Operator</button>
-      <button type="button" class="role-pill" data-role="admin" data-email="admin@vybe.demo" role="tab" aria-selected="false">Admin</button>
-    </div>
+    <p class="auth-tagline" style="margin-bottom:20px;">Your mood. Your trip. Your VYBE.</p>
 
     <form method="post" class="form auth" novalidate>
       {{ form.hidden_tag() }}
@@ -63,28 +56,6 @@
     el.type = show ? 'text' : 'password';
     b.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
   }));
-
-  // Role pill switcher: click updates active styling and fills demo credentials
-  const emailInput = document.getElementById('login-email');
-  const passInput = document.getElementById('login-password');
-  document.querySelectorAll('.role-pill').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.role-pill').forEach(p => {
-        p.classList.remove('active');
-        p.setAttribute('aria-selected', 'false');
-      });
-      btn.classList.add('active');
-      btn.setAttribute('aria-selected', 'true');
-      const email = btn.dataset.email;
-      if (email && emailInput && (!emailInput.value || emailInput.value.includes('@vybe.demo'))) {
-        emailInput.value = email;
-        if (passInput) {
-          const role = btn.dataset.role;
-          passInput.value = role === 'admin' ? 'admin123' : (role === 'operator' ? 'operator123' : 'traveler123');
-        }
-      }
-    });
-  });
 })();
 </script>
 {% endblock %}
