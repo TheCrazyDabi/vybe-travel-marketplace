@@ -1,0 +1,17 @@
+.git
+.github
+.venv
+android
+tests
+docs
+uploads
+*.db
+*.sqlite
+*.apk
+*.log
+*.bat
+*.ps1
+.env
+.env.local
+.pytest_cache
+__pycache__
