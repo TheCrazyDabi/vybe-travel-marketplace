@@ -110,8 +110,11 @@ def _demo_breakdown(price: int) -> dict:
 def _get_or_create_user(email, name, role, password):
     u = User.query.filter_by(email=email).first()
     if u:
+        if not u.check_password(password):
+            u.set_password(password)
+            db.session.flush()
         return u, False
-    u = User(name=name, email=email, role=role)
+    u = User(name=name, email=email, role=role, is_email_verified=True)
     u.set_password(password)
     db.session.add(u)
     db.session.flush()
@@ -122,6 +125,16 @@ def seed_demo():
     """Upsert the sample catalogue. Returns dict of counts."""
     counts = {"users_created": 0, "companies_created": 0, "companies_updated": 0,
               "packages_created": 0, "packages_updated": 0}
+
+    # Remove legacy PostgreSQL unique constraint on travel_companies(user_id) if present
+    try:
+        from sqlalchemy import text
+        if db.engine.dialect.name == "postgresql":
+            db.session.execute(text("ALTER TABLE travel_companies DROP CONSTRAINT IF EXISTS travel_companies_user_id_key"))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
+
     with open(DATA_FILE, encoding="utf-8") as f:
         payload = json.load(f)
 

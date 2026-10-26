@@ -40,6 +40,16 @@
       {{ form.submit(class="btn primary big auth-submit", value="Login") }}
 
       <p class="auth-footer-text">Don't have an account? <a href="/register">Sign up</a></p>
+
+      <div class="demo-pills-card" style="margin-top:20px; padding:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; text-align:center;">
+        <span style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:rgba(255,255,255,0.7); margin-bottom:8px;">Quick Demo Access (1-Tap Fill)</span>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+          <button type="button" class="btn small ghost demo-pill-btn" data-email="traveler@vybe.demo" data-pw="traveler123" title="Login as Demo Traveler">🧳 Traveler</button>
+          <button type="button" class="btn small ghost demo-pill-btn" data-email="operator@vybe.demo" data-pw="operator123" title="Login as Demo Operator">🏢 Operator</button>
+          <button type="button" class="btn small ghost demo-pill-btn" data-email="admin@vybe.demo" data-pw="admin123" title="Login as Demo Admin">🛡️ Admin</button>
+        </div>
+        <span style="display:block; font-size:11px; color:rgba(255,255,255,0.5); margin-top:6px;">Accepts role passwords (<code>traveler123</code>) or <code>pw123456</code></span>
+      </div>
     </form>
   </div>
 </div>
@@ -56,6 +66,21 @@
     el.type = show ? 'text' : 'password';
     b.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
   }));
+
+  // Demo 1-tap quick fill & submit
+  document.querySelectorAll('.demo-pill-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('login-email');
+      const pwInput = document.getElementById('login-password');
+      if (emailInput && pwInput) {
+        emailInput.value = btn.dataset.email;
+        pwInput.value = btn.dataset.pw;
+        const form = emailInput.closest('form');
+        if (form) form.submit();
+      }
+    });
+  });
 })();
 </script>
 {% endblock %}

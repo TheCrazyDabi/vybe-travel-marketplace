@@ -49,6 +49,34 @@ class ResetPasswordForm(FlaskForm):
     submit = SubmitField("Reset password")
 
 
+DEMO_ACCOUNTS = {
+    "traveler@vybe.demo": ("Demo Traveler", "traveler", "traveler123"),
+    "operator@vybe.demo": ("Demo Operator", "operator", "operator123"),
+    "admin@vybe.demo": ("Demo Admin", "admin", "admin123"),
+    "pending@vybe.demo": ("Pending Operator (demo)", "operator", "pending123"),
+    "rejected@vybe.demo": ("Rejected Operator (demo)", "operator", "rejected123"),
+}
+
+
+def _get_or_provision_user(email: str) -> User | None:
+    """Lookup user by email, automatically provisioning demo accounts if missing."""
+    clean_email = (email or "").strip().lower()
+    user = User.query.filter_by(email=clean_email).first()
+    if user is None and clean_email in DEMO_ACCOUNTS:
+        name, role, default_pw = DEMO_ACCOUNTS[clean_email]
+        user = User(name=name, email=clean_email, role=role, is_email_verified=True)
+        user.set_password(default_pw)
+        db.session.add(user)
+        db.session.flush()
+        _get_or_create_profile(user)
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            user = User.query.filter_by(email=clean_email).first()
+    return user
+
+
 def _dashboard_for(role: str) -> str:
     if role == "admin":
         return "admin.dashboard"
@@ -110,7 +138,7 @@ def login_page():
 
     if form.validate_on_submit():
         email = form.email.data.strip().lower()
-        user = User.query.filter_by(email=email).first()
+        user = _get_or_provision_user(email)
 
         if user and (user.status or "active") != "active":
             AuditEvent.log("auth.login_suspended", user_id=user.id, details={"email": email}, request=request)
@@ -240,7 +268,7 @@ def api_login():
 
     data = request.get_json(force=True, silent=True) or {}
     email = (data.get("email") or "").strip().lower()
-    user = User.query.filter_by(email=email).first()
+    user = _get_or_provision_user(email)
 
     if user and (user.status or "active") != "active":
         AuditEvent.log("auth.api_login_suspended", user_id=user.id, details={"email": email}, request=request)

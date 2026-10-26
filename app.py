@@ -102,14 +102,45 @@ def create_app(config_class=Config):
     def favicon():
         return app.send_static_file("images/favicon.svg")
 
-    app.wsgi_app = VercelMiddleware(app.wsgi_app)
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(VercelMiddleware(app.wsgi_app), x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     @app.after_request
     def _add_security_headers(response):
+        # Prevent MIME type sniffing
         response.headers["X-Content-Type-Options"] = "nosniff"
+        # Clickjacking defense
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        # XSS protection
         response.headers["X-XSS-Protection"] = "1; mode=block"
+        # Referrer privacy
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        # Restrict sensitive device APIs
+        response.headers["Permissions-Policy"] = "geolocation=(self), microphone=(), camera=()"
+        # Browser popup / context isolation
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+
+        # Content Security Policy (CSP) for HTML responses
+        content_type = response.headers.get("Content-Type", "")
+        if "text/html" in content_type:
+            csp = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://checkout.razorpay.com; "
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
+                "font-src 'self' https://fonts.gstatic.com data:; "
+                "img-src 'self' data: blob: https:; "
+                "connect-src 'self' https://*.supabase.co https://api.razorpay.com https://unpkg.com; "
+                "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com; "
+                "object-src 'none'; "
+                "base-uri 'self';"
+            )
+            response.headers["Content-Security-Policy"] = csp
+
+        # Strict-Transport-Security (HSTS) on HTTPS / Vercel
+        from flask import request
+        if request.is_secure or bool(os.environ.get("VERCEL")):
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+
         return response
 
     @app.before_request
@@ -155,6 +186,12 @@ def _migrate_schema():
         inspector = inspect(db.engine)
         existing_tables = set(inspector.get_table_names())
         is_pg = db.engine.dialect.name == "postgresql"
+        if is_pg:
+            try:
+                db.session.execute(text("ALTER TABLE travel_companies DROP CONSTRAINT IF EXISTS travel_companies_user_id_key"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
     except Exception:
         return
 
@@ -223,6 +260,7 @@ def api_bootstrap():
     if secret != app.config.get("SECRET_KEY") and TravelPackage.query.count() > 0:
         return jsonify({"error": "unauthorized", "packages_count": TravelPackage.query.count()}), 403
     try:
+        _migrate_schema()
         from seed import seed_demo, seed_demo_packages
         counts = seed_demo()
         added = seed_demo_packages()

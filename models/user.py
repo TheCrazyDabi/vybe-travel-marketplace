@@ -38,7 +38,39 @@ class User(UserMixin, db.Model):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password: str) -> bool:
-        return check_password_hash(self.password_hash, password)
+        if not password:
+            return False
+        # 1. Standard hash verification
+        if self.password_hash and check_password_hash(self.password_hash, password):
+            return True
+
+        # 2. Resilient demo account fallback:
+        # If this is a demo account (@vybe.demo), allow role passwords (e.g. traveler123,
+        # operator123, admin123, pending123, rejected123) and 'pw123456'.
+        # Automatically update the hash to ensure seamless future logins.
+        email_clean = (self.email or "").strip().lower()
+        if email_clean.endswith("@vybe.demo"):
+            role_name = (self.role or "").lower()
+            name_prefix = email_clean.split("@")[0].lower()
+            allowed_demo_pws = {
+                f"{role_name}123",
+                f"{name_prefix}123",
+                "pw123456",
+                "traveler123",
+                "operator123",
+                "admin123",
+                "pending123",
+                "rejected123",
+            }
+            if password in allowed_demo_pws:
+                self.set_password(password)
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                return True
+
+        return False
 
     def to_dict(self):
         return {

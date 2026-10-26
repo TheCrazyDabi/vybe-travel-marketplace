@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Trip map — VYBE{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+{% endblock %}
 {% block content %}
 <h1>Trip map</h1>
 <p class="muted">OpenStreetMap + Leaflet. Markers open package details.</p>

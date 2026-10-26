@@ -8,14 +8,15 @@ async function vybeFetch(url, opts = {}) {
 // Header saved-count badge (likes + saves combined) + liked badge.
 async function refreshNavCounts() {
   try {
-    const j = await (await fetch('/api/interests/counts')).json();
     const savedEl = document.getElementById('nav-saved-count') || document.getElementById('nav-save-count');
+    const likeEl = document.getElementById('nav-like-count');
+    if (!savedEl && !likeEl) return;
+    const j = await (await fetch('/api/interests/counts')).json();
     if (savedEl) {
       const n = (j.like || 0) + (j.save || 0);
       savedEl.textContent = n;
       savedEl.classList.toggle('hidden', n <= 0);
     }
-    const likeEl = document.getElementById('nav-like-count');
     if (likeEl) {
       const n = j.like || 0;
       likeEl.textContent = n;
