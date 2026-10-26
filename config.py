@@ -98,15 +98,21 @@ class BaseConfig:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Connection pool defaults
+    # Connection pool defaults (NullPool for serverless Vercel to prevent connection freeze stalls)
     if "postgresql" in SQLALCHEMY_DATABASE_URI:
         _is_serverless = bool(os.environ.get("VERCEL"))
-        SQLALCHEMY_ENGINE_OPTIONS = {
-            "pool_pre_ping": True,
-            "pool_recycle": 180,
-            "pool_size": 2 if _is_serverless else int(os.environ.get("DB_POOL_SIZE", "10")),
-            "max_overflow": 3 if _is_serverless else int(os.environ.get("DB_MAX_OVERFLOW", "20")),
-        }
+        if _is_serverless:
+            from sqlalchemy.pool import NullPool
+            SQLALCHEMY_ENGINE_OPTIONS = {
+                "poolclass": NullPool,
+            }
+        else:
+            SQLALCHEMY_ENGINE_OPTIONS = {
+                "pool_pre_ping": True,
+                "pool_recycle": 180,
+                "pool_size": int(os.environ.get("DB_POOL_SIZE", "10")),
+                "max_overflow": int(os.environ.get("DB_MAX_OVERFLOW", "20")),
+            }
 
     # Cookie & Session Security
     SESSION_COOKIE_HTTPONLY = True

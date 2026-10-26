@@ -184,7 +184,7 @@ function renderCard(){
   const topReason = (p.match_reasons || [])[0] || '';
   el.innerHTML = `
     <div class="stamp like">INTERESTED</div><div class="stamp nope">NOT INTERESTED</div>
-    <img src="${esc(p.cover_image || '')}" alt="${esc(p.destination||'trip')}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80&auto=format&fit=crop'" />
+    <img src="${esc(p.cover_image || '')}" alt="${esc(p.destination||'trip')}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80&auto=format&fit=crop'" />
     <div class="info">
       <b>${esc(p.title||'Trip')}</b><br/>
       <span class="muted">${esc(p.destination||'')} · ${esc(p.duration_days||'?')} days · ₹${price} <span class="muted small">/ person</span></span><br/>
@@ -368,11 +368,15 @@ async function doShare(){
 let dragX = 0;
 function enableDrag(el){
   let startX = 0, startY = 0, curX = 0, curY = 0, dragging = false, startTime = 0, hasMoved = false;
-  const like = () => el.querySelector('.stamp.like'), nope = () => el.querySelector('.stamp.nope');
+  let rafId = null;
+  const stampLike = el.querySelector('.stamp.like');
+  const stampNope = el.querySelector('.stamp.nope');
+
   const isModal = () => {
     const m = document.getElementById('pkg-detail-modal') || document.getElementById('detail-modal');
     return m ? !m.classList.contains('hidden') : false;
   };
+
   const down = (x, y) => {
     if (isModal()) return;
     dragging = true;
@@ -383,8 +387,19 @@ function enableDrag(el){
     curY = 0;
     dragX = 0;
     startTime = Date.now();
-    el.style.transition = '';
+    el.classList.add('dragging');
+    el.style.transition = 'none';
+    el.style.willChange = 'transform';
   };
+
+  const updateVisuals = () => {
+    rafId = null;
+    if (!dragging) return;
+    el.style.transform = `translate3d(${curX}px, 0, 0) rotate(${curX / 18}deg)`;
+    if (stampLike) stampLike.style.opacity = curX > 35 ? Math.min(1, (curX - 35) / 80) : 0;
+    if (stampNope) stampNope.style.opacity = curX < -35 ? Math.min(1, (-curX - 35) / 80) : 0;
+  };
+
   const move = (x, y) => {
     if (!dragging || isModal()) return;
     curX = x - startX;
@@ -392,26 +407,43 @@ function enableDrag(el){
     if (Math.abs(curX) > 8 || Math.abs(curY) > 8) hasMoved = true;
     if (Math.abs(curY) > 60 && Math.abs(curX) < 20) return;
     dragX = curX;
-    el.style.transform = `translateX(${curX}px) rotate(${curX / 18}deg)`;
-    const l = like(), n = nope();
-    if (l) l.style.opacity = curX > 40 ? Math.min(1, curX / 120) : 0;
-    if (n) n.style.opacity = curX < -40 ? Math.min(1, -curX / 120) : 0;
+    if (!rafId) {
+      rafId = requestAnimationFrame(updateVisuals);
+    }
   };
+
   const up = (e) => {
     if (!dragging) return;
     dragging = false;
-    if (isModal()) { el.style.transform = ''; dragX = 0; return; }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    el.classList.remove('dragging');
+    el.style.willChange = 'auto';
+
+    if (isModal()) {
+      el.style.transition = 'transform .2s ease-out';
+      el.style.transform = '';
+      dragX = 0;
+      return;
+    }
     const elapsed = Date.now() - startTime;
     const isTap = (!hasMoved || (Math.abs(curX) < 12 && Math.abs(curY) < 12)) && elapsed < 400;
 
     if (curX > 90) {
-      doInterested();
+      el.style.transition = 'transform .25s ease-out, opacity .25s ease-out';
+      el.style.transform = 'translate3d(120%, 0, 0) rotate(20deg)';
+      el.style.opacity = '0';
+      setTimeout(() => doInterested(), 150);
     } else if (curX < -90) {
-      doPass();
+      el.style.transition = 'transform .25s ease-out, opacity .25s ease-out';
+      el.style.transform = 'translate3d(-120%, 0, 0) rotate(-20deg)';
+      el.style.opacity = '0';
+      setTimeout(() => doPass(), 150);
     } else {
-      el.style.transition = 'transform .2s';
+      el.style.transition = 'transform .22s cubic-bezier(0.175, 0.885, 0.32, 1.2)';
       el.style.transform = '';
-      setTimeout(() => { dragX = 0; }, 50);
+      if (stampLike) stampLike.style.opacity = 0;
+      if (stampNope) stampNope.style.opacity = 0;
+      setTimeout(() => { dragX = 0; }, 60);
       if (isTap && e && e.target) {
         if (!e.target.closest('button, a, input, select, textarea, label')) {
           openDetail();
@@ -422,12 +454,25 @@ function enableDrag(el){
     curY = 0;
   };
 
-  el.addEventListener('pointerdown', e => {
+  const onPointerDown = (e) => {
     if (e.target.closest('button, a, input, select, textarea, label')) return;
     down(e.clientX, e.clientY);
-  });
-  window.addEventListener('pointermove', e => move(e.clientX, e.clientY));
-  window.addEventListener('pointerup', e => up(e));
+    try { el.setPointerCapture(e.pointerId); } catch (_) {}
+  };
+  const onPointerMove = (e) => {
+    move(e.clientX, e.clientY);
+  };
+  const onPointerUp = (e) => {
+    try {
+      if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+    } catch (_) {}
+    up(e);
+  };
+
+  el.addEventListener('pointerdown', onPointerDown);
+  el.addEventListener('pointermove', onPointerMove);
+  el.addEventListener('pointerup', onPointerUp);
+  el.addEventListener('pointercancel', onPointerUp);
 
   if (!window.PointerEvent) {
     el.addEventListener('touchstart', e => {

@@ -48,34 +48,28 @@ def check_and_expire_packages() -> int:
     Idempotent: packages already expired or inactive are skipped.
     """
     now = get_utc_now()
-    active_pkgs = TravelPackage.query.filter(
+    # High-performance DB-level filter: only loads packages that actually require expiry
+    to_expire = TravelPackage.query.filter(
         TravelPackage.is_active == True,
         TravelPackage.is_deleted == False,
+        (
+            ((TravelPackage.valid_until != None) & (TravelPackage.valid_until <= now))
+            | ((TravelPackage.booking_deadline != None) & (TravelPackage.booking_deadline <= now))
+            | ((TravelPackage.trip_start_date != None) & (TravelPackage.trip_start_date <= now))
+        ),
     ).all()
 
+    if not to_expire:
+        return 0
+
     expired_count = 0
-    for pkg in active_pkgs:
-        vu = to_naive_utc(pkg.valid_until)
-        bd = to_naive_utc(pkg.booking_deadline)
-        ts = to_naive_utc(pkg.trip_start_date)
+    for pkg in to_expire:
+        pkg.status = "expired"
+        pkg.is_active = False
+        expired_count += 1
 
-        is_expired = False
-        if vu and vu <= now:
-            is_expired = True
-        elif bd and bd <= now:
-            is_expired = True
-        elif ts and ts <= now:
-            is_expired = True
-
-        if is_expired:
-            pkg.status = "expired"
-            pkg.is_active = False
-            expired_count += 1
-
-    if expired_count > 0:
-        db.session.commit()
-        logger.info("check_and_expire_packages: transitioned %d packages to expired.", expired_count)
-
+    db.session.commit()
+    logger.info("check_and_expire_packages: transitioned %d packages to expired.", expired_count)
     return expired_count
 
 

@@ -1,5 +1,6 @@
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
+from sqlalchemy.orm import joinedload
 
 from models import Interest, TravelerProfile, TravelPackage, UserPreference, db
 from models.booking import Booking, Enquiry
@@ -398,7 +399,8 @@ def api_recommended():
     check_and_expire_packages()
     now = get_utc_now()
     pkgs = (
-        TravelPackage.query.filter_by(is_active=True, is_deleted=False)
+        TravelPackage.query.options(joinedload(TravelPackage.operator))
+        .filter_by(is_active=True, is_deleted=False)
         .filter(TravelPackage.status == "active")
         .filter((TravelPackage.valid_until == None) | (TravelPackage.valid_until >= now))
         .all()

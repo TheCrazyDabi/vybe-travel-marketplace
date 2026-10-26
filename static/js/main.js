@@ -5,24 +5,31 @@ async function vybeFetch(url, opts = {}) {
   return r.json();
 }
 
-// Header saved-count badge (likes + saves combined) + liked badge.
+// Unified navbar count and user interest preloader (single request)
 async function refreshNavCounts() {
   try {
     const savedEl = document.getElementById('nav-saved-count') || document.getElementById('nav-save-count');
     const likeEl = document.getElementById('nav-like-count');
-    if (!savedEl && !likeEl) return;
-    const j = await (await fetch('/api/interests/counts')).json();
-    if (savedEl) {
-      const n = (j.like || 0) + (j.save || 0);
-      savedEl.textContent = n;
-      savedEl.classList.toggle('hidden', n <= 0);
+    const res = await fetch('/api/interests');
+    if (res.ok) {
+      const j = await res.json();
+      const interests = j.interests || [];
+      const likes = interests.filter(i => i.action === 'like');
+      const saves = interests.filter(i => i.action === 'save');
+      window.likedSet = new Set(likes.map(i => i.package_id));
+      window.savedSet = new Set(saves.map(i => i.package_id));
+      if (savedEl) {
+        const n = likes.length + saves.length;
+        savedEl.textContent = n;
+        savedEl.classList.toggle('hidden', n <= 0);
+      }
+      if (likeEl) {
+        const n = likes.length;
+        likeEl.textContent = n;
+        likeEl.classList.toggle('hidden', n <= 0);
+      }
     }
-    if (likeEl) {
-      const n = j.like || 0;
-      likeEl.textContent = n;
-      likeEl.classList.toggle('hidden', n <= 0);
-    }
-  } catch (e) { /* anonymous users have no counts */ }
+  } catch (e) { /* anonymous users */ }
 }
 document.addEventListener('DOMContentLoaded', refreshNavCounts);
 window.refreshNavCounts = refreshNavCounts;
@@ -483,19 +490,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.closePackageModal();
       }
     });
-
-    // Preload interests for instant favourites/saved state
-    async function loadUserInterests() {
-      try {
-        const res = await fetch('/api/interests');
-        if (res.ok) {
-          const j = await res.json();
-          window.likedSet = new Set((j.interests || []).filter(i => i.action === 'like').map(i => i.package_id));
-          window.savedSet = new Set((j.interests || []).filter(i => i.action === 'save').map(i => i.package_id));
-        }
-      } catch (_) {}
-    }
-    loadUserInterests();
 
     // Browser back button support
     window.addEventListener('popstate', () => {

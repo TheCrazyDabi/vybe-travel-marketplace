@@ -6,6 +6,7 @@ from flask_login import current_user, login_required
 from models import Interest, TravelPackage, db
 from models.booking import Enquiry
 from models.package import PackageImage
+from sqlalchemy.orm import joinedload
 from services.package_lifecycle import (
     check_and_expire_packages,
     cleanup_expired_packages,
@@ -60,7 +61,8 @@ def list_page():
     check_and_expire_packages()
     now = get_utc_now()
     pkgs = (
-        TravelPackage.query.filter_by(is_active=True, is_deleted=False, status="active")
+        TravelPackage.query.options(joinedload(TravelPackage.operator))
+        .filter_by(is_active=True, is_deleted=False, status="active")
         .filter((TravelPackage.valid_until == None) | (TravelPackage.valid_until >= now))
         .order_by(TravelPackage.price.asc())
         .all()
@@ -70,7 +72,7 @@ def list_page():
 
 @packages_bp.get("/packages/<int:pkg_id>")
 def detail_page(pkg_id: int):
-    pkg = TravelPackage.query.get_or_404(pkg_id)
+    pkg = TravelPackage.query.options(joinedload(TravelPackage.operator)).get_or_404(pkg_id)
     if hasattr(pkg, "check_and_update_expiry"):
         pkg.check_and_update_expiry()
         db.session.commit()
@@ -107,7 +109,7 @@ def api_list():
     check_and_expire_packages()
     now = get_utc_now()
 
-    q = TravelPackage.query.filter_by(is_deleted=False)
+    q = TravelPackage.query.options(joinedload(TravelPackage.operator)).filter_by(is_deleted=False)
 
     # Status filter: default to active public packages
     status = request.args.get("status", "active").lower()
@@ -161,7 +163,7 @@ def api_list():
 
 @packages_bp.get("/api/packages/<int:pkg_id>")
 def api_detail(pkg_id: int):
-    pkg = TravelPackage.query.get_or_404(pkg_id)
+    pkg = TravelPackage.query.options(joinedload(TravelPackage.operator)).get_or_404(pkg_id)
     if hasattr(pkg, "check_and_update_expiry"):
         if pkg.check_and_update_expiry():
             db.session.commit()
