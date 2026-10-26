@@ -97,6 +97,8 @@ async function refreshState(){
     const j = await (await fetch('/api/interests')).json();
     likedSet = new Set((j.interests||[]).filter(i=>i.action==='like').map(i=>i.package_id));
     savedSet = new Set((j.interests||[]).filter(i=>i.action==='save').map(i=>i.package_id));
+    window.likedSet = likedSet;
+    window.savedSet = savedSet;
   } catch(e){}
   if (window.refreshNavCounts) window.refreshNavCounts();
 }
@@ -197,7 +199,23 @@ function renderCard(){
       <p class="small">${tags.map(t=>`<span class="badge">${esc(t)}</span>`).join(' ')}</p>
       <button class="btn small ghost card-detail" type="button">View details</button>
     </div>`;
+  el.setAttribute('role', 'button');
+  el.setAttribute('aria-label', `${p.title || 'Trip'} in ${p.destination || ''}. Tap to expand details.`);
   el.querySelector('.card-detail')?.addEventListener('click', (e)=>{ e.stopPropagation(); openDetail(); });
+  el.addEventListener('click', (e) => {
+    if (e.target.closest('button, a, input, select, textarea, label')) return;
+    if (Math.abs(dragX) > 15) return;
+    const m = document.getElementById('pkg-detail-modal');
+    if (m && !m.classList.contains('hidden')) return;
+    openDetail();
+  });
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      if (e.target.closest('button, a')) return;
+      e.preventDefault();
+      openDetail();
+    }
+  });
   enableDrag(el);
   stack.appendChild(el);
   if (deck[idx+1] && deck[idx+1].cover_image){ const im = new Image(); im.src = deck[idx+1].cover_image; }
@@ -226,6 +244,8 @@ function syncActionStates(){
   if(likeBtn && p) { likeBtn.classList.toggle('active', likedSet.has(p.id)); likeBtn.textContent = likedSet.has(p.id) ? '♥' : '♡'; }
   const saveBtn = document.getElementById('btn-save');
   if(saveBtn && p) { saveBtn.classList.toggle('active', savedSet.has(p.id)); saveBtn.textContent = savedSet.has(p.id) ? '★ Saved' : '☆ Save'; }
+  window.likedSet = likedSet;
+  window.savedSet = savedSet;
 }
 
 function prev(){ if(idx > 0){ idx--; renderCard(); } }
@@ -309,38 +329,32 @@ async function doSave(){
 
 function openDetail(){
   const p = current(); if(!p) return;
-  const m = document.getElementById('detail-modal');
-  const body = document.getElementById('dm-body');
-  document.getElementById('dm-title').textContent = p.title || 'Trip';
-  const price = Number(p.price||0).toLocaleString('en-IN');
-  const demoBadge = p.is_demo ? '<span class="badge">Sample data — not live</span>' : '';
-  const priceLabel = p.price_kind === 'demo_estimate' ? 'illustrative demo price' : (p.price_kind === 'confirmed' ? 'confirmed price' : (p.price_kind === 'operator_quote' ? 'operator quotation' : 'per-person estimate'));
-  let breakdown = '<p>Detailed breakdown: Not provided — <b>needs operator confirmation</b>.</p>';
-  if(p.price_breakdown){
-    const b = p.price_breakdown;
-    const row = (k,l)=>`<tr><td>${l}</td><td>₹${Number(b[k]||0).toLocaleString('en-IN')}</td></tr>`;
-    breakdown = `<table class="table">${row('base','Base')}${row('accommodation','Stay')}${row('transport','Transport')}${row('meals','Meals')}${row('activities','Activities & entry')}${row('taxes','Taxes & charges')}<tr><td><b>Est. total / person</b></td><td><b>₹${price}</b></td></tr></table><p class="muted small">Illustrative demo split — not a final quote. Exclusions: ${esc((p.excluded||[]).join(', ')||'Not provided')}</p>`;
+  if (window.openPackageModal) {
+    window.openPackageModal(p, {
+      onInterested: (pkg) => {
+        status(`♥ Interested in ${pkg.destination || 'trip'}! Enquiry recorded.`);
+        deck.splice(idx, 1);
+        if (idx >= deck.length) idx = Math.max(0, deck.length - 1);
+        refreshState().then(() => renderCard());
+      },
+      onLike: (pkg, liked) => {
+        if (liked) likedSet.add(pkg.id); else likedSet.delete(pkg.id);
+        renderCard();
+      },
+      onSave: (pkg, saved) => {
+        if (saved) savedSet.add(pkg.id); else savedSet.delete(pkg.id);
+        renderCard();
+      },
+      syncUrl: false
+    });
+    return;
   }
-  body.innerHTML = `
-    <img src="${esc(p.cover_image||'')}" alt="" style="width:100%;border-radius:12px;max-height:280px;object-fit:cover" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80&auto=format&fit=crop'" />
-    <p class="muted">${esc(p.destination||'')} · ${esc(p.duration_days||'?')} days${p.nights!=null?` / ${esc(p.nights)} nights`:''} · <b>₹${price}</b> / person <span class="muted small">(${priceLabel})</span> ${demoBadge}</p>
-    <p><b>Operator:</b> ${esc((p.operator&&p.operator.company_name)||'Not provided')} ${p.operator&&p.operator.is_verified?'<span class="badge verified">✓ Verified</span>':''}</p>
-    <p><b>Availability:</b> ${esc(p.availability_status||'Not provided')} ${p.seats_remaining!=null?`(${esc(p.seats_remaining)} seats)`:''}</p>
-    <p><b>Why it matches:</b> ${esc(p.match_explanation||'Not provided')}</p>
-    <p>${esc(p.short_desc||'Not provided')}</p>
-    <h4>Itinerary</h4><p>${esc(p.itinerary||'Not provided')}</p>
-    <div class="cols"><div><h4>Included</h4><p>${esc((p.included||[]).join(', ')||'Not provided')}</p>
-    <h4>Excluded</h4><p>${esc((p.excluded||[]).join(', ')||'Not provided')}</p></div>
-    <div><h4>Stay</h4><p>${esc(p.accommodation||'Not provided')}</p>
-    <h4>Transport</h4><p>${esc(p.transportation||'Not provided')}</p>
-    <h4>Dates</h4><p>${esc((p.departure_dates_list||[]).join(', ')||p.available_dates||'Not provided')}</p>
-    <h4>Group</h4><p>${esc(p.group_size||'Not provided')} Capacity: ${esc(p.capacity??'Not provided')}</p></div></div>
-    <h4>Cancellation</h4><p>${esc(p.cancellation_terms||'Unavailable — ask the operator before booking.')}</p>
-    <h4>Price breakdown</h4>${breakdown}
-    <div class="cta-row"><a class="btn small ghost" href="/packages/${p.id}">Open full page</a></div>`;
-  m.classList.remove('hidden');
 }
-function closeDetail(){ document.getElementById('detail-modal').classList.add('hidden'); }
+function closeDetail(){
+  if (window.closePackageModal) {
+    window.closePackageModal({ revertUrl: false });
+  }
+}
 
 async function doShare(){
   const p = current(); if(!p) return;
@@ -353,33 +367,76 @@ async function doShare(){
 
 let dragX = 0;
 function enableDrag(el){
-  let startX=0, startY=0, curX=0, dragging=false;
-  const like = ()=>el.querySelector('.stamp.like'), nope = ()=>el.querySelector('.stamp.nope');
-  const isModal = ()=>!document.getElementById('detail-modal').classList.contains('hidden');
-  const down = (x,y)=>{ if(isModal()) return; dragging=true; startX=x; startY=y; el.style.transition=''; };
-  const move = (x,y)=>{
-    if(!dragging || isModal()) return;
-    if(Math.abs(y-startY) > 60 && Math.abs(x-startX) < 20) return;
-    curX = x-startX; dragX = curX;
-    el.style.transform = `translateX(${curX}px) rotate(${curX/18}deg)`;
-    const l=like(), n=nope();
-    if(l) l.style.opacity = curX>40 ? Math.min(1,curX/120):0;
-    if(n) n.style.opacity = curX<-40 ? Math.min(1,-curX/120):0;
+  let startX = 0, startY = 0, curX = 0, curY = 0, dragging = false, startTime = 0, hasMoved = false;
+  const like = () => el.querySelector('.stamp.like'), nope = () => el.querySelector('.stamp.nope');
+  const isModal = () => {
+    const m = document.getElementById('pkg-detail-modal') || document.getElementById('detail-modal');
+    return m ? !m.classList.contains('hidden') : false;
   };
-  const up = ()=>{
-    if(!dragging) return; dragging=false;
-    if(isModal()){ el.style.transform=''; return; }
-    if(curX > 90) doInterested();
-    else if(curX < -90) doPass();
-    else { el.style.transition='transform .2s'; el.style.transform=''; dragX=0; }
-    curX=0;
+  const down = (x, y) => {
+    if (isModal()) return;
+    dragging = true;
+    hasMoved = false;
+    startX = x;
+    startY = y;
+    curX = 0;
+    curY = 0;
+    dragX = 0;
+    startTime = Date.now();
+    el.style.transition = '';
   };
-  el.addEventListener('pointerdown', e=>{ if(e.target.closest('button,a')) return; down(e.clientX,e.clientY); });
-  window.addEventListener('pointermove', e=>move(e.clientX,e.clientY));
-  window.addEventListener('pointerup', up);
-  el.addEventListener('touchstart', e=>{ if(e.target.closest('button,a')) return; down(e.touches[0].clientX,e.touches[0].clientY); }, {passive:true});
-  el.addEventListener('touchmove', e=>move(e.touches[0].clientX,e.touches[0].clientY), {passive:true});
-  el.addEventListener('touchend', up);
+  const move = (x, y) => {
+    if (!dragging || isModal()) return;
+    curX = x - startX;
+    curY = y - startY;
+    if (Math.abs(curX) > 8 || Math.abs(curY) > 8) hasMoved = true;
+    if (Math.abs(curY) > 60 && Math.abs(curX) < 20) return;
+    dragX = curX;
+    el.style.transform = `translateX(${curX}px) rotate(${curX / 18}deg)`;
+    const l = like(), n = nope();
+    if (l) l.style.opacity = curX > 40 ? Math.min(1, curX / 120) : 0;
+    if (n) n.style.opacity = curX < -40 ? Math.min(1, -curX / 120) : 0;
+  };
+  const up = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    if (isModal()) { el.style.transform = ''; dragX = 0; return; }
+    const elapsed = Date.now() - startTime;
+    const isTap = (!hasMoved || (Math.abs(curX) < 12 && Math.abs(curY) < 12)) && elapsed < 400;
+
+    if (curX > 90) {
+      doInterested();
+    } else if (curX < -90) {
+      doPass();
+    } else {
+      el.style.transition = 'transform .2s';
+      el.style.transform = '';
+      setTimeout(() => { dragX = 0; }, 50);
+      if (isTap && e && e.target) {
+        if (!e.target.closest('button, a, input, select, textarea, label')) {
+          openDetail();
+        }
+      }
+    }
+    curX = 0;
+    curY = 0;
+  };
+
+  el.addEventListener('pointerdown', e => {
+    if (e.target.closest('button, a, input, select, textarea, label')) return;
+    down(e.clientX, e.clientY);
+  });
+  window.addEventListener('pointermove', e => move(e.clientX, e.clientY));
+  window.addEventListener('pointerup', e => up(e));
+
+  if (!window.PointerEvent) {
+    el.addEventListener('touchstart', e => {
+      if (e.target.closest('button, a, input, select, textarea, label')) return;
+      down(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    el.addEventListener('touchmove', e => move(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+    el.addEventListener('touchend', e => up(e));
+  }
   el.style.touchAction = 'pan-y';
 }
 
@@ -433,7 +490,12 @@ document.getElementById('m-operator')?.addEventListener('click', ()=>{
 });
 document.addEventListener('keydown', e=>{
   if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
-  if(!document.getElementById('detail-modal').classList.contains('hidden')){ if(e.key==='Escape') closeDetail(); return; }
+  const pdm = document.getElementById('pkg-detail-modal');
+  const dm = document.getElementById('detail-modal');
+  if ((pdm && !pdm.classList.contains('hidden')) || (dm && !dm.classList.contains('hidden'))) {
+    if (e.key === 'Escape') closeDetail();
+    return;
+  }
   if(document.getElementById('swipe-screen').classList.contains('hidden')) return;
   if(e.key==='ArrowRight') next();
   if(e.key==='ArrowLeft') prev();

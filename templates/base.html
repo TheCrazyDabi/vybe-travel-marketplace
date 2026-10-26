@@ -99,7 +99,27 @@
   </footer>
   {% endif %}
 
-  <script src="{{ url_for('static', filename='js/main.js', v='6') }}"></script>
+  <!-- Unified Package Detail Modal / Bottom Sheet -->
+  <div id="pkg-detail-modal" class="modal pkg-detail-modal hidden" role="dialog" aria-modal="true" aria-label="Trip Details">
+    <div class="modal-card pkg-detail-card">
+      <div class="pkg-modal-header">
+        <button id="pdm-back-btn" type="button" class="btn small ghost pdm-back-btn" aria-label="Close details">← Back</button>
+        <span class="pdm-header-title" id="pdm-header-title">Trip Details</span>
+        <button id="pdm-close-btn" type="button" class="btn small ghost pdm-close-circle" aria-label="Close">✕</button>
+      </div>
+      <div class="pkg-modal-body" id="pdm-body" tabindex="0">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="pkg-modal-actions" id="pdm-actions">
+        <button id="pdm-btn-interested" type="button" class="btn primary pdm-action-primary">♥ I'm Interested</button>
+        <button id="pdm-btn-like" type="button" class="btn ghost pdm-action-fav" title="Favourite">♡ Favourite</button>
+        <button id="pdm-btn-save" type="button" class="btn ghost pdm-action-save" title="Save / Bookmark">☆ Save</button>
+        <a id="pdm-btn-chat" href="#" class="btn ghost pdm-action-chat hidden">Chat</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js', v='7') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

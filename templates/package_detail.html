@@ -5,7 +5,10 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 {% endblock %}
 {% block content %}
-<a href="/packages" class="muted">← All trips</a>
+<div style="margin-bottom:14px; display:flex; align-items:center; justify-content:space-between;">
+  <a href="/packages" class="btn small ghost" onclick="if (window.history.length > 1) { event.preventDefault(); window.history.back(); }">← Back to trips</a>
+  <span class="muted small">Package #{{ pkg.id }}</span>
+</div>
 {% if pkg.is_demo %}<p><span class="badge">Sample data — not live availability</span></p>{% endif %}
 <div class="detail">
   <div>
@@ -60,7 +63,16 @@
       <div><h4>Included</h4><ul>{% for x in pkg.included or [] %}<li>{{ x }}</li>{% else %}<li class="muted">Not provided</li>{% endfor %}</ul>
       <h4>Excluded</h4><ul>{% for x in pkg.excluded or [] %}<li>{{ x }}</li>{% else %}<li class="muted">Not provided</li>{% endfor %}</ul></div>
       <div><h4>Details</h4>
-        <p class="muted">Stay: {{ pkg.accommodation or 'Not provided' }}<br/>Travel: {{ pkg.transportation or 'Not provided' }}<br/>Group: {{ pkg.group_size or 'Not provided' }}{% if pkg.min_group_size or pkg.max_group_size %} ({{ pkg.min_group_size or '?' }}–{{ pkg.max_group_size or '?' }}){% endif %}<br/>Dates: {{ pkg.available_dates or 'Not provided' }}<br/>Seats: {{ pkg.seats_remaining if pkg.seats_remaining is not none else 'Not provided' }}<br/>Styles: {{ (pkg.suitable_travel_styles or [])|join(', ') or 'Not provided' }}</p>
+        <p class="muted">
+          Travel Dates: {% if pkg.trip_start_date and pkg.trip_end_date %}{{ pkg.trip_start_date.strftime('%d %b %Y') if pkg.trip_start_date.strftime else pkg.trip_start_date }} – {{ pkg.trip_end_date.strftime('%d %b %Y') if pkg.trip_end_date.strftime else pkg.trip_end_date }}{% elif pkg.departure_dates_list %}{{ pkg.departure_dates_list|join(', ') }}{% else %}{{ pkg.available_dates or 'Flexible departures' }}{% endif %}<br/>
+          {% if pkg.booking_deadline %}Booking Deadline: {{ pkg.booking_deadline.strftime('%d %b %Y') if pkg.booking_deadline.strftime else pkg.booking_deadline }}<br/>{% endif %}
+          {% if pkg.valid_until %}Listing Valid Until: {{ pkg.valid_until.strftime('%d %b %Y') if pkg.valid_until.strftime else pkg.valid_until }}<br/>{% endif %}
+          Stay: {{ pkg.accommodation or 'Not provided' }}<br/>
+          Travel: {{ pkg.transportation or 'Not provided' }}<br/>
+          Group: {{ pkg.group_size or 'Not provided' }}{% if pkg.capacity is not none %} (Capacity: {{ pkg.capacity }}){% elif pkg.min_group_size or pkg.max_group_size %} ({{ pkg.min_group_size or '?' }}–{{ pkg.max_group_size or '?' }}){% endif %}<br/>
+          Seats: {{ pkg.seats_remaining if pkg.seats_remaining is not none else 'Not specified' }}<br/>
+          Styles: {{ (pkg.suitable_travel_styles or [])|join(', ') or 'Not provided' }}
+        </p>
         <h4>Cancellation</h4><p class="muted small">{{ pkg.cancellation_terms or 'Unavailable — ask the operator before booking.' }}</p>
         {% if pkg.operator %}<h4>Operator</h4><p class="muted small">{{ pkg.operator.company_name }}<br/>{{ pkg.operator.description or '' }}<br/>Contact: {{ pkg.operator.contact_details or pkg.operator.business_email }}</p>{% endif %}
       </div>

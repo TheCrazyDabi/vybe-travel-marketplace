@@ -973,3 +973,297 @@ img { max-width: 100%; }
   .role-card { min-height: 50px; }
   input, select, textarea, .input { font-size: 16px; }
 }
+
+/* ==========================================================================
+   Unified Package Detail Modal & Bottom Sheet (Expandable Details)
+   ========================================================================== */
+.pkg-detail-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 11, 9, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.pkg-detail-modal.hidden {
+  display: none !important;
+}
+
+.pkg-detail-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent-border);
+  border-radius: 20px;
+  max-width: 740px;
+  width: 100%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 54px rgba(0, 0, 0, 0.65);
+  padding: 0 !important;
+  animation: pdmFadeSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes pdmFadeSlide {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.pkg-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.pdm-header-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 65%;
+  text-align: center;
+}
+
+.pdm-back-btn, .pdm-close-circle {
+  font-size: 14px;
+  min-height: 38px;
+  padding: 6px 14px;
+}
+
+.pkg-modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px 22px 30px;
+}
+
+.pdm-hero-wrap {
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #1e1311;
+  margin-bottom: 16px;
+}
+
+.pdm-hero-img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  display: block;
+}
+
+.pdm-thumbs-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 0;
+  margin-bottom: 14px;
+}
+
+.pdm-thumb-img {
+  width: 72px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.pdm-thumb-img:hover {
+  border-color: var(--color-primary);
+}
+
+.pdm-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.25;
+}
+
+.pdm-subline {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.pdm-price-tag {
+  display: inline-block;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.pdm-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 10px 0 16px;
+}
+
+.pdm-section {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.pdm-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+  margin: 0 0 8px;
+}
+
+.pdm-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pdm-meta-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.pdm-meta-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  display: block;
+  margin-bottom: 3px;
+  font-weight: 600;
+}
+
+.pdm-meta-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.pdm-pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pdm-pill-item {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border);
+}
+
+.pdm-pill-item.inc {
+  border-color: rgba(155, 224, 190, 0.4);
+  color: var(--color-success);
+}
+
+.pdm-pill-item.exc {
+  border-color: rgba(255, 179, 167, 0.3);
+  color: var(--color-text-muted);
+}
+
+.pkg-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.pdm-action-primary {
+  flex: 2 1 auto;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.pdm-action-fav, .pdm-action-save, .pdm-action-chat {
+  flex: 1 1 auto;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.pdm-action-fav.active {
+  background: rgba(220, 208, 255, 0.22);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pdm-action-save.active {
+  background: rgba(234, 179, 8, 0.2);
+  border-color: #EAB308;
+  color: #FDE047;
+}
+
+/* Mobile full-screen / bottom-sheet responsiveness */
+@media (max-width: 640px) {
+  .pkg-detail-modal {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .pkg-detail-card {
+    max-height: 94vh;
+    height: 94vh;
+    border-radius: 22px 22px 0 0;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+    animation: pdmSheetSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes pdmSheetSlide {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .pkg-modal-header {
+    padding: 10px 14px;
+  }
+  .pkg-modal-body {
+    padding: 14px 16px 24px;
+  }
+  .pkg-modal-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+  .pdm-action-primary {
+    width: 100%;
+    order: 1;
+    min-height: 48px;
+  }
+  .pdm-action-fav, .pdm-action-save, .pdm-action-chat {
+    width: calc(50% - 4px);
+    order: 2;
+    min-height: 44px;
+  }
+}
+
